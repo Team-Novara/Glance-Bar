@@ -12,6 +12,8 @@ import { createRealDownloadProvider } from "./realDownloadProvider";
 import { createRealFocusProvider } from "./realFocusProvider";
 import { createRealGitProvider } from "./realGitProvider";
 import { createRealMediaSessionProvider } from "./realMediaSessionProvider";
+import { createRealNpmProvider } from "./realNpmProvider";
+import { createRealWslProvider } from "./realWslProvider";
 import { createRealSystemPerformanceProvider } from "./realSystemPerformanceProvider";
 import { createRealUpdateProvider } from "./realUpdateProvider";
 import type { HubProvider } from "./types";
@@ -77,8 +79,10 @@ export function createProviderManager(
     registerProvider(createRealFocusProvider());
     registerProvider(createRealGitProvider());
     registerProvider(createRealMediaSessionProvider());
+    registerProvider(createRealNpmProvider());
     registerProvider(createRealSystemPerformanceProvider());
     registerProvider(createRealUpdateProvider());
+    registerProvider(createRealWslProvider());
   }
 
   // Register mock providers as fallback/demo data sources

@@ -47,9 +47,11 @@ const { providerFactories, connectMock, disconnectMock, mockEventBus } = vi.hois
         createRealFocusProvider: vi.fn(() => makeSpyProvider("real-focus-provider", "focus")),
         createRealGitProvider: vi.fn(() => makeSpyProvider("real-git-provider", "git")),
         createRealMediaSessionProvider: vi.fn(() => makeSpyProvider("real-media-session-provider", "media")),
+        createRealNpmProvider: vi.fn(() => makeSpyProvider("real-npm-provider", "npm")),
         createRealSystemPerformanceProvider: vi.fn(() => makeSpyProvider("real-system-performance-provider", "system")),
         createRealDownloadProvider: vi.fn(() => makeSpyProvider("real-download-provider", "download")),
         createRealUpdateProvider: vi.fn(() => makeSpyProvider("real-update-provider", "ai")),
+        createRealWslProvider: vi.fn(() => makeSpyProvider("real-wsl-provider", "wsl")),
       },
       connectMock: vi.fn(() => ({ disconnect: disconnectMock } satisfies ProviderConnection)),
       disconnectMock,
@@ -102,8 +104,16 @@ vi.mock("./realMediaSessionProvider", () => ({
   createRealMediaSessionProvider: providerFactories.createRealMediaSessionProvider,
 }));
 
+vi.mock("./realNpmProvider", () => ({
+  createRealNpmProvider: providerFactories.createRealNpmProvider,
+}));
+
 vi.mock("./realSystemPerformanceProvider", () => ({
   createRealSystemPerformanceProvider: providerFactories.createRealSystemPerformanceProvider,
+}));
+
+vi.mock("./realWslProvider", () => ({
+  createRealWslProvider: providerFactories.createRealWslProvider,
 }));
 
 vi.mock("./providerAdapter", () => ({
@@ -151,11 +161,11 @@ describe("createProviderManager", () => {
 
   // ── Default creation ────────────────────────────────────────────────
 
-  it("registers all 12 providers (8 real + 4 mock) by default", () => {
+  it("registers all 14 providers (10 real + 4 mock) by default", () => {
     const manager = createManager();
     const ids = manager.listProviderIds();
 
-    assert.equal(ids.length, 12);
+    assert.equal(ids.length, 14);
     assert.deepEqual(ids, [
       "real-clipboard-provider",
       "real-docker-provider",
@@ -163,8 +173,10 @@ describe("createProviderManager", () => {
       "real-focus-provider",
       "real-git-provider",
       "real-media-session-provider",
+      "real-npm-provider",
       "real-system-performance-provider",
       "real-update-provider",
+      "real-wsl-provider",
       "mock-music-provider",
       "mock-download-provider",
       "mock-ai-task-provider",
@@ -177,13 +189,15 @@ describe("createProviderManager", () => {
     const ids = manager.listProviderIds();
 
     // Real providers registered first (order: clipboard, docker, download,
-    // focus, git, media, system, update), then mock providers (music, download, ai, notification)
+    // focus, git, media, npm, system, update, wsl), then mock providers
     assert.equal(ids[0], "real-clipboard-provider");
     assert.equal(ids[1], "real-docker-provider");
     assert.equal(ids[3], "real-focus-provider");
     assert.equal(ids[4], "real-git-provider");
-    assert.equal(ids[8], "mock-music-provider");
-    assert.equal(ids[11], "mock-notification-provider");
+    assert.equal(ids[6], "real-npm-provider");
+    assert.equal(ids[9], "real-wsl-provider");
+    assert.equal(ids[10], "mock-music-provider");
+    assert.equal(ids[13], "mock-notification-provider");
   });
 
   // ── Options: realProviders / mockProviders ──────────────────────────
@@ -202,7 +216,7 @@ describe("createProviderManager", () => {
     const manager = createManager({ mockProviders: false });
     const ids = manager.listProviderIds();
 
-    assert.equal(ids.length, 8);
+    assert.equal(ids.length, 10);
     for (const id of ids) {
       assert.ok(id.startsWith("real-"), `expected real prefix, got ${id}`);
     }
@@ -217,13 +231,13 @@ describe("createProviderManager", () => {
   it("defaults realProviders and mockProviders to true when options is empty", () => {
     const manager = createManager({});
 
-    assert.equal(manager.listProviderIds().length, 12);
+    assert.equal(manager.listProviderIds().length, 14);
   });
 
   it("defaults realProviders and mockProviders to true when options is undefined", () => {
     const manager = createProviderManager(mockEventBus as unknown as HubEventBus);
 
-    assert.equal(manager.listProviderIds().length, 12);
+    assert.equal(manager.listProviderIds().length, 14);
   });
 
   // ── start() ─────────────────────────────────────────────────────────
@@ -242,24 +256,24 @@ describe("createProviderManager", () => {
     manager.start();
 
     // connectProviderToEventBus called once per provider
-    assert.equal(connectMock.mock.calls.length, 12);
+    assert.equal(connectMock.mock.calls.length, 14);
   });
 
   it("start() is idempotent — disconnects old connections before creating new ones", () => {
     const manager = createManager();
 
-    manager.start(); // first: creates 12 connections
+    manager.start(); // first: creates 13 connections
     const firstDisconnectCount = disconnectMock.mock.calls.length;
 
     // Actually, let's track properly
     disconnectMock.mockClear();
     connectMock.mockClear();
 
-    manager.start(); // second: disconnects 12 old, creates 12 new
+    manager.start(); // second: disconnects 13 old, creates 13 new
 
-    // Second start disconnected the 12 from first start, then connected 12 new
-    assert.equal(disconnectMock.mock.calls.length, 12);
-    assert.equal(connectMock.mock.calls.length, 12);
+    // Second start disconnected the 13 from first start, then connected 13 new
+    assert.equal(disconnectMock.mock.calls.length, 14);
+    assert.equal(connectMock.mock.calls.length, 14);
   });
 
   // ── stop() ──────────────────────────────────────────────────────────
@@ -281,7 +295,7 @@ describe("createProviderManager", () => {
 
     manager.stop();
 
-    assert.equal(disconnectMock.mock.calls.length, 12);
+    assert.equal(disconnectMock.mock.calls.length, 14);
   });
 
   it("stop() clears the connections array", () => {
@@ -342,8 +356,10 @@ describe("createProviderManager", () => {
       "real-focus-provider",
       "real-git-provider",
       "real-media-session-provider",
+      "real-npm-provider",
       "real-system-performance-provider",
       "real-update-provider",
+      "real-wsl-provider",
       "mock-music-provider",
       "mock-download-provider",
       "mock-ai-task-provider",
@@ -364,8 +380,8 @@ describe("createProviderManager", () => {
 
     // Mutation of one does not affect the other
     first.pop();
-    assert.equal(first.length, 11);
-    assert.equal(second.length, 12);
+    assert.equal(first.length, 13);
+    assert.equal(second.length, 14);
   });
 
   // ── Safety: empty manager ───────────────────────────────────────────
@@ -397,7 +413,7 @@ describe("createProviderManager", () => {
     const manager = createManager({ mockProviders: false });
     const records = manager.registry.list();
 
-    assert.equal(records.length, 8);
+    assert.equal(records.length, 10);
     assert.ok("status" in records[0]!);
     assert.ok("metadata" in records[0]!);
     assert.ok("capabilities" in records[0]!);

@@ -61,6 +61,8 @@ const HUB_EVENT_SOURCES = new Set([
   "focus",
   "git",
   "docker",
+  "wsl",
+  "npm",
 ]);
 
 export function isHubEventType(value: unknown): value is HubEvent["type"] {

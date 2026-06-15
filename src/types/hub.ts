@@ -21,7 +21,9 @@ export type HubEventSource =
   | "clipboard"
   | "focus"
   | "git"
-  | "docker";
+  | "docker"
+  | "wsl"
+  | "npm";
 
 export type SystemPerformanceMetricId = "cpu" | "memory" | "download" | "upload";
 
