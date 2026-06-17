@@ -81,6 +81,8 @@ function snapshotRealMediaState(
     progress: clampProgress(payload.progress),
     accent: "violet",
     playbackStatus: payload.playbackStatus,
+    positionMs: payload.positionMs,
+    durationMs: payload.durationMs,
     sourceHealth: {
       kind: "media",
       quality: "native",

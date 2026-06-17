@@ -22,6 +22,7 @@ This directory contains decision records from the v0.8 system status readiness p
 | `v0.8_SYSTEM_STATUS_READINESS_EVIDENCE_DECISION.md` | ✅ Superseded | Readiness evidence has been validated by actual implementation. |
 | `v0.8_SYSTEM_STATUS_ROLLBACK_DISABLE_KILL_SWITCH_CRITERIA.md` | ⚠️ Partially relevant | Rollback/disable criteria still relevant as operational guidance. |
 | `v0.8_SYSTEM_STATUS_RUNTIME_PAYLOAD_CONTRACT_PLAN.md` | ✅ Superseded | Runtime payload contract now implemented as Tauri IPC commands. |
+| `v0.8_DESKTOP_STATUS_SCHEDULER_DUALITY_DECISION.md` | 🟡 Proposed | Accepts the dual-layer scheduler (resolver snapshot path + hook event path). Stage 5+1 WIP landing. |
 
 ## Key Takeaway
 

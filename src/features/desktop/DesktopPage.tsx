@@ -26,10 +26,9 @@ import {
 } from "../../runtime/autostartRuntime";
 import { emitTauriFixtureEvents, getTauriInvoke } from "../../runtime/tauriRuntime";
 import { getSafeCurrentWindow, type TauriAppWindow } from "../../shared/tauriWindow";
-import { type resolveDesktopStatusState } from "../../state/desktopStatusState";
-import type { DesktopStatusKind } from "../../types/hub";
+import type { DesktopStatusKind, DesktopStatusState } from "../../types/hub";
 
-function renderDesktopStatusTemplate(state: ReturnType<typeof resolveDesktopStatusState>) {
+function renderDesktopStatusTemplate(state: DesktopStatusState) {
   switch (state.kind) {
     case "resident":
       return <ResidentStatusTemplate state={state} />;

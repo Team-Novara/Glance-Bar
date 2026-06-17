@@ -54,7 +54,6 @@ function statusToPayload(status: TauriMediaSessionStatus): MediaSessionChangedPa
 
 export function createRealMediaSessionProvider(): HubProvider {
   let unlisten: (() => void) | undefined;
-  let lastEmittedAvailable: boolean | undefined;
 
   const metadata: HubProviderMetadata = {
     id: PROVIDER_ID,
@@ -82,23 +81,19 @@ export function createRealMediaSessionProvider(): HubProvider {
             return;
           }
           const payload = statusToPayload(result.status);
-          lastEmittedAvailable = payload.available;
           handle.emit([mediaPayloadToEvent(payload)]);
         })
         .catch(() => {
-          // Initial fetch failed — non-critical, listener will catch
-          // future changes. Don't markDegraded here: the GSMTC service
-          // is allowed to be transiently unavailable on cold boot.
+          // Initial fetch failed — non-critical, the listener below will
+          // catch future changes.
         });
 
+      // Note: we deliberately do NOT dedup by content hash here. The Rust
+      // media thread already debounces its own emits (it only fires on
+      // real changes plus the 20s keepalive + post-action force-emit),
+      // so adding a frontend hash on top of that caused the play/pause
+      // icon to lag the actual session state.
       onMediaSessionChanged((payload) => {
-        // Skip consecutive emissions that report the same availability
-        // and no meaningful change (the Rust side coalesces a few of
-        // these per second while a track plays).
-        if (payload.available === lastEmittedAvailable) {
-          return;
-        }
-        lastEmittedAvailable = payload.available;
         handle.emit([mediaPayloadToEvent(payload)]);
       })
         .then((unlistenFn) => {
@@ -112,7 +107,6 @@ export function createRealMediaSessionProvider(): HubProvider {
     stop() {
       unlisten?.();
       unlisten = undefined;
-      lastEmittedAvailable = undefined;
     },
   });
 }

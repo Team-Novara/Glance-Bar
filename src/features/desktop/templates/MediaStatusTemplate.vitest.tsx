@@ -15,7 +15,11 @@ describe("MediaStatusTemplate", () => {
     expect(screen.getByText("Neon Focus")).toBeInTheDocument();
     expect(screen.getByText("Now Playing")).toBeInTheDocument();
     expect(screen.getByText("Cober Player")).toBeInTheDocument();
-    expect(screen.getByText("01:42 / 03:28")).toBeInTheDocument();
+    // The time label now lives in the new control row, not in the meta
+    // eyebrow. The fixture provides positionMs=102_000, durationMs=208_000,
+    // which formatMediaTime() renders without zero-padded minute digits
+    // (Math.floor(102/60)=1, Math.floor(208/60)=3) — match the live format.
+    expect(screen.getByText("1:42 / 3:28")).toBeInTheDocument();
   });
 
   it("renders three media control buttons", () => {
@@ -178,5 +182,65 @@ describe("MediaStatusTemplate UI tokens", () => {
       expect(svg.getAttribute("height")).toBe("14");
       expect(svg.getAttribute("stroke-width")).toBe("2.4");
     });
+  });
+});
+
+describe("MediaStatusTemplate control row + time label", () => {
+  it("renders the new control row with control buttons and time label", () => {
+    const { container } = render(<MediaStatusTemplate state={mockMediaState()} />);
+    const row = container.querySelector(".product-status-media-control-row");
+    expect(row).toBeInTheDocument();
+    expect(row?.querySelector(".product-status-guest-controls")).toBeInTheDocument();
+    const time = row?.querySelector(".product-status-media-time");
+    expect(time).toBeInTheDocument();
+    expect(time?.textContent).toBe("1:42 / 3:28");
+  });
+
+  it("hides the time label when no position / duration is provided", () => {
+    // The bar used to fall back to the progress percent here, but the
+    // user found the dangling "0%" on the right edge distracting. Now
+    // the label only appears when a real time string is available.
+    const state = mockMediaState({
+      positionMs: undefined,
+      durationMs: undefined,
+      progress: 42,
+    });
+    const { container } = render(<MediaStatusTemplate state={state} />);
+    const time = container.querySelector(".product-status-media-time");
+    expect(time?.textContent).toBe("");
+  });
+
+  it("hides the time label when duration is 0", () => {
+    const state = mockMediaState({
+      positionMs: 0,
+      durationMs: 0,
+      progress: 7,
+    });
+    const { container } = render(<MediaStatusTemplate state={state} />);
+    const time = container.querySelector(".product-status-media-time");
+    expect(time?.textContent).toBe("");
+  });
+
+  it("hides the visualizer and meta when the player is unavailable", () => {
+    const { container } = render(
+      <MediaStatusTemplate state={mockMediaState({ playbackStatus: "unavailable" })} />,
+    );
+    expect(container.querySelector(".product-status-media-visualizer")).not.toBeInTheDocument();
+    expect(container.querySelector(".product-status-media-meta")).not.toBeInTheDocument();
+  });
+
+  it("hides the visualizer when paused but keeps the time label", () => {
+    const { container } = render(
+      <MediaStatusTemplate state={mockMediaState({ playbackStatus: "paused" })} />,
+    );
+    expect(container.querySelector(".product-status-media-visualizer")).not.toBeInTheDocument();
+    expect(container.querySelector(".product-status-media-meta")).toBeInTheDocument();
+    expect(container.querySelector(".product-status-media-time")).toBeInTheDocument();
+  });
+
+  it("renders the time label with the i18n 'Playback position' aria-label", () => {
+    const { container } = render(<MediaStatusTemplate state={mockMediaState()} />);
+    const time = container.querySelector(".product-status-media-time");
+    expect(time?.getAttribute("aria-label")).toBe("Playback position");
   });
 });

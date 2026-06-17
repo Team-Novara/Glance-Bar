@@ -191,6 +191,7 @@
     "pause": "Pause",
     "playPause": "Play/Pause",
     "next": "Next",
+    "positionLabel": "Playback position",
     "unavailable": {
       "badge": "No player detected"
     },

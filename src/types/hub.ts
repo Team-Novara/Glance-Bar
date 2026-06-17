@@ -122,6 +122,8 @@ export type DesktopMediaState = DesktopStatusBaseState & {
   timeLabel: string;
   accent: DesktopStatusAccentTone;
   playbackStatus?: "playing" | "paused" | "unavailable" | "unsupported";
+  positionMs?: number;
+  durationMs?: number;
 };
 
 export type DesktopDownloadState = DesktopStatusBaseState & {

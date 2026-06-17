@@ -105,6 +105,14 @@ fn start_mta_media_thread(
       // Refresh timer state: tracks when we last re-emitted a playing session.
       let mut last_refresh_at: u64 = 0;
 
+      // Cache the SessionManager across iterations — RequestAsync is
+      // the most expensive call in the read cycle (~50-200ms), so we
+      // avoid re-creating it every 50ms. We only re-create when the
+      // cached manager fails or when no session is available.
+      let mut cached_manager: Option<
+        windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager,
+      > = None;
+
       loop {
         // 1. Handle pending requests: actions first, then refreshes.
         while let Ok(MediaRequest::Action(action, reply_tx)) = request_rx.try_recv() {
@@ -112,8 +120,8 @@ fn start_mta_media_thread(
           let _ = reply_tx.send(result);
         }
 
-        // 2. Read status once per cycle.
-        let status = read_media_session_status();
+        // 2. Read status once per cycle, reusing the cached manager.
+        let status = read_media_session_status_with_cache(&mut cached_manager);
 
         // 2a. Periodic refresh: when a session is playing and the refresh interval
         // has elapsed, re-emit the status so the frontend expiry window resets.
@@ -156,8 +164,10 @@ fn start_mta_media_thread(
           break;
         }
 
-        // 5. Sleep briefly to yield CPU. No message pump needed on MTA.
-        std::thread::sleep(Duration::from_millis(50));
+        // 5. Sleep briefly to yield CPU. Tighter than before so the
+        // frontend sees pause / track-change within ~100-200ms instead
+        // of the previous ~500ms+.
+        std::thread::sleep(Duration::from_millis(20));
       }
     })
     .expect("failed to spawn WinRT media thread");
@@ -180,7 +190,7 @@ fn execute_media_action(action: &str) -> Result<MediaControlResult, String> {
 
   let async_op = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
     .map_err(|e| format!("media manager request failed: {e}"))?;
-  let manager = sta_wait_async(async_op, timeout)
+  let manager = mta_wait_async(async_op, timeout)
     .map_err(|e| format!("media manager get failed: {e}"))?;
 
   let session = manager
@@ -348,9 +358,17 @@ use std::sync::mpsc as std_mpsc;
   tx.send(MediaRequest::Action(action, reply_tx))
     .map_err(|_| "STA media thread channel closed".to_string())?;
   drop(tx); // release lock before blocking
-  reply_rx
+  let result: MediaControlResult = reply_rx
     .recv_timeout(Duration::from_secs(5))
     .map_err(|_| "STA media thread timed out".to_string())?
+    .map_err(|e| format!("media action failed: {e}"))?;
+
+  // The media thread itself now force-emits a post-action snapshot inside
+  // its action handler (see media.rs start_mta_media_thread). That emit
+  // happens on the media thread, so we don't need a second emit here —
+  // doing two would race the next 1s poll and can drop the user's
+  // optimistic click.
+  Ok(result)
 }
 
 #[cfg(not(windows))]
@@ -743,12 +761,68 @@ fn read_media_session_status() -> MediaSessionStatus {
 }
 
 #[cfg(windows)]
+fn read_media_session_status_with_cache(
+  cache: &mut Option<
+    windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager,
+  >,
+) -> MediaSessionStatus {
+  read_media_session_status_at_cached(unix_time_ms(), cache)
+}
+
+#[cfg(windows)]
 fn read_media_session_status_at(checked_at: u64) -> MediaSessionStatus {
-  match read_windows_media_session_status(checked_at) {
-    Ok(status) => status,
-    Err(e) => {
-      append_media_log(&format!("[result] read_windows_media_session_status FAILED: {e}"));
-      MediaSessionStatus {
+  let mut cache = None;
+  read_media_session_status_at_cached(checked_at, &mut cache)
+}
+
+#[cfg(windows)]
+fn read_media_session_status_at_cached(
+  checked_at: u64,
+  cache: &mut Option<
+    windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager,
+  >,
+) -> MediaSessionStatus {
+  let timeout = std::time::Duration::from_secs(5);
+
+  // Reuse the cached manager if present; otherwise request a fresh
+  // one. Caching avoids paying the RequestAsync cost on every poll.
+  let manager: Option<
+    windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager,
+  > = if let Some(manager) = cache.as_ref() {
+    Some(manager.clone())
+  } else {
+    let fresh = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
+      .ok()
+      .and_then(|op| mta_wait_async(op, timeout).ok());
+    if let Some(ref manager) = fresh {
+      *cache = Some(manager.clone());
+    }
+    fresh
+  };
+
+  let Some(manager) = manager else {
+    // Clear cache on failure so next iteration retries from scratch.
+    *cache = None;
+    return MediaSessionStatus {
+      available: false,
+      playback_status: "unavailable",
+      progress: 0,
+      position_ms: None,
+      duration_ms: None,
+      title: String::new(),
+      artist: String::new(),
+      code: "provider-failed",
+      checked_at,
+    };
+  };
+
+  let session = match manager.GetCurrentSession() {
+    Ok(s) => s,
+    Err(_) => {
+      // Session went away — drop the cached manager so the next cycle
+      // re-discovers.
+      *cache = None;
+      return MediaSessionStatus {
         available: false,
         playback_status: "unavailable",
         progress: 0,
@@ -756,10 +830,115 @@ fn read_media_session_status_at(checked_at: u64) -> MediaSessionStatus {
         duration_ms: None,
         title: String::new(),
         artist: String::new(),
-        code: "provider-failed",
+        code: "no-session",
         checked_at,
-      }
+      };
     }
+  };
+
+  let playback_info = match session.GetPlaybackInfo() {
+    Ok(i) => i,
+    Err(_) => {
+      return MediaSessionStatus {
+        available: true,
+        playback_status: "unavailable",
+        progress: 0,
+        position_ms: None,
+        duration_ms: None,
+        title: String::new(),
+        artist: String::new(),
+        code: "no-playback-info",
+        checked_at,
+      };
+    }
+  };
+
+  let playback_status = match playback_info.PlaybackStatus() {
+    Ok(s) => s,
+    Err(_) => {
+      return MediaSessionStatus {
+        available: true,
+        playback_status: "unavailable",
+        progress: 0,
+        position_ms: None,
+        duration_ms: None,
+        title: String::new(),
+        artist: String::new(),
+        code: "no-status",
+        checked_at,
+      };
+    }
+  };
+
+  let timeline = match session.GetTimelineProperties() {
+    Ok(t) => t,
+    Err(_) => {
+      return MediaSessionStatus {
+        available: true,
+        playback_status: playback_status_label(playback_status),
+        progress: 0,
+        position_ms: None,
+        duration_ms: None,
+        title: String::new(),
+        artist: String::new(),
+        code: "no-timeline",
+        checked_at,
+      };
+    }
+  };
+
+  let position_ms = timeline
+    .Position()
+    .ok()
+    .and_then(|t| duration_100ns_to_ms(t.Duration));
+  let duration_ms = timeline
+    .EndTime()
+    .ok()
+    .and_then(|t| duration_100ns_to_ms(t.Duration));
+  let progress = match (position_ms, duration_ms) {
+    (Some(position), Some(duration)) if duration > 0 => {
+      clamp_percent((position as f64 / duration as f64) * 100.0)
+    }
+    _ => 0,
+  };
+  let label = playback_status_label(playback_status);
+
+  // Title / artist come from a separate async call. Best-effort — if
+  // it stalls or fails, we still report a valid session with empty
+  // title / artist.
+  let (title, artist) = match session.TryGetMediaPropertiesAsync() {
+    Ok(async_op) => match mta_wait_async(async_op, timeout) {
+      Ok(props) => (
+        props.Title().unwrap_or_default().to_string(),
+        props.Artist().unwrap_or_default().to_string(),
+      ),
+      Err(_) => (String::new(), String::new()),
+    },
+    Err(_) => (String::new(), String::new()),
+  };
+
+  MediaSessionStatus {
+    available: true,
+    playback_status: label,
+    progress,
+    position_ms,
+    duration_ms,
+    title,
+    artist,
+    code: "available",
+    checked_at,
+  }
+}
+
+#[cfg(windows)]
+fn playback_status_label(
+  status: windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus,
+) -> &'static str {
+  if status == windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing
+  {
+    "playing"
+  } else {
+    "paused"
   }
 }
 
@@ -778,6 +957,38 @@ fn read_media_session_status_at(checked_at: u64) -> MediaSessionStatus {
   }
 }
 
+
+#[cfg(windows)]
+fn mta_wait_async<T>(
+  async_op: windows::Foundation::IAsyncOperation<T>,
+  timeout: std::time::Duration,
+) -> windows::core::Result<T>
+where
+  T: windows::core::RuntimeType + Clone + Send + 'static,
+{
+  use windows::core::Interface;
+  use windows::Foundation::{AsyncStatus, IAsyncInfo};
+
+  let info: IAsyncInfo = async_op.cast().map_err(|e| {
+    append_media_log(&format!("[wait] cast to IAsyncInfo FAILED: {e}"));
+    windows::core::Error::from(e.code())
+  })?;
+
+  // Poll for completion directly on this thread instead of spawning a
+  // worker — GetResults() MUST be called from the same apartment that
+  // initiated the async operation.
+  let deadline = std::time::Instant::now() + timeout;
+  loop {
+    if let Ok(AsyncStatus::Completed) = info.Status() {
+      return async_op.GetResults();
+    }
+    if std::time::Instant::now() >= deadline {
+      append_media_log("[wait] TIMEOUT");
+      return Err(windows::core::Error::from(windows::core::HRESULT(0x800705B4u32 as i32)));
+    }
+    std::thread::sleep(std::time::Duration::from_millis(10));
+  }
+}
 
 /// STA-based fallback for waiting on WinRT async operations.
 ///
@@ -963,9 +1174,9 @@ fn read_windows_media_session_status(checked_at: u64) -> windows::core::Result<M
   let async_op = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
     .map_err(|e| { append_media_log(&format!("[step] RequestAsync FAILED: HRESULT={e}")); e })?;
   append_media_log(&format!("[step] RequestAsync OK, op ptr={:?}", &async_op as *const _ as *const ()));
-  append_media_log("[step] sta_wait_async for manager");
-  let manager = sta_wait_async(async_op, timeout)
-    .map_err(|e| { append_media_log(&format!("[step] sta_wait_async(manager) FAILED: {e}")); e })?;
+  append_media_log("[step] mta_wait_async for manager");
+  let manager = mta_wait_async(async_op, timeout)
+    .map_err(|e| { append_media_log(&format!("[step] mta_wait_async(manager) FAILED: {e}")); e })?;
   append_media_log("[step] GetCurrentSession start");
   let session = match manager.GetCurrentSession() {
     Ok(s) => {
@@ -998,7 +1209,7 @@ fn read_windows_media_session_status(checked_at: u64) -> windows::core::Result<M
     };
 
   let (title, artist) = match session.TryGetMediaPropertiesAsync() {
-    Ok(async_op) => match sta_wait_async(async_op, timeout) {
+    Ok(async_op) => match mta_wait_async(async_op, timeout) {
       Ok(props) => {
         let t = props.Title().unwrap_or_default().to_string();
         let a = props.Artist().unwrap_or_default().to_string();

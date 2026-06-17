@@ -89,6 +89,17 @@ button {
     cursor: move;
   }
 
+  /* When the center renders a guest template (`.product-status-state`), align
+     children to the top of the capsule so the icon doesn't leave a visible
+     gap at the top of the bar. The metrics grid (resident template) keeps
+     its centered baseline; the `:has` selector only matches when the inner
+     template is a state copy + body wrapper, not a metrics grid. */
+  .product-status-center:has(> .product-status-state) {
+    align-items: flex-start;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
   .product-status-center:hover {
     transform: translateY(-1px);
     box-shadow:
@@ -484,6 +495,67 @@ button {
 
   .product-status-track-orange span {
     background: linear-gradient(90deg, #f59e0b 0%, #fb923c 100%);
+  }
+
+  /* ── Media template: artist + visualizer meta row ── */
+  .product-status-media-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  .product-status-media-artist {
+    color: #5f6f88;
+    font-size: 11px;
+    font-weight: 640;
+    line-height: 1.2;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── Media template: control row (prev / play-pause / next + time label) ── */
+  .product-status-media-control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .product-status-media-control-row > .product-status-guest-controls {
+    margin-top: 0;
+  }
+
+  .product-status-media-time {
+    color: #5f6f88;
+    font-size: 10.5px;
+    font-weight: 680;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0;
+  }
+
+  /* ── Media template: thicken the track so the fill is unmistakable ── */
+  .product-status-state .product-status-track {
+    height: 6px;
+  }
+
+  .product-status-state .product-status-track > span {
+    /* Slightly more saturated violet for the media fill so it reads as
+       "progress" rather than "decoration" against the lavender track. */
+    background: linear-gradient(90deg, #a855f7 0%, #ec4899 100%) !important;
+    box-shadow:
+      0 0 12px rgba(168, 85, 247, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.32);
   }
 
   .product-status-icon-media {

@@ -191,6 +191,7 @@
     "pause": "暂停",
     "playPause": "播放/暂停",
     "next": "下一首",
+    "positionLabel": "播放进度",
     "unavailable": {
       "badge": "未检测到播放器"
     },

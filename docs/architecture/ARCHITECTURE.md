@@ -121,6 +121,20 @@ The runtime bridge layer (`src/runtime/`) is the interface between the Tauri nat
 - **`systemPerformanceRuntime.ts`** — Calls `get_system_performance` Tauri command, normalizes CPU/memory/network metrics, tracks source quality (live/fallback/stale/unavailable).
 - **`desktopProductRuntime.ts`** — Listens for Tauri events: menu actions, settings changes, open-settings requests.
 - **`statusWindowRuntime.ts`** — Window management: overlay state, floating policy enforcement, fullscreen avoidance, position correction, debounced display/scale change handling.
+- **`schedulerService.ts`** — Stateful desktop status scheduler driven by a 250ms `setInterval`. See the Scheduler Duality section below for how it pairs with the resolver snapshot path.
+
+### Scheduler Duality
+
+There are two scheduler implementations in the codebase that share ~90% of their decision logic. This is **intentional**, not a duplication to be merged.
+
+| Path | File | Caller | Semantics |
+|------|------|--------|-----------|
+| Resolver snapshot path | `src/state/desktopStatusScheduler.ts` | `src/state/desktopStatusState.ts` (resolver) | Pure function, called once per React render, snapshot in / decision out |
+| Hook event path | `src/runtime/schedulerService.ts` | `src/features/desktop/hooks/useDesktopStatusRuntime.ts` (hook) | Stateful service, started in `useEffect`, holds current decision across renders, drives the 15s media/resident wall-clock alternation |
+
+The resolver path is pure because React renders are synchronous and side-effect-free. The hook path is stateful because the 15s media/resident alternation needs a wall-clock heartbeat that persists across renders (the alternation would otherwise stall until the next provider event arrived, which can be minutes while music plays).
+
+Both implementations must stay in sync. The decision record at `docs/decisions/v0.8_DESKTOP_STATUS_SCHEDULER_DUALITY_DECISION.md` documents the rationale, stop conditions, and the safe follow-up if duplication becomes a maintenance burden.
 
 ### Event Bus
 

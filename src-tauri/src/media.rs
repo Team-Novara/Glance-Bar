@@ -54,6 +54,21 @@ pub fn start_mta_media_thread(
                 while let Ok(MediaRequest::Action(action, reply_tx)) = request_rx.try_recv() {
                     let result = execute_media_action(&action);
                     let _ = reply_tx.send(result);
+                    // After a successful action, give GSMTC a brief moment
+                    // to settle the new playbackStatus, then re-read and
+                    // emit so the frontend's play/pause icon flips within
+                    // ~150ms instead of waiting for the next change tick.
+                    if result.is_ok() {
+                        std::thread::sleep(Duration::from_millis(150));
+                        let post_status = read_media_session_status();
+                        last_available = post_status.available;
+                        last_playback_status = post_status.playback_status.clone();
+                        last_progress = post_status.progress;
+                        last_title = post_status.title.clone();
+                        last_artist = post_status.artist.clone();
+                        let _ = app_handle.emit(MEDIA_SESSION_EVENT, &post_status);
+                        append_media_log("[action] force-emit post-action status");
+                    }
                 }
 
                 let status = read_media_session_status();
@@ -69,20 +84,15 @@ pub fn start_mta_media_thread(
                     append_media_log("[refresh] re-emitted playing session");
                 }
 
-                append_media_log(&format!(
-                    "[iter] avail={} status='{}' title='{}' code='{}'",
-                    status.available, status.playback_status, status.title, status.code
-                ));
-
                 let changed = status.available != last_available
                     || status.playback_status != last_playback_status
-                    || status.progress.abs_diff(last_progress) > 0
+                    || status.progress.abs_diff(last_progress) > 1
                     || status.title != last_title
                     || status.artist != last_artist;
 
                 if changed {
                     last_available = status.available;
-                    last_playback_status = status.playback_status.to_string();
+                    last_playback_status = status.playback_status.clone();
                     last_progress = status.progress;
                     last_title = status.title.clone();
                     last_artist = status.artist.clone();
@@ -97,7 +107,10 @@ pub fn start_mta_media_thread(
                     break;
                 }
 
-                std::thread::sleep(Duration::from_millis(50));
+                // 1s poll cadence — the cached SessionManager makes this
+                // essentially free, and 1s resolution is plenty for the
+                // 30s display window.
+                std::thread::sleep(MEDIA_POLL_INTERVAL);
             }
         })
         .expect("failed to spawn WinRT media thread");

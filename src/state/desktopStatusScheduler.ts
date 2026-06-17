@@ -1,3 +1,22 @@
+/**
+ * Pure resolver snapshot path for desktop status scheduling.
+ *
+ * This module is the **resolver snapshot path**: a pure function called once
+ * per React render from `src/state/desktopStatusState.ts` (the resolver). It
+ * takes a snapshot of inputs (`activeKinds`, `availableKinds`, `preferredKind`,
+ * `previousKind`, `previousChangedAt`, `now`) and returns a deterministic
+ * `ScheduleDecision` with no side effects and no subscriptions.
+ *
+ * It is paired with `src/runtime/schedulerService.ts`, which is the **hook
+ * event path**: a stateful service started inside `useEffect` in
+ * `src/features/desktop/hooks/useDesktopStatusRuntime.ts`. The hook service
+ * drives the wall-clock heartbeat for the 15s media/resident alternation.
+ *
+ * The two implementations share ~90% of their decision logic and must stay
+ * in sync. See the decision record for the rationale and stop conditions:
+ *
+ *   docs/decisions/v0.8_DESKTOP_STATUS_SCHEDULER_DUALITY_DECISION.md
+ */
 import { DESKTOP_STATUS_PRIORITY_ORDER } from "../data/desktopStatusConfig";
 import { dedupeKindsOrEmpty } from "../shared/runtimeGuards";
 import type {
@@ -10,7 +29,12 @@ export const DESKTOP_STATUS_FALLBACK_KIND: DesktopStatusKind = "resident";
 export const DESKTOP_STATUS_STABILITY_WINDOW_MS = 6_000;
 export const DESKTOP_STATUS_PREFERRED_WINDOW_MS = 20_000;
 export const DESKTOP_STATUS_PREEMPTION_WINDOW_MS = 12_000;
-export const DESKTOP_STATUS_MEDIA_ALTERNATE_WINDOW_MS = 15_000;
+
+/** How long the bar shows the media state during the alternation cycle. */
+export const DESKTOP_STATUS_MEDIA_DURATION_MS = 15_000;
+
+/** How long the bar shows the resident state during the alternation cycle. */
+export const DESKTOP_STATUS_RESIDENT_DURATION_MS = 8_000;
 
 function isWithinWindow(timestamp: number | undefined, now: number, durationMs: number): boolean {
   if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) {
@@ -54,23 +78,45 @@ export function scheduleDesktopStatus(
           changed: preferredKind !== previousKind,
         }
       : (() => {
-          // Special case: the 15s media/resident alternation cycle drives
-          // what to show when both kinds are available and active AND no
-          // higher-priority kind (focus/update/notification/download) is
-          // active. We start on "media" (the more interesting state) and
-          // let subsequent calls drive the alternation.
+          // Special case: the asymmetric media/resident alternation cycle
+          // (8s resident ↔ 15s media) drives what to show when both kinds
+          // are available and active AND no higher-priority kind
+          // (focus/update/notification/download) is active.
+          //
+          // We let the alternation function (below) drive the actual
+          // selection, but we need to NOT let the priority loop /
+          // previousKind stability branch swallow it. The strategy:
+          //  - If there's no previous decision, force "media" to start.
+          //  - If there IS a previous decision, return the unchanged
+          //    previousKind so the alternation function (which is called
+          //    right after this IIFE) can decide whether to flip.
+          //
+          // Without this carve-out the priority loop below would either
+          // always pick "resident" (it sits at the bottom of
+          // DESKTOP_STATUS_PRIORITY_ORDER) or hold the previous kind via
+          // the 6s stability window — both of which prevent the
+          // 8s/15s cadence from ever being observed.
           if (
-            previousKind === undefined &&
             shouldConsiderMediaResidentAlternation(activeKinds, availableKinds) &&
             !activeAvailableKinds.some((kind) => {
               const priority = DESKTOP_STATUS_PRIORITY_ORDER.indexOf(kind);
               return priority !== -1 && priority < DESKTOP_STATUS_PRIORITY_ORDER.indexOf("media");
             })
           ) {
+            if (previousKind === undefined) {
+              return {
+                kind: "media" as DesktopStatusKind,
+                reason: "priority" as const,
+                changed: true,
+              };
+            }
+            // Defer to the alternation function below. Return the same
+            // kind we showed last so the alternation function can
+            // compute a flip without us pre-empting it.
             return {
-              kind: "media" as DesktopStatusKind,
+              kind: previousKind,
               reason: "priority" as const,
-              changed: true,
+              changed: false,
             };
           }
 
@@ -140,14 +186,14 @@ export function scheduleDesktopStatus(
     previousChangedAt: input.previousChangedAt,
     activeKinds,
     availableKinds,
-    previousKind,
+    previousKind: input.previousKind,
   });
 
   if (alternateKind !== initialDecision.kind) {
     return {
       kind: alternateKind,
       reason: initialDecision.reason,
-      changed: alternateKind !== previousKind,
+      changed: alternateKind !== input.previousKind,
     };
   }
 
@@ -156,8 +202,8 @@ export function scheduleDesktopStatus(
 
 /**
  * Returns true when both `media` and `resident` are available + active — the
- * preconditions for the 15s media/resident alternation cycle. This is the
- * canonical helper used by the scheduler AND by callers who want to know
+ * preconditions for the asymmetric media/resident alternation cycle. This is
+ * the canonical helper used by the scheduler AND by callers who want to know
  * whether the alternation policy applies.
  */
 function shouldConsiderMediaResidentAlternation(
@@ -173,10 +219,12 @@ function shouldConsiderMediaResidentAlternation(
 
 /**
  * Alternates the visible kind between "media" and "resident" when both are
- * available and at least one is active. Each cycle is
- * `DESKTOP_STATUS_MEDIA_ALTERNATE_WINDOW_MS` long, so the bar shows media
- * for 15s, resident for 15s, media for 15s, etc. while a media session is
- * live.
+ * available and at least one is active. The cycle is asymmetric on purpose:
+ * media is shown for `DESKTOP_STATUS_MEDIA_DURATION_MS` (15s) and resident
+ * for `DESKTOP_STATUS_RESIDENT_DURATION_MS` (8s), so a playing session gets
+ * more dwell time on the media card without making the resident capsule
+ * feel abandoned. While a media session is live the bar shows media 15s,
+ * resident 8s, media 15s, resident 8s, etc.
  *
  * Skips alternation when:
  *  - Either kind is unavailable or inactive
@@ -211,22 +259,32 @@ export function shouldAlternateMediaWithResident({
     return kind;
   }
 
-  // First call after the scheduler starts (no previous change yet): keep the
-  // initial kind (priority) and let subsequent calls drive the alternation.
+  // First call after the scheduler starts (no previous change yet): keep
+  // the initial kind. The next render with elapsed time will drive the
+  // alternation.
   if (previousChangedAt === undefined) {
     return kind;
   }
 
-  if (
-    !Number.isFinite(previousChangedAt) ||
-    now - previousChangedAt < DESKTOP_STATUS_MEDIA_ALTERNATE_WINDOW_MS
-  ) {
+  // The alternation window is keyed on the kind the bar is CURRENTLY
+  // showing (passed in as `kind`). If the current kind has been on
+  // screen for its full duration, flip to the opposite.
+  //
+  // - If `kind === "media"`, the current 15s media window has elapsed
+  //   → flip to resident (will be shown for 8s).
+  // - If `kind === "resident"`, the current 8s resident window has
+  //   elapsed → flip to media (will be shown for 15s).
+  const currentWindowMs =
+    kind === "media" ? DESKTOP_STATUS_MEDIA_DURATION_MS : DESKTOP_STATUS_RESIDENT_DURATION_MS;
+
+  if (!Number.isFinite(previousChangedAt) || now - previousChangedAt < currentWindowMs) {
     return kind;
   }
 
-  // The alternation flips based on the *previously shown* kind so the
-  // 15s cadence stays consistent across calls: when we last showed
-  // media, the next alternation switches to resident (and vice versa).
-  const basis = previousKind === "media" || previousKind === "resident" ? previousKind : kind;
-  return basis === "media" ? "resident" : "media";
+  // Flip to the opposite.
+  const flipped = kind === "media" ? ("resident" as const) : ("media" as const);
+  // We don't need previousKind here, but the parameter is kept for
+  // backwards-compatible signature in case future logic needs it.
+  void previousKind;
+  return flipped;
 }

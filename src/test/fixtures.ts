@@ -71,6 +71,8 @@ export function mockMediaState(overrides?: Partial<DesktopMediaState>): DesktopM
     progress: 48,
     accent: "violet",
     playbackStatus: "playing",
+    positionMs: 102_000,
+    durationMs: 208_000,
     sourceHealth: mockSourceHealth({ kind: "media", quality: "native" }),
     ...overrides,
   };

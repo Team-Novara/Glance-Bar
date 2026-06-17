@@ -23,6 +23,12 @@ pub type MediaRequestSender = Arc<Mutex<std_mpsc::Sender<MediaRequest>>>;
 /// frontend expiry window (30s) is never breached by silence.
 pub const MEDIA_REFRESH_INTERVAL: Duration = Duration::from_secs(20);
 
+/// Background poll cadence on the media thread. This is cheap (cached
+/// SessionManager, no P/Invoke across the win32 boundary per tick) so 1s
+/// is fine. Tightening this gives smoother progress updates at the cost of
+/// more wakeups per second.
+pub const MEDIA_POLL_INTERVAL: Duration = Duration::from_millis(1000);
+
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DesktopStatusPreferences {
