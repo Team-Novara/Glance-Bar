@@ -7,7 +7,7 @@ import type {
   MockProviderOptions,
 } from "./types";
 import { snapshotHubEvent } from "../shared/runtimeGuards";
-import type { HubEvent, HubTask, MusicState, NotificationState } from "../types/hub";
+import type { HubEvent, HubTask, MusicState } from "../types/hub";
 
 /** Tick interval for the mock music provider. */
 export const MOCK_MUSIC_TICK_MS = 5_000;

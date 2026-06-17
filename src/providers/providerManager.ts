@@ -13,9 +13,9 @@ import { createRealFocusProvider } from "./realFocusProvider";
 import { createRealGitProvider } from "./realGitProvider";
 import { createRealMediaSessionProvider } from "./realMediaSessionProvider";
 import { createRealNpmProvider } from "./realNpmProvider";
-import { createRealWslProvider } from "./realWslProvider";
 import { createRealSystemPerformanceProvider } from "./realSystemPerformanceProvider";
 import { createRealUpdateProvider } from "./realUpdateProvider";
+import { createRealWslProvider } from "./realWslProvider";
 import type { HubProvider } from "./types";
 import type { HubEventBus } from "../state/hubState";
 
