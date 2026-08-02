@@ -4,6 +4,7 @@ import { formatMediaTime } from "../shared/mediaTime";
 import { clampProgress, dedupeKinds } from "../shared/runtimeGuards";
 import type {
   ClipboardPayload,
+  DesktopDeveloperState,
   DesktopClipboardState,
   DesktopDownloadState,
   DesktopFocusState,
@@ -31,6 +32,7 @@ const DESKTOP_STATUS_AVAILABLE_KINDS: DesktopStatusKind[] = [
   "clipboard",
   "focus",
   "notification",
+  "developer",
 ];
 
 function normalizeAvailableKinds(
@@ -166,6 +168,41 @@ function snapshotAiTask(task: HubTask): DesktopUpdateState {
   };
 }
 
+function snapshotDeveloperEvent(event: HubEvent): DesktopDeveloperState {
+  const payload = event.payload as HubTask | undefined;
+  const title =
+    payload && typeof payload.title === "string" && payload.title
+      ? payload.title
+      : i18n.t("developer.eyebrow");
+  const detail =
+    payload && typeof payload.subtitle === "string" && payload.subtitle
+      ? payload.subtitle
+      : i18n.t("developer.defaultDetail");
+
+  return {
+    kind: "developer",
+    title,
+    subtitle: i18n.t("developer.subtitle"),
+    source: "system",
+    detail,
+    accent: "cyan",
+    progress:
+      payload && typeof payload.progress === "number"
+        ? clampProgress(payload.progress)
+        : undefined,
+    sourceHealth: {
+      kind: "developer",
+      quality: "native",
+      code:
+        typeof event.metadata?.["code"] === "string"
+          ? (event.metadata["code"] as "available" | "unsupported")
+          : "available",
+      safeToDisplay: true,
+      lastCheckedAt: event.createdAt,
+    },
+  };
+}
+
 function snapshotNotificationEvent(
   event: HubEvent,
 ): DesktopClipboardState | DesktopFocusState | DesktopNotificationState | undefined {
@@ -232,6 +269,16 @@ function deriveStateOverrides(hubState: HubStoreState): Partial<DesktopStatusSta
   const aiTask = hubState.tasks.find((task) => task.type === "ai");
   if (aiTask) {
     overrides.update = snapshotAiTask(aiTask);
+  }
+
+  // --- Developer events (git/docker/wsl/npm real providers) ---
+  const developerEvent = hubState.events.find(
+    (event) =>
+      event.type === "ai" &&
+      (event.source === "git" || event.source === "docker" || event.source === "wsl" || event.source === "npm"),
+  );
+  if (developerEvent) {
+    overrides.developer = snapshotDeveloperEvent(developerEvent);
   }
 
   // --- Clipboard (real provider) ---
@@ -303,6 +350,17 @@ function deriveActiveKinds(hubState: HubStoreState, events: HubEvent[]): Desktop
   // AI task
   if (hubState.tasks.some((task) => task.type === "ai")) {
     activeKinds.push("update");
+  }
+
+  // Developer events (git/docker/wsl/npm real providers)
+  if (
+    events.some(
+      (event) =>
+        event.type === "ai" &&
+        (event.source === "git" || event.source === "docker" || event.source === "wsl" || event.source === "npm"),
+    )
+  ) {
+    activeKinds.push("developer");
   }
 
   // Clipboard (real provider or mock notification)

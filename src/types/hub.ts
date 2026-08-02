@@ -56,7 +56,8 @@ export type DesktopStatusKind =
   | "update"
   | "clipboard"
   | "focus"
-  | "notification";
+  | "notification"
+  | "developer";
 
 export type DesktopGuestStatusKind = Exclude<DesktopStatusKind, "resident">;
 
@@ -162,6 +163,13 @@ export type DesktopNotificationState = DesktopStatusBaseState & {
   accent: DesktopStatusAccentTone;
 };
 
+export type DesktopDeveloperState = DesktopStatusBaseState & {
+  kind: "developer";
+  detail: string;
+  accent: DesktopStatusAccentTone;
+  progress?: number;
+};
+
 export type DesktopStatusState =
   | DesktopResidentState
   | DesktopMediaState
@@ -169,7 +177,8 @@ export type DesktopStatusState =
   | DesktopUpdateState
   | DesktopClipboardState
   | DesktopFocusState
-  | DesktopNotificationState;
+  | DesktopNotificationState
+  | DesktopDeveloperState;
 
 export type DesktopStatusStateMap = {
   resident: DesktopResidentState;
@@ -179,6 +188,7 @@ export type DesktopStatusStateMap = {
   clipboard: DesktopClipboardState;
   focus: DesktopFocusState;
   notification: DesktopNotificationState;
+  developer: DesktopDeveloperState;
 };
 
 export type DesktopStatusResolverInput = {

@@ -43,9 +43,15 @@
       "eyebrow": "专注"
     },
     "notification": {
-      "label": "通知",
-      "description": "展示前台应用最近一条通知。",
-      "eyebrow": "通知"
+     "label": "通知",
+     "description": "展示前台应用最近一条通知。",
+     "eyebrow": "通知"
+    },
+    "developer": {
+      "label": "开发者",
+      "description": "展示 git、docker、wsl、npm 等开发者环境状态。",
+      "eyebrow": "开发者",
+      "progress": "开发者进度"
     }
   },
   "metrics": {
@@ -89,11 +95,16 @@
       "detail": "剩余 12 分钟"
     },
     "notification": {
-      "title": "新消息",
-      "subtitle": "通知",
-      "app": "Cober",
-      "sender": "Mock Provider",
-      "message": "npm run qa 已通过"
+     "title": "新消息",
+     "subtitle": "通知",
+     "app": "Cober",
+     "sender": "Mock Provider",
+     "message": "npm run qa 已通过"
+    },
+    "developer": {
+      "title": "开发者环境",
+      "subtitle": "状态中心",
+      "detail": "未检测到活跃的开发者任务"
     }
   },
   "settings": {
@@ -230,5 +241,10 @@
     "noRepo": "非 Git 仓库",
     "noGitCli": "未找到 git 命令行",
     "unavailable": "Git 状态不可用"
+  },
+  "developer": {
+    "eyebrow": "开发者",
+    "subtitle": "状态中心",
+    "defaultDetail": "未检测到活跃的开发者任务"
   }
 }

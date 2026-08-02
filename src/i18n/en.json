@@ -43,9 +43,15 @@
       "eyebrow": "Focus"
     },
     "notification": {
-      "label": "Notification",
-      "description": "Shows the latest notification from a foreground app.",
-      "eyebrow": "Notification"
+     "label": "Notification",
+     "description": "Shows the latest notification from a foreground app.",
+     "eyebrow": "Notification"
+    },
+    "developer": {
+      "label": "Developer",
+      "description": "Shows developer environment status from git, docker, wsl, and npm.",
+      "eyebrow": "Developer",
+      "progress": "Developer progress"
     }
   },
   "metrics": {
@@ -89,11 +95,16 @@
       "detail": "12 min remaining"
     },
     "notification": {
-      "title": "New message",
-      "subtitle": "Notification",
-      "app": "Cober",
-      "sender": "Mock Provider",
-      "message": "npm run qa passed"
+     "title": "New message",
+     "subtitle": "Notification",
+     "app": "Cober",
+     "sender": "Mock Provider",
+     "message": "npm run qa passed"
+    },
+    "developer": {
+      "title": "Developer Environment",
+      "subtitle": "Status Center",
+      "detail": "No active developer task detected"
     }
   },
   "settings": {
@@ -230,5 +241,10 @@
     "noRepo": "Not a git repository",
     "noGitCli": "git CLI not found",
     "unavailable": "Git status unavailable"
+  },
+  "developer": {
+    "eyebrow": "Developer",
+    "subtitle": "Status Center",
+    "defaultDetail": "No active developer task detected"
   }
 }

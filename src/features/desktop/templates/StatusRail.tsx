@@ -1,4 +1,4 @@
-export type StatusRailAccent = "violet" | "green" | "orange";
+export type StatusRailAccent = "violet" | "green" | "orange" | "cyan";
 
 type StatusRailProps = {
   value: number;

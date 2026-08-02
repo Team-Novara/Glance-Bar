@@ -18,6 +18,7 @@ import {
   ArrowRight,
   Bell,
   Check,
+  Terminal,
   type LucideIcon,
 } from "lucide-react";
 import { useMemo } from "react";
@@ -57,6 +58,7 @@ const TEMPLATE_ICON_MAP: Record<DesktopStatusKind, LucideIcon> = {
   clipboard: Clipboard,
   focus: Eye,
   notification: Bell,
+  developer: Terminal,
 };
 
 /* ─── Win11-style pill toggle switch ─── */

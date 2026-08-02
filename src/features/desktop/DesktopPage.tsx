@@ -19,6 +19,7 @@ import { MediaStatusTemplate } from "./templates/MediaStatusTemplate";
 import { NotificationStatusTemplate } from "./templates/NotificationStatusTemplate";
 import { ResidentStatusTemplate } from "./templates/ResidentStatusTemplate";
 import { UpdateStatusTemplate } from "./templates/UpdateStatusTemplate";
+import { DeveloperStatusTemplate } from "./templates/DeveloperStatusTemplate";
 import { getDesktopStatusShellCopy } from "../../data/desktopStatusConfig";
 import {
   getAutostartEnabled,
@@ -44,6 +45,8 @@ function renderDesktopStatusTemplate(state: DesktopStatusState) {
       return <FocusStatusTemplate state={state} />;
     case "notification":
       return <NotificationStatusTemplate state={state} />;
+    case "developer":
+      return <DeveloperStatusTemplate state={state} />;
   }
 }
 
@@ -101,7 +104,7 @@ export function DesktopPage() {
   });
 
   // Settings actions (preference toggles + menu forwarding)
-  const { toggleAlwaysFloat, toggleAvoidFullscreen, toggleLockPosition, toggleFromMenu } =
+  const { toggleAlwaysFloat, toggleAvoidFullscreen, toggleLockPosition } =
     useSettingsActions({
       preferences,
       updatePreferences,
@@ -110,7 +113,7 @@ export function DesktopPage() {
     });
 
   // Window lifecycle (reset, quit, recall)
-  const { resetPosition, quitStatusCenter, recallStatusCenter } = useWindowLifecycle({
+  const { resetPosition, recallStatusCenter } = useWindowLifecycle({
     appWindowRef,
   });
 
@@ -153,7 +156,7 @@ export function DesktopPage() {
   }, [refreshMetrics, refreshRuntime, isDraggingRef]);
 
   // Settings panel open state + native context menu + native settings launch
-  const { settingsOpen, openSettings, closeSettings, showNativeContextMenu, handleOpenSettingsClick } =
+  const { settingsOpen, closeSettings, showNativeContextMenu, handleOpenSettingsClick } =
     useSettingsUI({ isDraggingRef });
 
   const handleKindSelect = useCallback(
@@ -171,37 +174,6 @@ export function DesktopPage() {
       setAutostartEnabled(nextValue);
     }
   }, [autostartEnabled]);
-
-  // Reserved for a future native context-menu integration that pipes
-  // menu actions through here. The Settings panel already exposes the
-  // same toggles directly, so this handler is currently a no-op.
-  const _handleMenuAction = useCallback(
-    async (action: string, checked?: boolean) => {
-      switch (action) {
-        case "refresh-data":
-          await refresh();
-          return;
-        case "toggle-always-float":
-        case "toggle-avoid-fullscreen":
-        case "toggle-lock-position":
-          if (typeof checked === "boolean") {
-            toggleFromMenu(action, checked);
-          }
-          return;
-        case "reset-position":
-          await resetPosition();
-          return;
-        case "open-settings":
-          openSettings();
-          return;
-        case "quit":
-          await quitStatusCenter();
-          return;
-      }
-    },
-    [refresh, toggleFromMenu, resetPosition, openSettings, quitStatusCenter],
-  );
-
   // Global context menu + Escape key
   useContextMenu({ settingsOpen, closeSettings, showNativeContextMenu });
 
