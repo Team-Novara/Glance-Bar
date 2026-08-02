@@ -173,6 +173,12 @@ async function run() {
   });
 
   await page.addInitScript(() => {
+    // Force English so the not-found page and i18n keys resolve to English
+    // during QA. Without this, i18next falls back to zh-CN (fallbackLng)
+    // and assertions against English strings like "Cober page not found"
+    // time out because the rendered text is Chinese.
+    localStorage.setItem("i18nLng", "en");
+
     window.__qaTauriInvokeDelayMs = 0;
     window.__TAURI__ = {
       core: {
@@ -393,8 +399,11 @@ async function run() {
       );
     }
 
-    await expectText(page, "Cober page not found");
-    await expectLink(page, "Open /desktop");
+    // Locale-agnostic: the app's i18n fallback is zh-CN, so the visible
+    // title text depends on the active locale. Assert on the stable
+    // test ID instead of the English string.
+    await page.getByTestId("showcase-not-found-title").waitFor({ state: "visible", timeout: 5_000 });
+    await page.getByRole("link", { name: /open \/desktop/i }).waitFor({ state: "visible", timeout: 5_000 });
 
     const desktopResponse = await page.goto(desktopUrl, {
       waitUntil: "networkidle",
