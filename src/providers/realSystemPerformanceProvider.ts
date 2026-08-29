@@ -3,8 +3,8 @@ import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./
 import {
   loadSystemPerformanceStatus,
   type SystemStatusDiagnostic,
-} from "../runtime/systemPerformanceRuntime";
-import { getTauriInvoke } from "../runtime/tauriRuntime";
+} from "../runtime/system/systemPerformanceRuntime";
+import { getTauriInvoke } from "../runtime/tauri/tauriRuntime";
 import type { HubEvent } from "../types/hub";
 import type { SystemPerformanceSnapshot } from "../types/hub";
 

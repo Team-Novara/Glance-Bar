@@ -1,6 +1,6 @@
 import { createProviderShell } from "./providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
-import { sendDownloadControl, type DownloadAction } from "../runtime/downloadControlRuntime";
+import { sendDownloadControl, type DownloadAction } from "../runtime/actions/downloadControlRuntime";
 import type { HubEvent } from "../types/hub";
 
 const PROVIDER_ID = "real-download-provider";

@@ -4,7 +4,7 @@ import {
   getFocusAssistState,
   onFocusAssistChanged,
   type FocusAssistState,
-} from "../runtime/systemMonitorRuntime";
+} from "../runtime/system/systemMonitorRuntime";
 import type { HubEvent } from "../types/hub";
 
 const PROVIDER_ID = "real-focus-provider";

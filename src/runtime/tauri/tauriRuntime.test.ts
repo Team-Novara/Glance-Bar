@@ -17,9 +17,9 @@ import {
 import {
   SYSTEM_STATUS_DIAGNOSTIC_CODES,
   type SystemStatusDiagnosticCode,
-} from "./systemPerformanceRuntime";
-import type { HubEvent } from "../types/hub";
-import type { HubProviderCapability } from "../providers/types";
+} from "../system/systemPerformanceRuntime";
+import type { HubEvent } from "../../types/hub";
+import type { HubProviderCapability } from "../../providers/types";
 
 import { describe, it } from "vitest";
 describe("tauriRuntime.test", () => {

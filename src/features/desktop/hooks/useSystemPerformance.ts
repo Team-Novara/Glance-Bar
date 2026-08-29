@@ -4,8 +4,8 @@ import { systemPerformanceMetrics } from "@/data/mockHubData";
 import {
   loadSystemPerformanceStatus,
   type SystemStatusDiagnostic,
-} from "@/runtime/systemPerformanceRuntime";
-import { getTauriInvoke } from "@/runtime/tauriRuntime";
+} from "@/runtime/system/systemPerformanceRuntime";
+import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 import type { SystemPerformanceMetric } from "@/types/hub";
 
 const STATUS_REFRESH_MS = 1800;

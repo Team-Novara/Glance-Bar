@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MediaStatusTemplate } from "./MediaStatusTemplate";
 import { mockMediaState } from "../../../test/fixtures";
 
-vi.mock("../../../runtime/mediaControlRuntime", () => ({
+vi.mock("../../../runtime/system/mediaControlRuntime", () => ({
   sendMediaControl: vi.fn().mockResolvedValue({ success: true }),
 }));
 
@@ -41,7 +41,7 @@ describe("MediaStatusTemplate", () => {
   });
 
   it("calls sendMediaControl when control buttons are clicked", async () => {
-    const { sendMediaControl } = await import("../../../runtime/mediaControlRuntime");
+    const { sendMediaControl } = await import("../../../runtime/system/mediaControlRuntime");
     const mockSend = vi.mocked(sendMediaControl);
     mockSend.mockClear();
 

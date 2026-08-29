@@ -1,4 +1,4 @@
-﻿import { getTauriInvoke, type TauriInvoke } from "./tauriRuntime";
+﻿import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const DISMISS_NOTIFICATION_COMMAND = "dismiss_notification";
 

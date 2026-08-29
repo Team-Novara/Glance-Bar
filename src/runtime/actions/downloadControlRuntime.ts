@@ -1,4 +1,4 @@
-import { getTauriInvoke, type TauriInvoke } from "./tauriRuntime";
+import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const PAUSE_COMMAND = "pause_download";
 const RESUME_COMMAND = "resume_download";

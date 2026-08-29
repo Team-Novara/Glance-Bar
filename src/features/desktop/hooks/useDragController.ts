@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 
-import { correctStatusWindowPosition } from "@/runtime/statusWindowRuntime";
-import { getTauriInvoke } from "@/runtime/tauriRuntime";
+import { correctStatusWindowPosition } from "@/runtime/window/statusWindowRuntime";
+import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 
 const STATUS_WINDOW_DRAG_COMMAND = "start_window_drag";
 

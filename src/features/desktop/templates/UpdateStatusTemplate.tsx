@@ -9,7 +9,7 @@ import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
 import { getDesktopStatusTemplateChromeCopy } from "@/data/desktopStatusConfig";
-import { installUpdate } from "@/runtime/updateInstallRuntime";
+import { installUpdate } from "@/runtime/actions/updateInstallRuntime";
 import type { DesktopUpdateState } from "@/types/hub";
 
 type UpdateStatusTemplateProps = {

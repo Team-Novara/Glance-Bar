@@ -7,7 +7,7 @@
  * `previousKind`, `previousChangedAt`, `now`) and returns a deterministic
  * `ScheduleDecision` with no side effects and no subscriptions.
  *
- * It is paired with `src/runtime/schedulerService.ts`, which is the **hook
+ * It is paired with `src/runtime/scheduler/schedulerService.ts`, which is the **hook
  * event path**: a stateful service started inside `useEffect` in
  * `src/features/desktop/hooks/useDesktopStatusRuntime.ts`. The hook service
  * drives the wall-clock heartbeat for the 15s media/resident alternation.

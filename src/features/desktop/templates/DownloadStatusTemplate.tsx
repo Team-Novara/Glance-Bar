@@ -10,7 +10,7 @@ import { StatusRail } from "./StatusRail";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
 import { getDesktopStatusTemplateChromeCopy } from "@/data/desktopStatusConfig";
-import { sendDownloadControl } from "@/runtime/downloadControlRuntime";
+import { sendDownloadControl } from "@/runtime/actions/downloadControlRuntime";
 import type { DesktopDownloadState } from "@/types/hub";
 
 type DownloadStatusTemplateProps = {

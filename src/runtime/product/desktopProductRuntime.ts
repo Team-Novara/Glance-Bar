@@ -1,7 +1,7 @@
 import { listen, type Event, type UnlistenFn } from "@tauri-apps/api/event";
 
-import { isRecord } from "../shared/lib/runtimeGuards";
-import type { DesktopStatusMenuActionId, DesktopStatusPreferencesPayload } from "../types/hub";
+import { isRecord } from "../../shared/lib/runtimeGuards";
+import type { DesktopStatusMenuActionId, DesktopStatusPreferencesPayload } from "../../types/hub";
 
 export const STATUS_CENTER_SETTINGS_EVENT = "status-center://settings";
 

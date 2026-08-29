@@ -1,3 +1,3 @@
-// Framework barrel ¡ª scheduler split scaffold (explicit re-exports to avoid star collision)
-export { createSchedulerService } from '@/runtime/schedulerService';
+// Framework barrel â€” scheduler split (explicit re-exports to avoid star collision)
+export { createSchedulerService } from './schedulerService';
 export * from '@/state/desktopStatusScheduler';

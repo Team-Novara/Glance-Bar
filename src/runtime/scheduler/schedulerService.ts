@@ -17,9 +17,9 @@
  *
  *   docs/decisions/v0.8_DESKTOP_STATUS_SCHEDULER_DUALITY_DECISION.md
  */
-import { DESKTOP_STATUS_PRIORITY_ORDER } from "../data/desktopStatusConfig";
-import { dedupeKindsOrEmpty } from "../shared/lib/runtimeGuards";
-import type { DesktopStatusKind } from "../types/hub";
+import { DESKTOP_STATUS_PRIORITY_ORDER } from "../../data/desktopStatusConfig";
+import { dedupeKindsOrEmpty } from "../../shared/lib/runtimeGuards";
+import type { DesktopStatusKind } from "../../types/hub";
 
 export const DESKTOP_STATUS_FALLBACK_KIND: DesktopStatusKind = "resident";
 export const DESKTOP_STATUS_STABILITY_WINDOW_MS = 6_000;

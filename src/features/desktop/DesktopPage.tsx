@@ -24,8 +24,8 @@ import { getDesktopStatusShellCopy } from "../../data/desktopStatusConfig";
 import {
   getAutostartEnabled,
   setAutostartEnabled as applyAutostart,
-} from "../../runtime/autostartRuntime";
-import { emitTauriFixtureEvents, getTauriInvoke } from "../../runtime/tauriRuntime";
+} from "../../runtime/window/autostartRuntime";
+import { emitTauriFixtureEvents, getTauriInvoke } from "../../runtime/tauri/tauriRuntime";
 import { getSafeCurrentWindow, type TauriAppWindow } from "../../shared/lib/tauriWindow";
 import type { DesktopStatusKind, DesktopStatusState } from "../../types/hub";
 

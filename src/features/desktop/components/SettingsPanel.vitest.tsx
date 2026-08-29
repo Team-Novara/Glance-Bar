@@ -12,7 +12,7 @@ import type {
 } from '@/providers/types';
 import type { DesktopStatusKind, DesktopStatusPreferences } from '@/types/hub';
 
-vi.mock('@/runtime/autostartRuntime', () => ({
+vi.mock('@/runtime/window/autostartRuntime', () => ({
   getAutostartEnabled: vi.fn().mockResolvedValue(false),
   setAutostartEnabled: vi.fn().mockResolvedValue(true),
 }));

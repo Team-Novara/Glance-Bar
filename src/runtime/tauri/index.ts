@@ -1,3 +1,3 @@
-// Framework barrel ¡ª will own tauriRuntime + tauriWindow after Slice3
-export * from '@/runtime/tauriRuntime';
+// Framework barrel â€” tauri split (tauriWindow stays in shared/lib)
+export * from './tauriRuntime';
 export * from '@/shared/lib/tauriWindow';
