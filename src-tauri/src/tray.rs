@@ -9,6 +9,7 @@
 
 use tauri::menu::{Menu, MenuBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::AppHandle;
 
 pub(crate) const TRAY_ID: &str = "status-center-tray";
 pub(crate) const TRAY_MENU_SHOW_STATUS_CENTER: &str = "tray-show-status-center";
@@ -16,7 +17,7 @@ pub(crate) const TRAY_MENU_OPEN_SETTINGS: &str = "tray-open-settings";
 pub(crate) const TRAY_MENU_QUIT: &str = "quit";
 
 pub(crate) fn create_tray_menu<R: tauri::Runtime>(
-    app: &tauri::AppHandle<R>,
+    app: &AppHandle<R>,
 ) -> Result<Menu<R>, tauri::Error> {
     MenuBuilder::new(app)
         .text(
@@ -29,16 +30,14 @@ pub(crate) fn create_tray_menu<R: tauri::Runtime>(
         .build()
 }
 
-// Tray-icon construction. The caller supplies the left-click callback
-// (typically `toggle_status_center_window`) and the menu reference.
 pub(crate) fn build_tray_icon<R, F>(
-    app: &tauri::App<R>,
+    app: AppHandle<R>,
     tray_menu: &Menu<R>,
     on_left_click: F,
 ) -> Result<tauri::tray::TrayIcon<R>, tauri::Error>
 where
     R: tauri::Runtime,
-    F: Fn(&tauri::AppHandle<R>) + Send + Sync + 'static,
+    F: Fn(&AppHandle<R>) + Send + Sync + 'static,
 {
     let mut tray_builder = TrayIconBuilder::with_id(TRAY_ID)
         .menu(tray_menu)
@@ -59,7 +58,7 @@ where
         tray_builder = tray_builder.icon(icon);
     }
 
-    let tray = tray_builder.build(app)?;
+    let tray = tray_builder.build(&app)?;
     let _ = tray.set_show_menu_on_left_click(false);
     Ok(tray)
 }

@@ -1,2 +1,11 @@
-// Scaffold ¡ª Slice5 will move #[tauri::command] fns here from lib.rs
-// pub mod system; pub mod media; pub mod clipboard; pub mod focus; pub mod window; pub mod prefs;
+// ---------------------------------------------------------------------------
+// Commands module â€” all #[tauri::command] handlers extracted from lib.rs.
+// ---------------------------------------------------------------------------
+// Each sub-module owns one concern. lib.rs wires these into the
+// invoke_handler! macro and keeps only run() + glue + constants.
+
+pub mod system;
+pub mod media;
+pub mod clipboard;
+pub mod focus;
+pub mod window;
