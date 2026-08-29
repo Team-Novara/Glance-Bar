@@ -7,9 +7,11 @@ This document is the shortest path for a new contributor to understand how the r
 If you are new here:
 
 1. [README](../README.md)
-2. [Architecture](architecture/ARCHITECTURE.md)
-3. [Roadmap](product/ROADMAP.md)
-4. [Contributing](../CONTRIBUTING.md)
+2. [PRD](product/PRD.md) — what we build
+3. [UI Spec](product/UI_SPEC.md) — how it looks
+4. [Glance Bar Unified Plan](plans/GLANCE_BAR_PLAN.md) — **single execution source of truth** (supersedes all `ROADMAP-NEXT*` and `v0.7` plans, now in `archive/plans/`)
+5. [Architecture](architecture/ARCHITECTURE.md) — how it runs
+6. [Contributing](../CONTRIBUTING.md)
 
 ## Folder Map
 
@@ -78,13 +80,13 @@ Project documentation grouped by purpose.
   QA and testing guidance
 
 - `plans/`
-  active implementation plans
+  active: `GLANCE_BAR_PLAN.md` is the single source of truth; `IMPLEMENTATION_PLAN.md`/`STAGE5_WIP_LANDING.md`/`v0.7_TAURI_SPIKE_PLAN.md` are `[SUPERSEDED]` in-place
 
 - `decisions/`
-  current decision records
+  17 records — 1 Active (`PRIVACY_CHECKLIST`), 1 Proposed (`SCHEDULER_DUALITY`), 4 Partially relevant, 11 Superseded — see `decisions/README.md`
 
 - `archive/`
-  historical reports and frozen records
+  historical: `archive/plans/` holds `ROADMAP-NEXT.md`, `ROADMAP-NEXT-V2.md` and superseded plans
 
 ## Fast Paths By Task
 
@@ -140,7 +142,8 @@ For current project structure, trust:
 
 - `README.md`
 - `CONTRIBUTING.md`
+- `docs/plans/GLANCE_BAR_PLAN.md` — supersedes all prior plans
+- `docs/product/ROADMAP.md` — product-facing summary (points to the plan above)
 - this file
-- active docs outside `archive/`
 
-Files under `docs/archive/` are historical context only.
+Files under `docs/archive/` are historical context only. If a doc header says `[SUPERSEDED]`, do not use it as source of truth.
