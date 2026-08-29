@@ -40,13 +40,13 @@ jobs:
         run: npm run lint
 
       - name: Run legacy state tests
-        run: npm run test:state
+        run: npm run test:vitest:state
 
       - name: Run legacy provider tests
-        run: npm run test:providers
+        run: npm run test:vitest:providers
 
       - name: Run legacy runtime tests
-        run: npm run test:runtime
+        run: npm run test:vitest:runtime
 
       - name: Run Vitest component & aggregation tests
         run: npx vitest run --reporter=verbose
