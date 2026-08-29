@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+
+# Least privilege for GITHUB_TOKEN.
+permissions:
+  contents: read
 
 # Cancel in-progress runs for the same ref when a new commit lands,
 # so we don't burn CI minutes on a superseded SHA.
@@ -14,6 +19,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: ESLint
+        run: npm run lint
+
   test:
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: test (node ${{ matrix.node }})
@@ -29,29 +49,23 @@ jobs:
         node: [20, 22]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Run legacy state tests
+      - name: Run state tests
         run: npm run test:vitest:state
-
-      - name: Run legacy provider tests
+      - name: Run provider tests
         run: npm run test:vitest:providers
-
-      - name: Run legacy runtime tests
+      - name: Run runtime tests
         run: npm run test:vitest:runtime
-
-      - name: Run Vitest component & aggregation tests
+      - name: Run component & aggregation tests
         run: npx vitest run --reporter=verbose
+      - name: Run tests with coverage (threshold 80% for providers/runtime/state)
+        run: npx vitest run --coverage --coverage.provider=v8 --coverage.reportsDirectory=coverage --coverage.thresholds.lines=80 --coverage.thresholds.functions=80 --coverage.include="src/providers/**,src/runtime/**,src/state/**"
+        continue-on-error: true
 
   typecheck:
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
@@ -59,17 +73,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
       - name: TypeScript type-check
         run: npx tsc -b --noEmit
+
+  rust:
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
+    name: rust (check + clippy + fmt)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Cargo check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: Cargo clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all -W clippy::pedantic --allow clippy::module_name_repetitions
+      - name: Cargo fmt check
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 
   build:
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
@@ -77,18 +105,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
       - name: Production build
         run: npm run build
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
