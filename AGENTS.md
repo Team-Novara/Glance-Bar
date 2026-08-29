@@ -6,7 +6,7 @@
 
 ## 0. Project Identity
 
-- **Glance Bar** (`jay77721/Glance-Bar`, was `Cober-Windows-Bar`) — Cross-platform Unified Status Hub, 303×64 pill `src-tauri/tauri.conf.json:14`, `identifier com.glance.bar`
+- **Glance Bar** (`Team-Novara/Glance-Bar`, was `Cober-Windows-Bar`) — Cross-platform Unified Status Hub, 303×64 pill `src-tauri/tauri.conf.json:14`, `identifier com.glance.bar`
 - Stack: Tauri 2 + Rust + React 19 + TS 5.9 + Vite 7 + Tailwind 3.4 + Framer 12
 - Data flow: `Provider(mock+native IPC) -> EventBus -> Store -> Resolver -> UI` `docs/architecture/ARCHITECTURE.md:11` — Scheduler duality intentional `ARCHITECTURE.md:126` (`desktopStatusScheduler.ts:59` pure + `schedulerService.ts:110` 250ms stateful)
 
