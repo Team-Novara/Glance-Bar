@@ -15,7 +15,6 @@ yarn-error.log*
 pnpm-debug.log*
 .vscode/*
 !.vscode/extensions.json
-CLAUDE.md
 
 # debug/temp artifacts
 .dev.log

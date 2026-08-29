@@ -69,6 +69,7 @@ src-tauri/src/{commands,window,media,monitoring,preferences,tray,types} -> leaf
 - `interface` for shapes, `type` for unions; exported functions/components have explicit return/props types
 - Props named `{Component}Props`, functional components only, hooks at top, immutable updates (spread)
 - No `console.log` in `src/` — use `tauri-plugin-log`; `eslint no-console: warn`
+- **All code comments must be English and clear** — explain *why*, not *what*; keep `// TODO` in English with issue link if applicable
 
 ### React / Styling / Animation
 - Tailwind utilities + CSS custom properties in `src/styles/` — follow Fluent Acrylic/Mica, tokens only via variables
@@ -100,13 +101,14 @@ cargo check && cargo clippy
 - `GLANCE_BAR_PLAN.md` is the only execution plan — `ROADMAP-NEXT*` are archived to `docs/archive/plans/`, do not edit archived docs
 - Any structural move must update `README.md` + `docs/README.md` + `AGENTS.md §2` + `CONTRIBUTING.md`
 
-## 8. Git Workflow (Protected `main`)
+## 8. Git Workflow (Protected `main` — PR-Only)
 
-- `main` is protected `allow_force_pushes:false allow_deletions:false` — never force-push, never delete
-- Work in `refactor/*` `feat/*` `fix/*` branches via `git worktree` for parallel work — one worktree per Builder
+- `main` is protected `allow_force_pushes:false allow_deletions:false` — **never commit directly to `main`**, never force-push, never delete `main`
+- **PR-only workflow (enforced):** All changes go via `feat/*` `fix/*` `refactor/*` `chore/*` `docs/*` branches + `gh pr create` → review → squash merge. Direct `git push origin main` is forbidden (branch protection will reject it).
+- Work in `git worktree` for parallel work — one worktree per Builder/Task
 - Small PRs, one purpose, one `CODEOWNERS` dir — avoid mixing `desktop` + `runtime` + `Rust` in one PR
 - Commit freely when green; **push only on explicit request**, confirm branch + diff before `git push`
-- PR title `feat|fix|chore|docs|refactor(scope): subject`; squash merge, delete remote branch after merge (`git push origin --delete`)
+- PR title `feat|fix|chore|docs|refactor(scope): subject`; **PR body must be English**; squash merge, delete remote branch after merge (`git push origin --delete`)
 
 ## 9. Desktop Launch
 
