@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled]
 
 # Cancel in-progress runs for the same ref when a new commit lands,
 # so we don't burn CI minutes on a superseded SHA.
@@ -14,6 +15,7 @@ concurrency:
 
 jobs:
   test:
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: test (node ${{ matrix.node }})
     runs-on: ubuntu-latest
     strategy:
@@ -52,6 +54,7 @@ jobs:
         run: npx vitest run --reporter=verbose
 
   typecheck:
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: typecheck
     runs-on: ubuntu-latest
     steps:
@@ -69,6 +72,7 @@ jobs:
         run: npx tsc -b --noEmit
 
   build:
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: build
     runs-on: ubuntu-latest
     steps:
