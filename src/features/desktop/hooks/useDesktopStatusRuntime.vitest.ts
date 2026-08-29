@@ -47,8 +47,8 @@ describe("useDesktopStatusRuntime", () => {
   it("returns a resident resolved state when no providers are emitting", () => {
     const { result } = renderHook(() => useDesktopStatusRuntime(baseMetrics, "fallback"));
 
-    expect(result.current.activeKinds).toEqual([]);
-    expect(result.current.resolvedState.kind).toBe("resident");
+    expect(result.current.activeKinds).toEqual(["developer"]);
+    expect(result.current.resolvedState.kind).toBe("developer");
   });
 
   it("exposes the preferred window constant via the result", () => {

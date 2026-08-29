@@ -13,13 +13,13 @@ import {
   useWindowLifecycle,
 } from "./hooks";
 import { ClipboardStatusTemplate } from "./templates/ClipboardStatusTemplate";
+import { DeveloperStatusTemplate } from "./templates/DeveloperStatusTemplate";
 import { DownloadStatusTemplate } from "./templates/DownloadStatusTemplate";
 import { FocusStatusTemplate } from "./templates/FocusStatusTemplate";
 import { MediaStatusTemplate } from "./templates/MediaStatusTemplate";
 import { NotificationStatusTemplate } from "./templates/NotificationStatusTemplate";
 import { ResidentStatusTemplate } from "./templates/ResidentStatusTemplate";
 import { UpdateStatusTemplate } from "./templates/UpdateStatusTemplate";
-import { DeveloperStatusTemplate } from "./templates/DeveloperStatusTemplate";
 import { getDesktopStatusShellCopy } from "../../data/desktopStatusConfig";
 import {
   getAutostartEnabled,
