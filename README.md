@@ -1,6 +1,6 @@
-# Cober-Windows-Bar
+# Glance Bar
 
-Cober-Windows-Bar is a Tauri + React prototype for a compact Windows desktop status center.
+Glance Bar is a Tauri + React prototype for a compact Windows desktop status center.
 
 This repository currently contains two parallel product surfaces:
 
