@@ -87,6 +87,7 @@ describe("desktopStatusScheduler.test", () => {
   test("desktop status priority order is exposed for higher-level resolvers", () => {
     assert.deepEqual(getDesktopStatusPriorityOrder(), [
       "focus",
+      "developer",
       "update",
       "notification",
       "download",

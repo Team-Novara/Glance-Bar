@@ -103,7 +103,7 @@ describe("desktopStatusState.test", () => {
     assert.equal("rawPayload" in state.sourceStatus!, false);
   });
 
-  test("desktop status state map covers all seven status templates in product order", () => {
+  test("desktop status state map covers all eight status templates in product order", () => {
     const stateMap = createDesktopStatusStateMap(metrics);
     const kinds = Object.values(stateMap).map((state) => state.kind);
     assert.deepEqual(kinds, [
@@ -114,6 +114,7 @@ describe("desktopStatusState.test", () => {
       "clipboard",
       "focus",
       "notification",
+      "developer",
     ]);
   });
 
