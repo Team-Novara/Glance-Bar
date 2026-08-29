@@ -446,38 +446,33 @@ fn stop_focus_session() -> Result<MediaControlResult, String> {
 
 #[tauri::command]
 fn pause_download() -> Result<DownloadControlResult, String> {
-  // No real download manager is wired up yet; the capability provider reports
-  // "unavailable" / "not-implemented", so we always succeed to avoid blocking
-  // the UI. A future download provider will replace this with real logic.
-  Ok(DownloadControlResult { success: true })
+  // TODO not-implemented: real provider pending (code: not-implemented)
+  Ok(DownloadControlResult { success: false })
 }
 
 #[tauri::command]
 fn resume_download() -> Result<DownloadControlResult, String> {
-  Ok(DownloadControlResult { success: true })
+  // TODO not-implemented: real provider pending (code: not-implemented)
+  Ok(DownloadControlResult { success: false })
 }
 
 #[tauri::command]
 fn cancel_download() -> Result<DownloadControlResult, String> {
-  Ok(DownloadControlResult { success: true })
+  // TODO not-implemented: real provider pending (code: not-implemented)
+  Ok(DownloadControlResult { success: false })
 }
 
-  #[tauri::command]
-  fn install_update() -> Result<DownloadControlResult, String> {
-    Ok(DownloadControlResult { success: true })
-  }
+#[tauri::command]
+fn install_update() -> Result<DownloadControlResult, String> {
+  // TODO not-implemented: real provider pending (code: not-implemented)
+  Ok(DownloadControlResult { success: false })
+}
 
-  #[tauri::command]
-  fn dismiss_notification() -> Result<DownloadControlResult, String> {
-    // The notification payload surfaced to the front-end is a synthetic
-    // summary derived from the Focus Assist registry monitor — there is no
-    // per-notification record to dismiss. Returning success acknowledges the
-    // dismissal in the synthetic lifecycle and keeps the IPC contract real
-    // so the front-end can stop showing the best-effort "couldn't dismiss"
-    // toast. A future native notification provider can replace this with
-    // real Windows Toast dismissal (ToastNotificationHistory).
-    Ok(DownloadControlResult { success: true })
-  }
+#[tauri::command]
+fn dismiss_notification() -> Result<DownloadControlResult, String> {
+  // TODO not-implemented: real provider pending (code: not-implemented)
+  Ok(DownloadControlResult { success: false })
+}
 
 // ---------- Notification Summary (Windows Registry) ----------
 
