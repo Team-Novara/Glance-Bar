@@ -23,7 +23,7 @@ import {
   type ProviderConnection,
 } from "../../providers/providerAdapter";
 import type { HubProvider } from "../../providers/types";
-import { publishTauriFixtureEvents } from "../../runtime/tauriRuntime";
+import { publishTauriFixtureEvents } from "../../runtime/tauri/tauriRuntime";
 import {
   createAutoDemoSequence,
   createHubDemoScenario,

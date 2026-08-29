@@ -8,7 +8,7 @@ import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
 import { getDesktopStatusTemplateChromeCopy } from "@/data/desktopStatusConfig";
-import { dismissNotification } from "@/runtime/notificationDismissRuntime";
+import { dismissNotification } from "@/runtime/actions/notificationDismissRuntime";
 import type { DesktopNotificationState } from "@/types/hub";
 
 type NotificationStatusTemplateProps = {

@@ -1,8 +1,8 @@
-import { installUpdate } from "./updateInstallRuntime";
-import type { TauriInvoke } from "./tauriRuntime";
+import { stopFocusSession } from "./focusStopRuntime";
+import type { TauriInvoke } from "../tauri/tauriRuntime";
 
 import { describe, it } from "vitest";
-describe("updateInstallRuntime.test", () => {
+describe("focusStopRuntime.test", () => {
   function makeInvoke(
     result: unknown,
     calls: Array<{ command: string; args?: Record<string, unknown> }>,
@@ -14,18 +14,18 @@ describe("updateInstallRuntime.test", () => {
   }
 
   it("returns undefined when no Tauri invoke is available", async () => {
-    const result = await installUpdate(undefined);
+    const result = await stopFocusSession(undefined);
 
     assert.equal(result, undefined);
   });
 
-  it("invokes install_update with no arguments and returns success", async () => {
+  it("invokes stop_focus_session with no arguments and returns success", async () => {
     const calls: Array<{ command: string; args?: Record<string, unknown> }> = [];
     const invoke = makeInvoke({ success: true }, calls);
 
-    const result = await installUpdate(invoke);
+    const result = await stopFocusSession(invoke);
 
-    assert.deepEqual(calls, [{ command: "install_update", args: undefined }]);
+    assert.deepEqual(calls, [{ command: "stop_focus_session", args: undefined }]);
     assert.deepEqual(result, { success: true });
   });
 
@@ -33,9 +33,9 @@ describe("updateInstallRuntime.test", () => {
     const calls: Array<{ command: string; args?: Record<string, unknown> }> = [];
     const invoke = makeInvoke({ success: false }, calls);
 
-    const result = await installUpdate(invoke);
+    const result = await stopFocusSession(invoke);
 
-    assert.deepEqual(calls, [{ command: "install_update", args: undefined }]);
+    assert.deepEqual(calls, [{ command: "stop_focus_session", args: undefined }]);
     assert.deepEqual(result, { success: false });
   });
 
@@ -43,32 +43,32 @@ describe("updateInstallRuntime.test", () => {
     const calls: Array<{ command: string; args?: Record<string, unknown> }> = [];
     const invoke: TauriInvoke = async (command, args) => {
       calls.push({ command, args });
-      throw new Error("install update failed");
+      throw new Error("stop focus session failed");
     };
 
-    const result = await installUpdate(invoke);
+    const result = await stopFocusSession(invoke);
 
-    assert.deepEqual(calls, [{ command: "install_update", args: undefined }]);
+    assert.deepEqual(calls, [{ command: "stop_focus_session", args: undefined }]);
     assert.equal(result, undefined);
   });
 
   it("returns undefined when the native boundary returns a malformed payload", async () => {
     const calls: Array<{ command: string; args?: Record<string, unknown> }> = [];
-    const invoke = makeInvoke({ installed: true }, calls);
+    const invoke = makeInvoke({ stopped: true }, calls);
 
-    const result = await installUpdate(invoke);
+    const result = await stopFocusSession(invoke);
 
-    assert.deepEqual(calls, [{ command: "install_update", args: undefined }]);
+    assert.deepEqual(calls, [{ command: "stop_focus_session", args: undefined }]);
     assert.equal(result, undefined);
   });
 
   it("returns undefined when the native boundary returns a primitive", async () => {
     const calls: Array<{ command: string; args?: Record<string, unknown> }> = [];
-    const invoke = makeInvoke("ok", calls);
+    const invoke = makeInvoke(true, calls);
 
-    const result = await installUpdate(invoke);
+    const result = await stopFocusSession(invoke);
 
-    assert.deepEqual(calls, [{ command: "install_update", args: undefined }]);
+    assert.deepEqual(calls, [{ command: "stop_focus_session", args: undefined }]);
     assert.equal(result, undefined);
   });
 });

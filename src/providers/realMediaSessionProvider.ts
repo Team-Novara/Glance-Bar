@@ -3,8 +3,8 @@ import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./
 import {
   onMediaSessionChanged,
   type MediaSessionChangedPayload,
-} from "../runtime/systemMonitorRuntime";
-import { loadTauriMediaSessionStatus, type TauriMediaSessionStatus } from "../runtime/tauriRuntime";
+} from "../runtime/system/systemMonitorRuntime";
+import { loadTauriMediaSessionStatus, type TauriMediaSessionStatus } from "../runtime/tauri/tauriRuntime";
 import { MEDIA_DISPLAY_WINDOW_MS, formatMediaTime } from "../shared/lib/mediaTime";
 import type { HubEvent } from "../types/hub";
 

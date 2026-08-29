@@ -1,19 +1,19 @@
-import { getTauriInvoke, type TauriInvoke } from "./tauriRuntime";
+import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
-const STOP_FOCUS_COMMAND = "stop_focus_session";
+const INSTALL_UPDATE_COMMAND = "install_update";
 
-export type FocusStopResult = {
+export type UpdateInstallResult = {
   success: boolean;
 };
 
-export async function stopFocusSession(
+export async function installUpdate(
   invoke: TauriInvoke | undefined = getTauriInvoke(),
-): Promise<FocusStopResult | undefined> {
+): Promise<UpdateInstallResult | undefined> {
   if (!invoke) {
     return undefined;
   }
   try {
-    const result = await invoke(STOP_FOCUS_COMMAND);
+    const result = await invoke(INSTALL_UPDATE_COMMAND);
     if (
       typeof result === "object" &&
       result !== null &&

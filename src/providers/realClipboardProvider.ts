@@ -1,6 +1,6 @@
 import { createProviderShell } from "./providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
-import { onClipboardChanged, type ClipboardChangedPayload } from "../runtime/systemMonitorRuntime";
+import { onClipboardChanged, type ClipboardChangedPayload } from "../runtime/system/systemMonitorRuntime";
 import type { HubEvent } from "../types/hub";
 
 const PROVIDER_ID = "real-clipboard-provider";

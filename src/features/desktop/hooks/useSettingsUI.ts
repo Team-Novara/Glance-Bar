@@ -1,6 +1,6 @@
 import { useCallback, useState, type RefObject } from "react";
 
-import { getTauriInvoke } from "@/runtime/tauriRuntime";
+import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 
 const STATUS_CENTER_CONTEXT_MENU_COMMAND = "show_status_center_context_menu";
 const OPEN_STATUS_CENTER_SETTINGS_COMMAND = "open_status_center_settings";

@@ -9,7 +9,7 @@ import {
   STATUS_WINDOW_OVERLAY_POLICY_COMMAND,
   type StatusWindowOverlayState,
 } from "./statusWindowRuntime";
-import type { TauriInvoke } from "./tauriRuntime";
+import type { TauriInvoke } from "../tauri/tauriRuntime";
 
 import { describe, it } from "vitest";
 describe("statusWindowRuntime.test", () => {

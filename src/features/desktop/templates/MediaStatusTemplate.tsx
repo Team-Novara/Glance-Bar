@@ -9,7 +9,7 @@ import { StatusRail } from "./StatusRail";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
 import { getDesktopStatusTemplateChromeCopy } from "@/data/desktopStatusConfig";
-import { sendMediaControl, type MediaControlAction } from "@/runtime/mediaControlRuntime";
+import { sendMediaControl, type MediaControlAction } from "@/runtime/system/mediaControlRuntime";
 import { formatMediaTime } from "@/shared/lib/mediaTime";
 import type { DesktopMediaState } from "@/types/hub";
 

@@ -8,7 +8,7 @@ import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
 import { getDesktopStatusTemplateChromeCopy } from "@/data/desktopStatusConfig";
-import { stopFocusSession } from "@/runtime/focusStopRuntime";
+import { stopFocusSession } from "@/runtime/actions/focusStopRuntime";
 import type { DesktopFocusState } from "@/types/hub";
 
 type FocusStatusTemplateProps = {

@@ -1,10 +1,10 @@
-import i18n from "../i18n";
+import i18n from "../../i18n";
 import {
   loadSystemPerformance,
   loadSystemPerformanceStatus,
   normalizeSystemStatusDiagnostic,
 } from "./systemPerformanceRuntime";
-import type { SystemPerformanceMetric } from "../types/hub";
+import type { SystemPerformanceMetric } from "../../types/hub";
 
 import { describe, it } from "vitest";
 describe("systemPerformanceRuntime.test", () => {

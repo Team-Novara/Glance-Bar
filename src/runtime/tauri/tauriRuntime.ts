@@ -6,7 +6,7 @@ import {
   isRecord,
   parseHubEvents,
   snapshotHubEvent,
-} from "../shared/lib/runtimeGuards";
+} from "../../shared/lib/runtimeGuards";
 import type {
   DesktopGuestStatusKind,
   GuestProviderDiagnosticCode,
@@ -14,7 +14,7 @@ import type {
   GuestProviderSourceHealthMap,
   GuestProviderSourceQuality,
   HubEvent,
-} from "../types/hub";
+} from "../../types/hub";
 
 export const TAURI_FIXTURE_COMMAND = "get_hub_event_fixtures";
 export const TAURI_RUNTIME_CAPABILITIES_COMMAND = "get_runtime_capabilities";

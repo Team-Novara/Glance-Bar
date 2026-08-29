@@ -1,5 +1,5 @@
 import { dismissNotification } from "./notificationDismissRuntime";
-import type { TauriInvoke } from "./tauriRuntime";
+import type { TauriInvoke } from "../tauri/tauriRuntime";
 
 import { describe, it } from "vitest";
 describe("notificationDismissRuntime.test", () => {

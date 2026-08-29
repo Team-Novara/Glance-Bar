@@ -1,4 +1,4 @@
-import { getTauriInvoke, type TauriInvoke } from "./tauriRuntime";
+import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const CLIPBOARD_SET_COMMAND = "set_clipboard_content";
 const CLIPBOARD_CHANGED_EVENT = "status-center://clipboard-changed";

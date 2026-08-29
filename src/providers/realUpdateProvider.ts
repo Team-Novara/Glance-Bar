@@ -1,6 +1,6 @@
 import { createProviderShell } from "./providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
-import { installUpdate } from "../runtime/updateInstallRuntime";
+import { installUpdate } from "../runtime/actions/updateInstallRuntime";
 import type { HubEvent } from "../types/hub";
 
 const PROVIDER_ID = "real-update-provider";

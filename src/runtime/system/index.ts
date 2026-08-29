@@ -1,5 +1,20 @@
-// Framework barrel ¡ª system split scaffold
-export * from '@/runtime/systemPerformanceRuntime';
-export * from '@/runtime/mediaControlRuntime';
-// systemMonitorRuntime shares CLIPBOARD_CHANGED_EVENT with other modules ¡ª export explicitly if needed
-// export * from '@/runtime/systemMonitorRuntime';
+// Framework barrel â€” system split
+export * from './systemPerformanceRuntime';
+export * from './mediaControlRuntime';
+// systemMonitorRuntime shares CLIPBOARD_CHANGED_EVENT with mediaControlRuntime â€”
+// re-export its named exports explicitly to avoid a duplicate-export collision.
+export {
+  FOCUS_ASSIST_CHANGED_EVENT,
+  MEDIA_SESSION_CHANGED_EVENT,
+  NOTIFICATIONS_CHANGED_EVENT,
+  type ClipboardChangedPayload,
+  type FocusAssistState,
+  type MediaSessionChangedPayload,
+  type NotificationSummary,
+  getFocusAssistState,
+  getNotificationSummary,
+  onClipboardChanged,
+  onFocusAssistChanged,
+  onMediaSessionChanged,
+  onNotificationsChanged,
+} from './systemMonitorRuntime';

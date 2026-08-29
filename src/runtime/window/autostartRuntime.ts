@@ -1,4 +1,4 @@
-import { getTauriInvoke, type TauriInvoke } from "./tauriRuntime";
+import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const GET_AUTOSTART_COMMAND = "get_autostart_enabled";
 const SET_AUTOSTART_COMMAND = "set_autostart_enabled";

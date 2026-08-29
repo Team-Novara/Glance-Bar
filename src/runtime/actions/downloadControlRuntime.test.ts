@@ -1,5 +1,5 @@
 import { sendDownloadControl, type DownloadAction } from "./downloadControlRuntime";
-import type { TauriInvoke } from "./tauriRuntime";
+import type { TauriInvoke } from "../tauri/tauriRuntime";
 
 import { describe, it } from "vitest";
 describe("downloadControlRuntime.test", () => {
