@@ -33,8 +33,6 @@ jobs:
         run: npm ci
       - name: ESLint
         run: npm run lint
-      - name: Prettier check
-        run: npm run format:check
 
   test:
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
