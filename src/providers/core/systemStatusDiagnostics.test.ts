@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import {
   SYSTEM_STATUS_DIAGNOSTIC_CODES,
   type SystemStatusDiagnosticCode,
-} from "../runtime/system/systemPerformanceRuntime";
+} from "../../runtime/system/systemPerformanceRuntime";
 
 import { describe, it } from "vitest";
 describe("systemStatusDiagnostics.test", () => {
