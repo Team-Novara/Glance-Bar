@@ -1,6 +1,6 @@
 # Glance Bar Unified Plan
 
-> **Formerly `Cober-Windows-Bar` → `Glance-Bar` (repo `jay77721/Glance-Bar` @ `main`)**
+> **Formerly `Cober-Windows-Bar` → `Glance-Bar` (repo `Team-Novara/Glance-Bar` @ `main`)**
 > This document **supersedes** `IMPLEMENTATION_PLAN.md`, `STAGE5_WIP_LANDING.md`, `v0.7_TAURI_SPIKE_PLAN.md` (archived to `docs/archive/plans/`) and consolidates `docs/product/ROADMAP.md`, `docs/ROADMAP-NEXT.md`, `docs/ROADMAP-NEXT-V2.md` into one executable roadmap.
 > Baseline date: 2026-08-29 · Latest commit `197ed12 feat(desktop): add developer status kind`
 
