@@ -1,7 +1,7 @@
 import i18n from "../i18n";
 import { createHubStoreState, getActiveHubEvents } from "./hubState";
-import { formatMediaTime } from "../shared/mediaTime";
-import { clampProgress, dedupeKinds } from "../shared/runtimeGuards";
+import { formatMediaTime } from "../shared/lib/mediaTime";
+import { clampProgress, dedupeKinds } from "../shared/lib/runtimeGuards";
 import type {
   ClipboardPayload,
   DesktopDeveloperState,

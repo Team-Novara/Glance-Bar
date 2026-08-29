@@ -6,7 +6,7 @@ import {
   isRecord,
   parseHubEvents,
   snapshotHubEvent,
-} from "../shared/runtimeGuards";
+} from "../shared/lib/runtimeGuards";
 import type {
   DesktopGuestStatusKind,
   GuestProviderDiagnosticCode,

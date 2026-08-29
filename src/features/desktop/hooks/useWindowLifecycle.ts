@@ -5,7 +5,7 @@ import {
   STATUS_WINDOW_CORRECT_POSITION_COMMAND,
 } from "@/runtime/statusWindowRuntime";
 import { getTauriInvoke } from "@/runtime/tauriRuntime";
-import { getSafeCurrentWindow, type TauriAppWindow } from "@/shared/tauriWindow";
+import { getSafeCurrentWindow, type TauriAppWindow } from "@/shared/lib/tauriWindow";
 
 const QUIT_STATUS_CENTER_COMMAND = "quit_status_center";
 const SHOW_STATUS_CENTER_WINDOW_COMMAND = "show_status_center_window";

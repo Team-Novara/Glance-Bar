@@ -1,5 +1,5 @@
 import { getTauriInvoke, type TauriInvoke } from "./tauriRuntime";
-import { isRecord } from "../shared/runtimeGuards";
+import { isRecord } from "../shared/lib/runtimeGuards";
 
 export const STATUS_WINDOW_OVERLAY_POLICY_COMMAND = "get_overlay_policy";
 export const STATUS_WINDOW_FLOATING_COMMAND = "set_status_window_floating";

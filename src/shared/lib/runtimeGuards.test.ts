@@ -13,7 +13,7 @@ import {
   parseHubEvents,
   snapshotHubEvent,
 } from "./runtimeGuards";
-import type { HubEvent } from "../types/hub";
+import type { HubEvent } from "../../types/hub";
 
 describe("isRecord", () => {
   it("returns true for plain objects", () => {

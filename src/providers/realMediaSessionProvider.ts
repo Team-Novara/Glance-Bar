@@ -5,7 +5,7 @@ import {
   type MediaSessionChangedPayload,
 } from "../runtime/systemMonitorRuntime";
 import { loadTauriMediaSessionStatus, type TauriMediaSessionStatus } from "../runtime/tauriRuntime";
-import { MEDIA_DISPLAY_WINDOW_MS, formatMediaTime } from "../shared/mediaTime";
+import { MEDIA_DISPLAY_WINDOW_MS, formatMediaTime } from "../shared/lib/mediaTime";
 import type { HubEvent } from "../types/hub";
 
 const PROVIDER_ID = "real-media-session-provider";
