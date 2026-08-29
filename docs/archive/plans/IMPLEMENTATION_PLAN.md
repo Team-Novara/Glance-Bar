@@ -1,6 +1,4 @@
-# [SUPERSEDED] Cober-Windows-Bar Implementation Plan → `GLANCE_BAR_PLAN.md`
-
-> **This file is superseded by `GLANCE_BAR_PLAN.md` (Glance Bar unified plan). Kept for history; do not edit. Original content frozen at `c0a80ac` + `197ed12`.**
+# Cober-Windows-Bar Implementation Plan
 
 ## 1. Product Narrative
 

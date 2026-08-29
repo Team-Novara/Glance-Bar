@@ -1,7 +1,3 @@
-# [SUPERSEDED] Stage 5 Continuation → `GLANCE_BAR_PLAN.md` §4
-
-> **Superseded by `GLANCE_BAR_PLAN.md`. Archived copy in `docs/archive/plans/`.**
-
 # Stage 5 Continuation: Finish First Real Providers + Land WIP Branch
 
 ## Context

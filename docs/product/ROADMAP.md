@@ -1,6 +1,8 @@
-# Cober-Windows-Bar Roadmap
+# Glance Bar Roadmap
 
-Cober-Windows-Bar is a Windows 11 Unified Status Hub. The roadmap proves the product in layers: visual quality first, then state flow, then extension contracts, then desktop shell, then real data.
+> **Engineering execution plan → `../plans/GLANCE_BAR_PLAN.md`** (supersedes `Cober-Windows-Bar` naming). This file is the product-facing summary.
+
+Glance Bar (formerly Cober-Windows-Bar) is a cross-platform Unified Status Hub. The roadmap proves the product in layers: visual quality first, then state flow, then extension contracts, then desktop shell, then real data. Detailed execution is in `GLANCE_BAR_PLAN.md`.
 
 ## Stage 0: UI Prototype
 
@@ -154,15 +156,21 @@ What is real today:
 
 What remains:
 
-- Wrap system performance and media session as `HubProvider` implementations registered in `ProviderRegistry` and remove the direct listener in `useDesktopStatusRuntime` (Stage 5+2 — see [Stage 5 WIP landing plan](../plans/STAGE5_WIP_LANDING.md))
+- Wrap system performance and media session as `HubProvider` implementations registered in `ProviderRegistry` and remove the direct listener in `useDesktopStatusRuntime` (Stage 5+2 — see `../plans/GLANCE_BAR_PLAN.md` §4-5)
 - Download watcher provider (file system monitor or browser integration) — IPC stubs in place, no real provider yet
-- Native notification provider (Windows Notification Listener API) — synthetic dismissal in place, real toast listener pending
+- Native notification provider (cross-platform: Windows `UserNotificationListener` / macOS `UNUserNotificationCenter` / Linux `D-Bus`) — synthetic dismissal in place, real toast listener pending
 
-## Stage 6: Developer Hub
+## Stage 6: Cross-Platform Abstraction (NEW)
+
+Goal: make Glance Bar run on Windows / macOS / Linux from one codebase (window/media/focus traits). See `../plans/GLANCE_BAR_PLAN.md` §6.
+
+Target: v0.9, after Stage 5+2 provider wrapping.
+
+## Stage 7: Developer Hub
 
 Goal: become a daily developer status center.
 
-Target: v0.9 or later, after core providers are stable.
+Target: v0.9+ or v1.0, after cross-platform abstraction.
 
 Candidate surfaces:
 
@@ -174,11 +182,11 @@ Candidate surfaces:
 
 This stage is one of the strongest differentiation points because developer workflows create persistent, glanceable status.
 
-## Stage 7: AI Agent Hub
+## Stage 8: AI Agent Hub
 
 Goal: summarize long-running AI work and multi-agent activity.
 
-Target: v1.0.
+Target: v1.0+.
 
 Candidate surfaces:
 
