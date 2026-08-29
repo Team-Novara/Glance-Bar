@@ -1,1 +1,1 @@
-export * from '@/providers/types';
+export * from './types';

@@ -1,3 +1,114 @@
-// Barrel: re-export from legacy types/hub ¡ª framework only, no logic moved yet
-// TODO Slice1: split src/types/hub.ts:1-346 into types/desktop/performance here
-export * from '@/types/hub';
+export type HubMode = "idle" | "music" | "aiProgress" | "download" | "notification" | "multiTask";
+
+export type HubTaskType =
+  | "music"
+  | "ai"
+  | "download"
+  | "notification"
+  | "media"
+  | "clipboard"
+  | "focus"
+  | "system";
+
+export type HubEventSource =
+  | "mock"
+  | "system"
+  | "music"
+  | "download"
+  | "ai"
+  | "notification"
+  | "media"
+  | "clipboard"
+  | "focus"
+  | "git"
+  | "docker"
+  | "wsl"
+  | "npm";
+
+export type HubTask = {
+  id: string;
+  type: HubTaskType;
+  title: string;
+  subtitle: string;
+  progress?: number;
+  accent: "pink" | "blue" | "green" | "cyan";
+};
+
+export type MediaSessionPayload = {
+  available: boolean;
+  playbackStatus: "playing" | "paused" | "unavailable" | "unsupported";
+  progress: number;
+  positionMs?: number;
+  durationMs?: number;
+  title?: string;
+  artist?: string;
+};
+
+export type ClipboardPayload = {
+  text: string;
+  sourceApp: string;
+  copiedAt: number;
+};
+
+export type FocusAssistPayload = {
+  active: boolean;
+  profile: string;
+  checkedAt: number;
+};
+
+export type SystemPerformancePayload = {
+  cpu: number;
+  memory: number;
+  downloadSpeed: number;
+  uploadSpeed: number;
+  quality: "live" | "fallback" | "stale" | "unavailable";
+};
+
+export type HubEvent = {
+  id: string;
+  type: HubTaskType;
+  source: HubEventSource;
+  createdAt: number;
+  expiresAt?: number;
+  progress?: number;
+  payload?:
+    | MusicState
+    | NotificationState
+    | HubTask
+    | MediaSessionPayload
+    | ClipboardPayload
+    | FocusAssistPayload
+    | SystemPerformancePayload;
+  metadata?: Record<string, unknown>;
+};
+
+export type HubStoreState = {
+  events: HubEvent[];
+  mode: HubMode;
+  tasks: HubTask[];
+  notification?: NotificationState;
+  music?: MusicState;
+  clipboard?: ClipboardPayload;
+  focus?: FocusAssistPayload;
+  systemPerformance?: SystemPerformancePayload;
+};
+
+export type MusicState = {
+  title: string;
+  subtitle: string;
+  time: string;
+  progress: number;
+};
+
+export type NotificationState = {
+  app: string;
+  sender: string;
+  message: string;
+};
+
+export type ShowcaseStep = {
+  id: string;
+  mode: HubMode;
+  label: string;
+  caption: string;
+};
