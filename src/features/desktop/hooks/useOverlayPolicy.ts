@@ -12,7 +12,7 @@ import {
   type StatusWindowOverlayState,
 } from "@/runtime/statusWindowRuntime";
 import { getTauriInvoke } from "@/runtime/tauriRuntime";
-import { getSafeCurrentWindow, type TauriAppWindow } from "@/shared/tauriWindow";
+import { getSafeCurrentWindow, type TauriAppWindow } from "@/shared/lib/tauriWindow";
 
 const OVERLAY_POLICY_MS = 700;
 

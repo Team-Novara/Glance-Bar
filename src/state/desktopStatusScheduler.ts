@@ -18,7 +18,7 @@
  *   docs/decisions/v0.8_DESKTOP_STATUS_SCHEDULER_DUALITY_DECISION.md
  */
 import { DESKTOP_STATUS_PRIORITY_ORDER } from "../data/desktopStatusConfig";
-import { dedupeKindsOrEmpty } from "../shared/runtimeGuards";
+import { dedupeKindsOrEmpty } from "../shared/lib/runtimeGuards";
 import type {
   DesktopStatusKind,
   DesktopStatusScheduleDecision,

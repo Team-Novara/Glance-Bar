@@ -6,7 +6,7 @@ import type {
   HubProviderMetadata,
   MockProviderOptions,
 } from "./types";
-import { snapshotHubEvent } from "../shared/runtimeGuards";
+import { snapshotHubEvent } from "../shared/lib/runtimeGuards";
 import type { HubEvent, HubTask, MusicState } from "../types/hub";
 
 /** Tick interval for the mock music provider. */

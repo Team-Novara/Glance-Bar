@@ -1,4 +1,4 @@
-// Framework barrel ¡ª will own runtimeGuards/tauriWindow/mediaTime after Slice2
-export * from '@/shared/runtimeGuards';
-export * from '@/shared/tauriWindow';
-export * from '@/shared/mediaTime';
+// Framework barrel â€” owns runtimeGuards/tauriWindow/mediaTime after Slice2
+export * from './runtimeGuards';
+export * from './tauriWindow';
+export * from './mediaTime';

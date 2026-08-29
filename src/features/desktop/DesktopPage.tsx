@@ -26,7 +26,7 @@ import {
   setAutostartEnabled as applyAutostart,
 } from "../../runtime/autostartRuntime";
 import { emitTauriFixtureEvents, getTauriInvoke } from "../../runtime/tauriRuntime";
-import { getSafeCurrentWindow, type TauriAppWindow } from "../../shared/tauriWindow";
+import { getSafeCurrentWindow, type TauriAppWindow } from "../../shared/lib/tauriWindow";
 import type { DesktopStatusKind, DesktopStatusState } from "../../types/hub";
 
 function renderDesktopStatusTemplate(state: DesktopStatusState) {

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { DesktopPage } from "./features/desktop/DesktopPage";
+import { DesktopPage } from "../features/desktop/DesktopPage";
 
 // React.lazy + dynamic import puts ShowcasePage (and its CSS) in a separate
 // async chunk. The /showcase route is a developer / QA surface — never
@@ -13,7 +13,7 @@ import { DesktopPage } from "./features/desktop/DesktopPage";
 // bundle. The Tauri runtime builds the status center as a single-window
 // app, so the main bundle must stay under our 250KB production target.
 const ShowcasePage = lazy(() =>
-  import("./features/showcase/ShowcasePage").then((m) => ({ default: m.ShowcasePage })),
+  import("../features/showcase/ShowcasePage").then((m) => ({ default: m.ShowcasePage })),
 );
 
 export default function App() {

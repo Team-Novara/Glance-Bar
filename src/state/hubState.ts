@@ -1,4 +1,4 @@
-import { clampProgress, isFiniteNumber, snapshotHubEvent } from "../shared/runtimeGuards";
+import { clampProgress, isFiniteNumber, snapshotHubEvent } from "../shared/lib/runtimeGuards";
 import type {
   ClipboardPayload,
   FocusAssistPayload,
