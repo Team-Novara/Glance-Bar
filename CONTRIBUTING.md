@@ -6,33 +6,25 @@ Before opening a PR, read in this order:
 
 1. [README](README.md)
 2. [Repository Guide](docs/README.md)
-3. [Architecture Overview](docs/architecture/ARCHITECTURE.md)
-4. [Roadmap](docs/product/ROADMAP.md)
+3. [Glance Bar Unified Plan](docs/plans/GLANCE_BAR_PLAN.md) — single source of truth
+4. [Structure Refactor Plan](docs/plans/STRUCTURE_REFACTOR_PLAN.md) — new `src/{app,entities,providers,runtime,shared}` ownership
+5. [Architecture Overview](docs/architecture/ARCHITECTURE.md)
+6. [Roadmap](docs/product/ROADMAP.md)
 
 ## How To Navigate The Repo
 
-Use this mental model:
+Use this mental model (post `STRUCTURE_REFACTOR_PLAN.md` scaffold — old paths still work via barrel re-exports):
 
-- `src/features/desktop`
-  product-facing desktop status center
+- `src/app/` — App shell + routing (new)
+- `src/features/desktop|showcase` — product vs demo surfaces
+- `src/entities/{status,provider}` — domain types (new, re-exports `src/types/hub.ts`)
+- `src/providers/{core,impl/{mock,real,platform}}` — contracts + impls (new barrels re-export old)
+- `src/runtime/{tauri,window,scheduler,system,actions}` — Tauri bridge split (new barrels)
+- `src/shared/{ui,lib,config}` — UI + guards + constants (new)
+- `src/state/` — event bus/store/resolver
+- `src-tauri/src/{commands,window/{win,mac,linux},media/{win,mac,linux},monitoring}` — Rust split scaffolds
 
-- `src/features/showcase`
-  demo, QA, and review surface
-
-- `src/shared/ui`
-  reusable visual primitives only
-
-- `src/runtime`
-  desktop/runtime behavior and Tauri-facing frontend boundary
-
-- `src-tauri`
-  native shell and Rust commands
-
-- `src/providers`
-  provider contracts, mocks, adapters, and registries
-
-- `src/state`
-  event bus and store logic
+Old paths (`src/types/hub.ts`, `src/runtime/tauriRuntime.ts`, `src/providers/providerManager.ts`, `src-tauri/src/lib.rs:1754`) still work; new code **must** use new barrels (`@/entities/status`, `@/runtime/tauri`, `@/providers/core`).
 
 ## What Kind Of PR To Open
 
@@ -98,8 +90,9 @@ Historical files under `docs/archive/` are archival context and should not be tr
 
 - Keep product-facing desktop work separate from showcase-only demo work.
 - Reuse `src/shared/ui` instead of duplicating primitives.
-- Put shared types in `src/types`.
-- Keep runtime behavior centralized instead of scattering it across UI components.
+- Put domain types in `src/entities/` (new), not `src/types/` (legacy barrel).
+- Keep runtime behavior in `src/runtime/{tauri,window,scheduler,system,actions}` — do not scatter across UI components.
+- Respect `CODEOWNERS` ownership per folder; do not edit outside your dir without review.
 - Do not add fake "website preview" flows to the desktop product path.
 
 ## Questions To Ask Before A Large PR

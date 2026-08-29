@@ -1,0 +1,18 @@
+# CODEOWNERS — framework only, all lines default to @jay77721 until team grows
+# New code under new structure must be reviewed by owner; old paths remain fallback.
+
+*                              @jay77721
+
+# New structure ownership (STRUCTURE_REFACTOR_PLAN.md §4)
+# Uncomment and assign when team splits:
+/src/features/desktop/    @jay77721
+/src/features/showcase/   @jay77721
+/src/entities/            @jay77721
+/src/providers/           @jay77721
+/src/runtime/             @jay77721
+/src/shared/              @jay77721
+/src-tauri/src/window/    @jay77721
+/src-tauri/src/media/     @jay77721
+/src-tauri/src/commands/  @jay77721
+/src-tauri/src/monitoring/ @jay77721
+/src/app/                 @jay77721
