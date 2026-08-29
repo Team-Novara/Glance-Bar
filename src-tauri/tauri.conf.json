@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Cober Windows Bar",
+  "productName": "Glance Bar",
   "version": "1.0.0",
-  "identifier": "com.cober.windowsbar",
+  "identifier": "com.glance.bar",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173/desktop",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Cober Windows Bar",
+        "title": "Glance Bar",
         "width": 303,
         "height": 64,
         "minWidth": 303,
