@@ -16,19 +16,19 @@
 - Task involves 3+ independent modules or files
 - User describes a feature with multiple components
 - Task has clear module boundaries (auth, api, ui, etc.)
-- User says: "快速", "并行", "同时处理", "多模块", "快速开发"
+- User says: "quick", "parallel", "do it at the same time", "multi-module", "rapid dev"
 
 ### Detection signals:
-- "实现一个XXX功能，包括..." -> multiple components
-- "添加认证、支付、用户管理" -> 3+ modules
-- "重构这个模块，涉及这几个文件" -> 3+ files
+- "implement a XXX feature, including..." -> multiple components
+- "add auth, payments, user management" -> 3+ modules
+- "refactor this module, touching these files" -> 3+ files
 - Plan identifies 3+ independent workstreams
 
 ### When NOT to auto-trigger:
 - Single file changes
 - Simple bug fixes
 - Tightly coupled changes
-- User explicitly says "不需要并行"
+- User explicitly says "no parallelism needed"
 
 ## 2. Directory Ownership & Dependency Rule (FSD)
 
