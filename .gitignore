@@ -26,3 +26,5 @@ desktop_screenshot.png
 codegraph.html
 screenshotScript.js
 work/
+scripts/diag-missing.mjs
+media-debug.log

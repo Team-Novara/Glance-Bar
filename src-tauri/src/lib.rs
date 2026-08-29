@@ -1150,14 +1150,26 @@ where
 
 #[cfg(windows)]
 fn append_media_log(msg: &str) {
-  use std::io::Write;
-  let path = "C:\\Users\\jay\\Desktop\\media-debug.log";
-  if let Ok(mut f) = std::fs::OpenOptions::new()
-    .create(true)
-    .append(true)
-    .open(path)
+  #[cfg(debug_assertions)]
   {
-    let _ = writeln!(f, "{msg}");
+    use std::io::Write;
+    let log_dir = std::env::var_os("LOCALAPPDATA")
+      .map(std::path::PathBuf::from)
+      .map(|p| p.join("com.cober.windowsbar").join("logs"))
+      .unwrap_or_else(|| std::env::temp_dir().join("com.cober.windowsbar").join("logs"));
+    let _ = std::fs::create_dir_all(&log_dir);
+    let path = log_dir.join("media-debug.log");
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+      .create(true)
+      .append(true)
+      .open(path)
+    {
+      let _ = writeln!(f, "{msg}");
+    }
+  }
+  #[cfg(not(debug_assertions))]
+  {
+    let _ = msg;
   }
 }
 
