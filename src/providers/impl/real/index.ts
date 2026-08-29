@@ -1,5 +1,11 @@
-// Framework barrel ¡ª will own real*Provider 10 files
-export * from '@/providers/realClipboardProvider';
-export * from '@/providers/realFocusProvider';
-export * from '@/providers/realSystemPerformanceProvider';
-export * from '@/providers/realMediaSessionProvider';
+// Real (Tauri-backed) provider implementations.
+export * from "./realClipboardProvider";
+export * from "./realDockerProvider";
+export * from "./realDownloadProvider";
+export * from "./realFocusProvider";
+export * from "./realGitProvider";
+export * from "./realMediaSessionProvider";
+export * from "./realNpmProvider";
+export * from "./realSystemPerformanceProvider";
+export * from "./realUpdateProvider";
+export * from "./realWslProvider";

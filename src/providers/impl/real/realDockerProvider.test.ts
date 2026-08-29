@@ -7,8 +7,8 @@ import {
   type DockerStatus,
   type DockerStatusCode,
 } from "./realDockerProvider";
-import type { HubEvent } from "../types/hub";
-import type { HubProvider } from "./types";
+import type { HubEvent } from "../../../types/hub";
+import type { HubProvider } from "../../core/types";
 
 function collectEvents(provider: HubProvider): HubEvent[] {
   const events: HubEvent[] = [];

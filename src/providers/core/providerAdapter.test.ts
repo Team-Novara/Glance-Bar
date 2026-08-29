@@ -13,9 +13,9 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { connectProviderToEventBus, type ProviderConnection } from "./providerAdapter";
-import { createHubEventBus, type HubEventBus } from "../state/hubState";
+import { createHubEventBus, type HubEventBus } from "../../state/hubState";
 import { createProviderShell, type ProviderShellHandle } from "./providerShell";
-import type { HubEvent } from "../types/hub";
+import type { HubEvent } from "../../types/hub";
 import type { HubProviderMetadata, HubProviderCapability } from "./types";
 
 // ── Helpers ──────────────────────────────────────────────────────────

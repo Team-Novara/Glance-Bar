@@ -5,7 +5,7 @@ import {
   createMockDownloadEvent,
   createMockMusicEvent,
   createMockNotificationEvent,
-} from "../providers/mockProviders";
+} from "../providers";
 import { aggregateDesktopStatusInput } from "./desktopStatusAggregation";
 
 import { describe, it } from "vitest";

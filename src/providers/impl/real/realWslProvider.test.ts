@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createRealWslProvider, REAL_WSL_POLL_INTERVAL_MS } from "./realWslProvider";
-import type { HubProvider, HubProviderStatus } from "./types";
+import type { HubProvider, HubProviderStatus } from "../../core/types";
 
 const PROVIDER_ID = "real-wsl-provider";
 

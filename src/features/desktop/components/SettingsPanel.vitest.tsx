@@ -2,14 +2,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act, within } from '@testing-library/react';
 import i18n from '@/i18n';
 import { SettingsPanel } from './SettingsPanel';
-import type { ProviderRegistryRecord } from '@/providers/providerRegistry';
+import type { ProviderRegistryRecord } from '@/providers';
 import type {
   HubProviderCapability,
   HubProviderHealth,
   HubProviderKind,
   HubProviderLifecycle,
   HubProviderMetadata,
-} from '@/providers/types';
+} from '@/providers';
 import type { DesktopStatusKind, DesktopStatusPreferences } from '@/types/hub';
 
 vi.mock('@/runtime/window/autostartRuntime', () => ({

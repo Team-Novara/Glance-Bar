@@ -5,7 +5,7 @@ import {
   createMockDownloadEvent,
   createMockMusicEvent,
   createMockNotificationEvent,
-} from "../providers/mockProviders";
+} from "../providers";
 
 const now = Date.UTC(2026, 5, 9, 12, 0, 0);
 

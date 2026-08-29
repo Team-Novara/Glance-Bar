@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { describe, it, vi, beforeEach } from "vitest";
-import type { HubEventBus } from "../state/hubState";
+import type { HubEventBus } from "../../state/hubState";
 import type { HubProvider, HubProviderStatus } from "./types";
 import type { ProviderConnection } from "./providerAdapter";
 

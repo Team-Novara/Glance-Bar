@@ -1,2 +1,5 @@
-// Framework barrel ¡ª will own mockProviders split per kind
-export * from '@/providers/mockProviders';
+// Mock provider factories â€” split per kind from the original mockProviders.ts.
+export * from "./mockMusicProvider";
+export * from "./mockDownloadProvider";
+export * from "./mockAiProvider";
+export * from "./mockNotificationProvider";

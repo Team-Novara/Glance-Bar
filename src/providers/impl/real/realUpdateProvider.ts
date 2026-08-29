@@ -1,7 +1,7 @@
-import { createProviderShell } from "./providerShell";
-import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
-import { installUpdate } from "../runtime/actions/updateInstallRuntime";
-import type { HubEvent } from "../types/hub";
+import { installUpdate } from "../../../runtime/actions/updateInstallRuntime";
+import type { HubEvent } from "../../../types/hub";
+import { createProviderShell } from "../../core/providerShell";
+import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
 const PROVIDER_ID = "real-update-provider";
 const TICK_INTERVAL_MS = 2_000;

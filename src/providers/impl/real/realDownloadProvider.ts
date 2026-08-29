@@ -1,7 +1,7 @@
-import { createProviderShell } from "./providerShell";
-import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
-import { sendDownloadControl, type DownloadAction } from "../runtime/actions/downloadControlRuntime";
-import type { HubEvent } from "../types/hub";
+import { sendDownloadControl, type DownloadAction } from "../../../runtime/actions/downloadControlRuntime";
+import type { HubEvent } from "../../../types/hub";
+import { createProviderShell } from "../../core/providerShell";
+import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
 const PROVIDER_ID = "real-download-provider";
 const TICK_INTERVAL_MS = 1_000;

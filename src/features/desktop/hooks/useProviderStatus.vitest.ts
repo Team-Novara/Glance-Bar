@@ -2,14 +2,14 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 
 import { useProviderStatus } from "./useProviderStatus";
-import type { ProviderManager } from "@/providers/providerManager";
-import type { ProviderRegistryRecord } from "@/providers/providerRegistry";
+import type { ProviderManager } from "@/providers";
+import type { ProviderRegistryRecord } from "@/providers";
 import type {
   HubProvider,
   HubProviderHealth,
   HubProviderLifecycle,
   HubProviderStatus,
-} from "@/providers/types";
+} from "@/providers";
 
 // ── Test doubles ────────────────────────────────────────────────────────
 

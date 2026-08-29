@@ -1,23 +1,23 @@
+import { connectProviderToEventBus, type ProviderConnection } from "./providerAdapter";
+import { createProviderRegistry } from "./providerRegistry";
+import type { HubProvider } from "./types";
+import type { HubEventBus } from "../../state/hubState";
 import {
   createMockMusicProvider,
   createMockDownloadProvider,
   createMockAIProvider,
   createMockNotificationProvider,
-} from "./mockProviders";
-import { connectProviderToEventBus, type ProviderConnection } from "./providerAdapter";
-import { createProviderRegistry } from "./providerRegistry";
-import { createRealClipboardProvider } from "./realClipboardProvider";
-import { createRealDockerProvider } from "./realDockerProvider";
-import { createRealDownloadProvider } from "./realDownloadProvider";
-import { createRealFocusProvider } from "./realFocusProvider";
-import { createRealGitProvider } from "./realGitProvider";
-import { createRealMediaSessionProvider } from "./realMediaSessionProvider";
-import { createRealNpmProvider } from "./realNpmProvider";
-import { createRealSystemPerformanceProvider } from "./realSystemPerformanceProvider";
-import { createRealUpdateProvider } from "./realUpdateProvider";
-import { createRealWslProvider } from "./realWslProvider";
-import type { HubProvider } from "./types";
-import type { HubEventBus } from "../state/hubState";
+} from "../impl/mock/index";
+import { createRealClipboardProvider } from "../impl/real/realClipboardProvider";
+import { createRealDockerProvider } from "../impl/real/realDockerProvider";
+import { createRealDownloadProvider } from "../impl/real/realDownloadProvider";
+import { createRealFocusProvider } from "../impl/real/realFocusProvider";
+import { createRealGitProvider } from "../impl/real/realGitProvider";
+import { createRealMediaSessionProvider } from "../impl/real/realMediaSessionProvider";
+import { createRealNpmProvider } from "../impl/real/realNpmProvider";
+import { createRealSystemPerformanceProvider } from "../impl/real/realSystemPerformanceProvider";
+import { createRealUpdateProvider } from "../impl/real/realUpdateProvider";
+import { createRealWslProvider } from "../impl/real/realWslProvider";
 
 export type ProviderManagerOptions = {
   /** When true, register real (Tauri-backed) providers. Default: true. */

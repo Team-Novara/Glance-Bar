@@ -30,7 +30,7 @@ import {
   getDesktopStatusTemplateDescriptors,
   getDesktopStatusSettingsCopy,
 } from "@/data/desktopStatusConfig";
-import type { ProviderRegistryRecord } from "@/providers/providerRegistry";
+import type { ProviderRegistryRecord } from "@/providers";
 import type { DesktopStatusKind, DesktopStatusPreferences } from "@/types/hub";
 
 export type SettingsPanelProps = {

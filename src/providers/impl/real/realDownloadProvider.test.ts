@@ -7,7 +7,7 @@ import {
   dispatchDownloadControl,
   type DownloadProviderStatus,
 } from "./realDownloadProvider";
-import type { HubEvent } from "../types/hub";
+import type { HubEvent } from "../../../types/hub";
 
 function collectEvents(provider: ReturnType<typeof createRealDownloadProvider>): HubEvent[] {
   const events: HubEvent[] = [];

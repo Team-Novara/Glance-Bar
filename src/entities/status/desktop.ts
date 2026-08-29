@@ -1,5 +1,5 @@
-import type { HubEvent, HubStoreState } from "./types";
 import type { SystemPerformanceMetric, SystemPerformanceSourceStatus } from "./performance";
+import type { HubEvent, HubStoreState } from "./types";
 
 export type DesktopStatusKind =
   | "resident"
