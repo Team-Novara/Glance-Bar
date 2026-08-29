@@ -5,7 +5,7 @@
 // `lib.rs` calls load / persist; this module owns the file path, IO, and
 // serde_json encoding.
 
-use crate::types::DesktopStatusPreferences;
+use crate::types::{DesktopStatusPreferences, StatusCenterMenuItems};
 use std::fs;
 use std::path::PathBuf;
 use tauri::Manager;
@@ -56,4 +56,13 @@ pub(crate) fn persist_status_center_preferences<R: tauri::Runtime>(
         .map_err(|error| format!("failed to serialize preferences: {error}"))?;
     fs::write(&path, payload)
         .map_err(|error| format!("failed to write preferences {}: {error}", path.display()))
+}
+
+pub(crate) fn apply_preference_menu_state<R: tauri::Runtime>(
+    menu_items: &StatusCenterMenuItems<R>,
+    preferences: &DesktopStatusPreferences,
+) {
+    let _ = menu_items.always_float.set_checked(preferences.always_float);
+    let _ = menu_items.avoid_fullscreen.set_checked(preferences.avoid_fullscreen);
+    let _ = menu_items.lock_position.set_checked(preferences.lock_position);
 }
