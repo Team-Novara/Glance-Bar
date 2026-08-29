@@ -17,12 +17,12 @@ import {
   createMockDownloadProvider,
   createMockMusicProvider,
   createMockNotificationProvider,
-} from "../../providers/mockProviders";
+} from "../../providers";
 import {
   connectProviderToEventBus,
   type ProviderConnection,
-} from "../../providers/providerAdapter";
-import type { HubProvider } from "../../providers/types";
+} from "../../providers";
+import type { HubProvider } from "../../providers";
 import { publishTauriFixtureEvents } from "../../runtime/tauri/tauriRuntime";
 import {
   createAutoDemoSequence,

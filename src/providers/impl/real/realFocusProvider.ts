@@ -1,11 +1,11 @@
-import { createProviderShell } from "./providerShell";
-import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
 import {
   getFocusAssistState,
   onFocusAssistChanged,
   type FocusAssistState,
-} from "../runtime/system/systemMonitorRuntime";
-import type { HubEvent } from "../types/hub";
+} from "../../../runtime/system/systemMonitorRuntime";
+import type { HubEvent } from "../../../types/hub";
+import { createProviderShell } from "../../core/providerShell";
+import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
 const PROVIDER_ID = "real-focus-provider";
 

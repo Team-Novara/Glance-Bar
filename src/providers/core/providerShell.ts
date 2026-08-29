@@ -5,7 +5,7 @@ import type {
   HubProviderMetadata,
   HubProviderStatus,
 } from "./types";
-import type { HubEvent } from "../types/hub";
+import type { HubEvent } from "../../types/hub";
 
 export type ProviderShellHandle = {
   emit(events: HubEvent[]): void;

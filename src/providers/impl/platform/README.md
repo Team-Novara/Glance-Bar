@@ -1,8 +1,8 @@
-# Platform impls ¡ª for Stage6 cross-platform trait
+# Platform impls â€” for Stage6 cross-platform trait
 
-- windows/ ¡ª GSMTC, Win32 window, registry
-- macos/   ¡ª NowPlaying, NSWindow, DND
-- linux/   ¡ª MPRIS D-Bus, layer-shell
+- windows/ â†’ GSMTC, Win32 window, registry
+- macos/   â†’ NowPlaying, NSWindow, DND
+- linux/   â†’ MPRIS D-Bus, layer-shell
 
-Each subfolder will implement \PlatformMediaProvider\ / \PlatformWindowPolicy\ traits.
-Keep \#[cfg(target_os)]\ narrow per file.
+Each subfolder will implement `PlatformMediaProvider` / `PlatformWindowPolicy` traits.
+Keep `#[cfg(target_os)]` narrow per file.

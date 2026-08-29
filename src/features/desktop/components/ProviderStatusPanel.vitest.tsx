@@ -2,14 +2,14 @@ import { describe, it, expect } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 
 import { ProviderStatusPanel } from "./ProviderStatusPanel";
-import type { ProviderRegistryRecord } from "@/providers/providerRegistry";
+import type { ProviderRegistryRecord } from "@/providers";
 import type {
   HubProviderCapability,
   HubProviderHealth,
   HubProviderKind,
   HubProviderLifecycle,
   HubProviderMetadata,
-} from "@/providers/types";
+} from "@/providers";
 
 function makeMetadata(overrides: Partial<HubProviderMetadata> = {}): HubProviderMetadata {
   return {

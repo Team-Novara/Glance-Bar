@@ -4,7 +4,7 @@ import {
   createMockDownloadProvider,
   createMockMusicProvider,
   createMockNotificationProvider,
-} from "./mockProviders";
+} from "../impl/mock/index";
 import { createProviderRegistry } from "./providerRegistry";
 import type {
   HubProvider,

@@ -1,7 +1,7 @@
-import { createProviderShell } from "./providerShell";
-import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
-import { onClipboardChanged, type ClipboardChangedPayload } from "../runtime/system/systemMonitorRuntime";
-import type { HubEvent } from "../types/hub";
+import { onClipboardChanged, type ClipboardChangedPayload } from "../../../runtime/system/systemMonitorRuntime";
+import type { HubEvent } from "../../../types/hub";
+import { createProviderShell } from "../../core/providerShell";
+import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
 const PROVIDER_ID = "real-clipboard-provider";
 const CLIPBOARD_DISPLAY_WINDOW_MS = 5_000;

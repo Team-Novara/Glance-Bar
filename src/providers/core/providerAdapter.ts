@@ -1,5 +1,5 @@
 import type { HubProvider } from "./types";
-import type { HubEventBus } from "../state/hubState";
+import type { HubEventBus } from "../../state/hubState";
 
 export type ProviderConnection = {
   disconnect(): void;

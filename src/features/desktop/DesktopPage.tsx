@@ -21,11 +21,11 @@ import { NotificationStatusTemplate } from "./templates/NotificationStatusTempla
 import { ResidentStatusTemplate } from "./templates/ResidentStatusTemplate";
 import { UpdateStatusTemplate } from "./templates/UpdateStatusTemplate";
 import { getDesktopStatusShellCopy } from "../../data/desktopStatusConfig";
+import { emitTauriFixtureEvents, getTauriInvoke } from "../../runtime/tauri/tauriRuntime";
 import {
   getAutostartEnabled,
   setAutostartEnabled as applyAutostart,
 } from "../../runtime/window/autostartRuntime";
-import { emitTauriFixtureEvents, getTauriInvoke } from "../../runtime/tauri/tauriRuntime";
 import { getSafeCurrentWindow, type TauriAppWindow } from "../../shared/lib/tauriWindow";
 import type { DesktopStatusKind, DesktopStatusState } from "../../types/hub";
 

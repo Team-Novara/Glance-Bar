@@ -6,9 +6,9 @@ import {
   findDegradedProviders,
   type ProviderHealthSnapshot,
   type ProviderHealthSummary,
-} from "@/providers/providerHealthMonitor";
-import type { ProviderRegistryRecord } from "@/providers/providerRegistry";
-import type { HubProviderHealth } from "@/providers/types";
+} from "@/providers";
+import type { ProviderRegistryRecord } from "@/providers";
+import type { HubProviderHealth } from "@/providers";
 
 export type ProviderStatusPanelProps = {
   records: ProviderRegistryRecord[];

@@ -1,12 +1,12 @@
-import { createProviderShell } from "./providerShell";
-import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
 import {
   loadSystemPerformanceStatus,
   type SystemStatusDiagnostic,
-} from "../runtime/system/systemPerformanceRuntime";
-import { getTauriInvoke } from "../runtime/tauri/tauriRuntime";
-import type { HubEvent } from "../types/hub";
-import type { SystemPerformanceSnapshot } from "../types/hub";
+} from "../../../runtime/system/systemPerformanceRuntime";
+import { getTauriInvoke } from "../../../runtime/tauri/tauriRuntime";
+import type { HubEvent } from "../../../types/hub";
+import type { SystemPerformanceSnapshot } from "../../../types/hub";
+import { createProviderShell } from "../../core/providerShell";
+import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
 const PROVIDER_ID = "real-system-performance-provider";
 const POLL_INTERVAL_MS = 1_800;

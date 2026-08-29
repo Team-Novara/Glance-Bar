@@ -1,5 +1,5 @@
 /**
- * Tests for the four mock provider factories in src/providers/mockProviders.ts:
+ * Tests for the four mock provider factories in src/providers/impl/mock/:
  *   - createMockMusicProvider
  *   - createMockDownloadProvider
  *   - createMockAIProvider
@@ -29,9 +29,9 @@ import {
   createMockDownloadProvider,
   createMockMusicProvider,
   createMockNotificationProvider,
-} from "./mockProviders";
-import type { HubProvider } from "./types";
-import type { HubEvent, NotificationState } from "../types/hub";
+} from "./index";
+import type { HubProvider } from "../../core/types";
+import type { HubEvent, NotificationState } from "../../../types/hub";
 
 // ── Fixtures ─────────────────────────────────────────────────────────
 

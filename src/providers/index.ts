@@ -1,3 +1,9 @@
-// Framework barrel ¡ª import from new path: import { createProviderManager } from '@/providers'
-export * from '@/providers/providerManager';
-export * from '@/providers/types';
+// Framework barrel â€” import from new path: import { createProviderManager } from '@/providers'
+export * from "./core/providerManager";
+export * from "./core/providerRegistry";
+export * from "./core/providerAdapter";
+export * from "./core/providerShell";
+export * from "./core/providerHealthMonitor";
+export * from "./core/types";
+export * from "./impl/mock/index";
+export * from "./impl/real/index";

@@ -1,6 +1,6 @@
-import { createProviderShell } from "./providerShell";
-import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "./types";
-import type { HubEvent } from "../types/hub";
+import type { HubEvent } from "../../../types/hub";
+import { createProviderShell } from "../../core/providerShell";
+import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
 const PROVIDER_ID = "real-wsl-provider";
 export const REAL_WSL_POLL_INTERVAL_MS = 8_000;

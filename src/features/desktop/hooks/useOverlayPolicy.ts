@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 
+import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 import {
   correctStatusWindowPosition,
   correctStatusWindowPositionForDisplayChange,
@@ -11,7 +12,6 @@ import {
   STATUS_WINDOW_SCALE_CHANGE_DEBOUNCE_MS,
   type StatusWindowOverlayState,
 } from "@/runtime/window/statusWindowRuntime";
-import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 import { getSafeCurrentWindow, type TauriAppWindow } from "@/shared/lib/tauriWindow";
 
 const OVERLAY_POLICY_MS = 700;

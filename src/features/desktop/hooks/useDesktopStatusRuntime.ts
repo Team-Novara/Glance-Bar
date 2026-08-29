@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DESKTOP_STATUS_TEMPLATE_ORDER } from "@/data/desktopStatusConfig";
 import i18n from "@/i18n";
-import { createProviderManager, type ProviderManager } from "@/providers/providerManager";
-import type { ProviderRegistryRecord } from "@/providers/providerRegistry";
+import { createProviderManager, type ProviderManager } from "@/providers";
+import type { ProviderRegistryRecord } from "@/providers";
 import { createSchedulerService, DESKTOP_STATUS_PREFERRED_WINDOW_MS } from "@/runtime/scheduler/schedulerService";
 import { aggregateDesktopStatusInput } from "@/state/desktopStatusAggregation";
 import { resolveDesktopStatusState } from "@/state/desktopStatusState";
