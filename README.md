@@ -181,4 +181,4 @@ For contribution expectations and a suggested PR path, see [Contributing](CONTRI
 
 ## License
 
-MIT
+Apache-2.0 — see [LICENSE](./LICENSE). Copyright 2026 Team Novara.
