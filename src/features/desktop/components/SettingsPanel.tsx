@@ -24,7 +24,6 @@ import {
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ProviderStatusPanel } from "./ProviderStatusPanel";
 
 import type { DesktopStatusKind, DesktopStatusPreferences } from "@/entities";
 import {
@@ -32,6 +31,8 @@ import {
   getDesktopStatusSettingsCopy,
 } from "@/entities/status/config";
 import type { ProviderRegistryRecord } from "@/providers";
+
+import { ProviderStatusPanel } from "./ProviderStatusPanel";
 
 export type SettingsPanelProps = {
   preferences: DesktopStatusPreferences;

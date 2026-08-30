@@ -1,3 +1,5 @@
+import type { HubEvent, HubTask } from "@/entities";
+
 import {
   MOCK_DOWNLOAD_PROGRESS_STEP,
   MOCK_DOWNLOAD_TICK_MS,
@@ -11,7 +13,6 @@ import type {
   MockProviderOptions,
 } from "../../core/types";
 
-import type { HubEvent, HubTask } from "@/entities";
 
 export const createMockDownloadEvent = (options: MockProviderOptions = {}): HubEvent => {
   const createdAt = resolveNow(options);

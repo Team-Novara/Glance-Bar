@@ -1,5 +1,3 @@
-import { clampProgress, isFiniteNumber, snapshotHubEvent } from "../shared/lib/runtimeGuards";
-
 import type {
   ClipboardPayload,
   FocusAssistPayload,
@@ -9,6 +7,9 @@ import type {
   HubTask,
   SystemPerformancePayload,
 } from "@/entities";
+
+import { clampProgress, isFiniteNumber, snapshotHubEvent } from "../shared/lib/runtimeGuards";
+
 
 const taskAccentMap: Record<string, HubTask["accent"]> = {
   music: "pink",

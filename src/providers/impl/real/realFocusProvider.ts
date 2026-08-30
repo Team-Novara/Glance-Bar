@@ -1,3 +1,5 @@
+import type { HubEvent } from "@/entities";
+
 import {
   getFocusAssistState,
   onFocusAssistChanged,
@@ -6,7 +8,6 @@ import {
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
-import type { HubEvent } from "@/entities";
 
 const PROVIDER_ID = "real-focus-provider";
 

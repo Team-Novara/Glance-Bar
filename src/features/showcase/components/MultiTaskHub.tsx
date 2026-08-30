@@ -1,10 +1,11 @@
+import type { HubTask } from "@/entities";
+
 import {
   FluentIconChip,
   FluentProgressRail,
   type ShowcaseFluentMode,
 } from "./ShowcaseFluentTokens";
 
-import type { HubTask } from "@/entities";
 
 type MultiTaskHubProps = {
   tasks: HubTask[];

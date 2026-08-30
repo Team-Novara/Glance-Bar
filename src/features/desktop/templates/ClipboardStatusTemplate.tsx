@@ -3,13 +3,14 @@ import { Clipboard, ExternalLink } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { DesktopClipboardState } from "@/entities";
+import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
+
 import { DesktopStatusTemplateFrame } from "./DesktopStatusTemplateFrame";
 import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-import type { DesktopClipboardState } from "@/entities";
-import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
 
 type ClipboardStatusTemplateProps = {
   state: DesktopClipboardState;

@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  defaultDesktopRuntimeDependencies,
-  type DesktopRuntimeDependencies,
-} from "./desktopRuntimeDependencies";
 
 import type {
   DesktopStatusKind,
@@ -20,6 +16,11 @@ import type { ProviderRegistryRecord } from "@/providers";
 import { DESKTOP_STATUS_PREFERRED_WINDOW_MS } from "@/runtime/scheduler/schedulerService";
 import { aggregateDesktopStatusInput } from "@/state/desktopStatusAggregation";
 import { resolveDesktopStatusState } from "@/state/desktopStatusState";
+
+import {
+  defaultDesktopRuntimeDependencies,
+  type DesktopRuntimeDependencies,
+} from "./desktopRuntimeDependencies";
 
 function systemPayloadToMetrics(payload: SystemPerformancePayload): SystemPerformanceMetric[] {
   return [

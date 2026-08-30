@@ -35,12 +35,12 @@
 ```
 src/
   app/            -> features, entities, shared
-  features/desktop|showcase -> entities, shared (never runtime directly except via runtime/index)
-  entities/{status,provider} -> (pure types, no React)
-  providers/{core,impl/*} -> entities, shared, runtime/tauri
-  runtime/{tauri,window,scheduler,system,actions} -> entities, shared
-  shared/{ui,lib,config} -> (leaf, imports nothing inside src)
-  state/          -> entities, shared
+  features/desktop|showcase -> entities, shared, providers, runtime, state, i18n (top consumer; hooks may touch runtime)
+  entities/{status,provider} -> entities, i18n (pure types, no React)
+  providers/{core,impl/*} -> entities, shared, runtime, state (Bus is the designed flow)
+  runtime/{tauri,window,scheduler,system,actions} -> entities, shared, state, i18n (never features, never providers)
+  shared/{ui,lib,config} -> shared, entities (documented exceptions)
+  state/          -> entities, shared, i18n
 src-tauri/src/{commands,window,media,monitoring,preferences,tray,types} -> leaf
 ```
 

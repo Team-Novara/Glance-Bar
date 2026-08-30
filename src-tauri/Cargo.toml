@@ -35,3 +35,20 @@ tauri-plugin-autostart = "2"
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Graphics_Dwm", "Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader", "Win32_UI_HiDpi", "Win32_System_Threading", "Win32_System_Com"] }
 windows = { version = "0.58", features = ["Foundation", "Media_Control", "Win32_System_WinRT"] }
 winreg = "0.52"
+
+# Aligned with the objc2 0.6.x / 0.3.x family that tauri / tray-icon / muda /
+# arboard already resolve on macOS, so exactly one ObjC binding stack compiles
+# (STAGE6 design §5 names 0.5/0.2, which was current at design time; 0.5/0.2
+# would duplicate the whole ObjC runtime alongside the already-locked 0.6.4).
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSString", "NSDictionary", "NSArray"] }
+objc2-app-kit = { version = "0.3", features = ["NSWindow", "NSScreen", "NSWorkspace"] }
+objc2-media-player = { version = "0.3", features = ["MPNowPlayingInfoCenter", "MPRemoteCommandCenter"] }
+
+# Same alignment logic: arboard / global-hotkey already pull x11rb 0.13 and
+# tauri-plugin-opener already pulls zbus 5.x on Linux — pinning the doc's
+# zbus "4" would compile a second full D-Bus stack into every Linux build.
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
+zbus = "5"

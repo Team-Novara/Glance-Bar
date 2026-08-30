@@ -2,16 +2,17 @@ import { Disc3, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { DesktopMediaState } from "@/entities";
+import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
+import { sendMediaControl, type MediaControlAction } from "@/runtime/system/mediaControlRuntime";
+import { formatMediaTime } from "@/shared/lib/mediaTime";
+
 import { DesktopStatusTemplateFrame } from "./DesktopStatusTemplateFrame";
 import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusRail } from "./StatusRail";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-import type { DesktopMediaState } from "@/entities";
-import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
-import { sendMediaControl, type MediaControlAction } from "@/runtime/system/mediaControlRuntime";
-import { formatMediaTime } from "@/shared/lib/mediaTime";
 
 type MediaStatusTemplateProps = {
   state: DesktopMediaState;

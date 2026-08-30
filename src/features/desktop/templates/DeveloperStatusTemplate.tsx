@@ -1,11 +1,12 @@
 import { Terminal } from "lucide-react";
 
+import type { DesktopDeveloperState } from "@/entities";
+import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
+
 import { DesktopStatusTemplateFrame } from "./DesktopStatusTemplateFrame";
 import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { StatusRail } from "./StatusRail";
 
-import type { DesktopDeveloperState } from "@/entities";
-import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
 
 type DeveloperStatusTemplateProps = {
   state: DesktopDeveloperState;

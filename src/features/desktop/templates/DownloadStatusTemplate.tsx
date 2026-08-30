@@ -3,15 +3,16 @@ import { Pause, Play, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { DesktopDownloadState } from "@/entities";
+import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
+import { sendDownloadControl } from "@/runtime/actions/downloadControlRuntime";
+
 import { DesktopStatusTemplateFrame } from "./DesktopStatusTemplateFrame";
 import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusRail } from "./StatusRail";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-import type { DesktopDownloadState } from "@/entities";
-import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
-import { sendDownloadControl } from "@/runtime/actions/downloadControlRuntime";
 
 type DownloadStatusTemplateProps = {
   state: DesktopDownloadState;

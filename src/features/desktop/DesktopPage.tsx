@@ -1,5 +1,8 @@
 import { useCallback } from "react";
 
+import type { DesktopStatusKind, DesktopStatusState } from "@/entities";
+import { getDesktopStatusShellCopy } from "@/entities/status/config";
+
 import { SettingsPanel } from "./components/SettingsPanel";
 import {
   useAppWindow,
@@ -24,8 +27,6 @@ import { NotificationStatusTemplate } from "./templates/NotificationStatusTempla
 import { ResidentStatusTemplate } from "./templates/ResidentStatusTemplate";
 import { UpdateStatusTemplate } from "./templates/UpdateStatusTemplate";
 
-import type { DesktopStatusKind, DesktopStatusState } from "@/entities";
-import { getDesktopStatusShellCopy } from "@/entities/status/config";
 
 function renderDesktopStatusTemplate(state: DesktopStatusState) {
   switch (state.kind) {
