@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import i18n from "../../../i18n";
 import { sourceQualityClassName, sourceQualityLabel } from "./ResidentStatusTemplate";
-import type { SystemPerformanceSourceQuality } from "../../../types/hub";
+import type { SystemPerformanceSourceQuality } from "@/entities";
 
 import { describe, it } from "vitest";
 describe("ResidentStatusTemplate.test", () => {

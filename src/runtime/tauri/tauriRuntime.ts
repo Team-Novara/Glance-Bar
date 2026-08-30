@@ -14,7 +14,7 @@ import type {
   GuestProviderSourceHealthMap,
   GuestProviderSourceQuality,
   HubEvent,
-} from "../../types/hub";
+} from "@/entities";
 
 export const TAURI_FIXTURE_COMMAND = "get_hub_event_fixtures";
 export const TAURI_RUNTIME_CAPABILITIES_COMMAND = "get_runtime_capabilities";

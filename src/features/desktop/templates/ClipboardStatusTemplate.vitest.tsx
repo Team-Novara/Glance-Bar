@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ClipboardStatusTemplate } from "./ClipboardStatusTemplate";
-import { mockClipboardState } from "../../../test/fixtures";
+import { mockClipboardState } from "../../../shared/test-util/fixtures";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue(undefined),

@@ -31,7 +31,7 @@ import {
   createMockNotificationProvider,
 } from "./index";
 import type { HubProvider } from "../../core/types";
-import type { HubEvent, NotificationState } from "../../../types/hub";
+import type { HubEvent, NotificationState } from "@/entities";
 
 // ── Fixtures ─────────────────────────────────────────────────────────
 

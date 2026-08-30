@@ -5,7 +5,7 @@ import {
   createMockProvider,
   resolveNow,
 } from "./shared";
-import type { HubEvent } from "../../../types/hub";
+import type { HubEvent } from "@/entities";
 import type {
   HubProvider,
   MockProviderOptions,

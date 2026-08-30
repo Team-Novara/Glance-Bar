@@ -4,4 +4,3 @@ export * from './window';
 export * from './scheduler';
 export * from './system';
 export * from './actions';
-export * from './product';

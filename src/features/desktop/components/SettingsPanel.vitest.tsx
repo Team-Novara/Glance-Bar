@@ -10,7 +10,7 @@ import type {
   HubProviderLifecycle,
   HubProviderMetadata,
 } from '@/providers';
-import type { DesktopStatusKind, DesktopStatusPreferences } from '@/types/hub';
+import type { DesktopStatusKind, DesktopStatusPreferences } from "@/entities";
 
 vi.mock('@/runtime/window/autostartRuntime', () => ({
   getAutostartEnabled: vi.fn().mockResolvedValue(false),

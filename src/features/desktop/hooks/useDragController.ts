@@ -11,9 +11,23 @@ export type UseDragControllerResult = {
   handlePointerDown: (event: ReactPointerEvent<HTMLElement>) => Promise<void>;
 };
 
-export function useDragController(): UseDragControllerResult {
+export type UseDragControllerOptions = {
+  /** Current lock-position preference; synced to the drag ref each render. */
+  lockPosition?: boolean;
+};
+
+export function useDragController({
+  lockPosition,
+}: UseDragControllerOptions = {}): UseDragControllerResult {
   const isDraggingRef = useRef(false);
   const lockPositionRef = useRef(false);
+
+  // Sync the lock-position preference to the drag controller ref.
+  // This is a render-time ref write — it's safe because the drag controller
+  // reads the ref lazily inside its event handler, not synchronously during
+  // render. Doing it via useEffect would just push the write one frame later
+  // and risk a window where the drag controller sees a stale value.
+  lockPositionRef.current = lockPosition ?? false;
 
   const handlePointerDown = useCallback(async (event: ReactPointerEvent<HTMLElement>) => {
     if (lockPositionRef.current || event.button !== 0) {

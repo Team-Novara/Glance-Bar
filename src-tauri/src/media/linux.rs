@@ -1,3 +1,33 @@
-// TODO Stage6: MPRIS D-Bus via zbus
-#[cfg(target_os = "linux")]
-pub fn get_media_status() {}
+// ---------------------------------------------------------------------------
+// Linux Media Session stub — MPRIS D-Bus via zbus (Stage 6).
+// ---------------------------------------------------------------------------
+
+use crate::types::MediaSessionStatus;
+use super::PlatformMediaProvider;
+
+/// Read the current media session status. Linux is not yet supported; returns
+/// an `unsupported` status.
+fn read_media_session_status_at(checked_at: u64) -> MediaSessionStatus {
+    MediaSessionStatus {
+        available: false,
+        playback_status: "unsupported",
+        progress: 0,
+        position_ms: None,
+        duration_ms: None,
+        title: String::new(),
+        artist: String::new(),
+        code: "unsupported",
+        checked_at,
+    }
+}
+
+/// Concrete Linux implementor of [`PlatformMediaProvider`].
+pub struct LinuxMediaProvider;
+
+impl PlatformMediaProvider for LinuxMediaProvider {
+    type Cache = ();
+
+    fn read_status(_cache: &mut Option<Self::Cache>, checked_at: u64) -> MediaSessionStatus {
+        read_media_session_status_at(checked_at)
+    }
+}

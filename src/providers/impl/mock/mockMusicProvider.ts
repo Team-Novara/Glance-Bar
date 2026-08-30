@@ -7,7 +7,7 @@ import {
   createTickingProvider,
   resolveNow,
 } from "./shared";
-import type { HubEvent, MusicState } from "../../../types/hub";
+import type { HubEvent, MusicState } from "@/entities";
 import type {
   HubProvider,
   HubProviderCapability,

@@ -2,7 +2,7 @@ import { useCallback, type RefObject } from "react";
 
 import { scheduleOverlayStartupReassert } from "@/runtime/window/statusWindowRuntime";
 import type { StatusWindowOverlayState } from "@/runtime/window/statusWindowRuntime";
-import type { DesktopStatusPreferences } from "@/types/hub";
+import type { DesktopStatusPreferences } from "@/entities";
 
 export type UseSettingsActionsOptions = {
   preferences: DesktopStatusPreferences;

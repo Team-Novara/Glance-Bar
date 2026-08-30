@@ -1,6 +1,6 @@
 import { Bell, Bot, Download, Layers3, Music2, PanelTop, Sparkles } from "lucide-react";
 
-import type { HubMode } from "../../../types/hub";
+import type { HubMode } from "@/entities";
 
 type ModeSidebarProps = {
   activeMode: HubMode;

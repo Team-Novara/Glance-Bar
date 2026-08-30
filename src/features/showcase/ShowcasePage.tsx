@@ -31,7 +31,7 @@ import {
   type HubDemoScenarioId,
 } from "../../state/hubScenarios";
 import { createHubEventBus } from "../../state/hubState";
-import type { HubMode, HubStoreState } from "../../types/hub";
+import type { HubMode, HubStoreState } from "@/entities";
 
 type ProviderDemoId = "music" | "ai" | "download" | "notification";
 

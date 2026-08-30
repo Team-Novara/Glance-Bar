@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import i18n from "../i18n";
+import i18n from "@/i18n";
 import {
   getDesktopStatusTemplateDescriptors,
   createDesktopStatusStateTemplates,
@@ -7,8 +7,8 @@ import {
   getDesktopStatusLabels,
   getDesktopStatusShellCopy,
   getDesktopStatusSettingsCopy,
-} from "./desktopStatusConfig";
-import type { SystemPerformanceMetric } from "../types/hub";
+} from "@/entities/status/config";
+import type { SystemPerformanceMetric } from "@/entities/status/performance";
 
 import { describe, it } from "vitest";
 describe("mockHubData.test", () => {

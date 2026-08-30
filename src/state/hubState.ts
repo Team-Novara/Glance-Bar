@@ -7,7 +7,7 @@ import type {
   HubStoreState,
   HubTask,
   SystemPerformancePayload,
-} from "../types/hub";
+} from "@/entities";
 
 const taskAccentMap: Record<string, HubTask["accent"]> = {
   music: "pink",

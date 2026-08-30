@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 
 import { FluentIconChip } from "./ShowcaseFluentTokens";
-import type { NotificationState } from "../../../types/hub";
+import type { NotificationState } from "@/entities";
 
 type NotificationHubProps = {
   notification: NotificationState;

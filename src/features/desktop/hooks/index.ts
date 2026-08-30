@@ -1,8 +1,11 @@
+export { useAppWindow } from "./useAppWindow";
+export { useAutostart } from "./useAutostart";
 export { useContextMenu } from "./useContextMenu";
 export { useDesktopStatusRuntime } from "./useDesktopStatusRuntime";
 export { useDragController } from "./useDragController";
 export { useOverlayPolicy } from "./useOverlayPolicy";
 export { usePreferences } from "./usePreferences";
+export { useRefreshAction } from "./useRefreshAction";
 export { useSettingsActions } from "./useSettingsActions";
 export { useSettingsUI } from "./useSettingsUI";
 export { useSystemPerformance } from "./useSystemPerformance";

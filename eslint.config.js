@@ -101,6 +101,54 @@ export default tseslint.config(
         },
       ],
 
+      // FSD directory boundaries (STRUCTURE_REFACTOR_PLAN.md §3).
+      // `eslint-plugin-boundaries` is not yet installed; we use the
+      // already-present `eslint-plugin-import` zone rule as the gate.
+      // NOTE: escalate from "warn" to "error" once violations are cleared (plan §9).
+      "import/no-restricted-paths": [
+        "warn",
+        {
+          zones: [
+            // features -> entities, shared, providers ONLY (NEVER runtime directly)
+            {
+              target: "src/features",
+              from: "src",
+              except: ["src/features", "src/entities", "src/shared", "src/providers"],
+            },
+            // providers -> entities, shared, runtime
+            {
+              target: "src/providers",
+              from: "src",
+              except: ["src/providers", "src/entities", "src/shared", "src/runtime"],
+            },
+            // runtime -> entities, shared ONLY (NEVER features, NEVER providers)
+            {
+              target: "src/runtime",
+              from: "src",
+              except: ["src/runtime", "src/entities", "src/shared"],
+            },
+            // entities -> import nothing inside src
+            {
+              target: "src/entities",
+              from: "src",
+              except: ["src/entities"],
+            },
+            // shared -> import nothing inside src
+            {
+              target: "src/shared",
+              from: "src",
+              except: ["src/shared"],
+            },
+            // state -> entities, shared ONLY
+            {
+              target: "src/state",
+              from: "src",
+              except: ["src/state", "src/entities", "src/shared"],
+            },
+          ],
+        },
+      ],
+
       // Base eslint
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "no-empty": ["error", { allowEmptyCatch: true }],

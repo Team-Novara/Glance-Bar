@@ -92,7 +92,7 @@ cargo check && cargo clippy
 ```
 
 - Every `Resolver`/`Scheduler`/`Provider` change **must** have vitest; priority/order changes need snapshot tests (`TEMPLATE_ORDER` `desktopStatusConfig.ts`)
-- Shared `src/test/fixtures.ts` `mock*State` + `mockSourceHealth` is canonical — never hand-roll health objects
+- Shared `src/shared/test-util/fixtures.ts` `mock*State` + `mockSourceHealth` is canonical — never hand-roll health objects
 - Coverage: `vitest --coverage` target 80% for `providers/` `runtime/` `state/`
 
 ## 7. Docs

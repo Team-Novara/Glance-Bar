@@ -7,7 +7,7 @@ import {
   type HubDemoScenarioId,
 } from "./hubScenarios";
 import { createHubEventBus, type HubEventBus } from "./hubState";
-import type { HubEvent, HubMode } from "../types/hub";
+import type { HubEvent, HubMode } from "@/entities";
 
 const BASE_NOW = Date.UTC(2026, 5, 14, 9, 0, 0);
 

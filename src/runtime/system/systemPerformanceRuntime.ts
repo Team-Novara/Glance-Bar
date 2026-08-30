@@ -1,7 +1,7 @@
-import { systemPerformanceMetrics } from "../../data/mockHubData";
+import { systemPerformanceMetrics } from "@/providers/impl/mock/mockHubData";
 import i18n from "../../i18n";
 import { isRecord } from "../../shared/lib/runtimeGuards";
-import type { SystemPerformanceMetric, SystemPerformanceSnapshot } from "../../types/hub";
+import type { SystemPerformanceMetric, SystemPerformanceSnapshot } from "@/entities";
 import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const TAURI_SYSTEM_PERFORMANCE_COMMAND = "get_system_performance";

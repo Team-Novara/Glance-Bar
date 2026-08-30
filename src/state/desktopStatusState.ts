@@ -2,7 +2,7 @@ import { scheduleDesktopStatus } from "./desktopStatusScheduler";
 import {
   DESKTOP_STATUS_TEMPLATE_ORDER,
   createDesktopStatusStateTemplates,
-} from "../data/desktopStatusConfig";
+} from "@/entities/status/config";
 import type {
   DesktopStatusKind,
   DesktopStatusResolverInput,
@@ -10,7 +10,7 @@ import type {
   DesktopStatusStateMap,
   SystemPerformanceMetric,
   SystemPerformanceSourceStatus,
-} from "../types/hub";
+} from "@/entities";
 
 const DESKTOP_STATUS_DEFAULT_KIND: DesktopStatusKind = "resident";
 

@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { useDesktopStatusRuntime } from "./useDesktopStatusRuntime";
-import { mockMetrics } from "@/test/fixtures";
-import type { SystemPerformanceMetric } from "../../types/hub";
+import { createHubEventBus } from "@/state/hubState";
+import type { HubEventBus } from "@/state/hubState";
+import { createSchedulerService } from "@/runtime/scheduler/schedulerService";
+import { defaultDesktopRuntimeDependencies } from "./desktopRuntimeDependencies";
+import type { DesktopRuntimeDependencies } from "./desktopRuntimeDependencies";
+import type { ProviderManager } from "@/providers";
+import { DESKTOP_STATUS_TEMPLATE_ORDER } from "@/entities/status/config";
+import { mockMetrics } from "@/shared/test-util/fixtures";
+import type { SystemPerformanceMetric } from "@/entities";
 
 // We don't want the real ProviderManager wiring up Tauri listeners in
 // jsdom — the Tauri `listen()` function isn't available, the
@@ -90,5 +97,51 @@ describe("useDesktopStatusRuntime", () => {
 
     expect(result.current.setActiveStatusKind).toBe(firstSetters.setActiveStatusKind);
     expect(result.current.setPreferredUntil).toBe(firstSetters.setPreferredUntil);
+  });
+
+  it("uses injected dependencies instead of constructing real core objects", () => {
+    const createEventBus = vi.fn((): HubEventBus => createHubEventBus());
+    const createManager = vi.fn(
+      (): ProviderManager =>
+        ({
+          registry: {
+            list: vi.fn(() => []),
+          },
+          start: vi.fn(),
+          stop: vi.fn(),
+          listProviderIds: vi.fn(() => []),
+        }) as unknown as ProviderManager,
+    );
+    const createScheduler = vi.fn(() => createSchedulerService());
+    const dependencies: DesktopRuntimeDependencies = {
+      createEventBus,
+      createProviderManager: createManager,
+      createSchedulerService: createScheduler,
+    };
+
+    const { result } = renderHook(() =>
+      useDesktopStatusRuntime(baseMetrics, "fallback", dependencies),
+    );
+
+    // Every factory is consulted exactly once, and the fake manager — not a
+    // real one with Tauri-backed providers — is what the hook exposes.
+    expect(createEventBus).toHaveBeenCalledTimes(1);
+    expect(createManager).toHaveBeenCalledTimes(1);
+    expect(createScheduler).toHaveBeenCalledTimes(1);
+    expect(result.current.providerManager).toBe(createManager.mock.results[0]?.value);
+    expect(result.current.providerRecords).toEqual([]);
+    // With the fake manager publishing nothing, the resolver still produces a
+    // valid kind — proving the hook renders end-to-end on injected fakes.
+    expect(DESKTOP_STATUS_TEMPLATE_ORDER).toContain(result.current.resolvedState.kind);
+  });
+
+  it("defaults to the real production dependencies when none are injected", () => {
+    const { result } = renderHook(() => useDesktopStatusRuntime(baseMetrics, "fallback"));
+
+    // The real manager registers Tauri-backed providers; the fake-path factories
+    // above must not leak into the default path.
+    expect(result.current.providerManager).toBeDefined();
+    expect(result.current.providerManager?.registry.list().length).toBeGreaterThan(0);
+    expect(defaultDesktopRuntimeDependencies.createEventBus).toBeTypeOf("function");
   });
 });

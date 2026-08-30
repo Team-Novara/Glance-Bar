@@ -5,7 +5,7 @@ import {
   type GitStatus,
   type GitStatusCode,
 } from "./realGitProvider";
-import type { HubEvent } from "../../../types/hub";
+import type { HubEvent } from "@/entities";
 import type { HubProvider } from "../../core/types";
 
 function collectEvents(provider: HubProvider): HubEvent[] {

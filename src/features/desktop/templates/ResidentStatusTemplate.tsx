@@ -6,7 +6,7 @@ import type {
   DesktopResidentState,
   SystemPerformanceMetric,
   SystemPerformanceSourceQuality,
-} from "../../../types/hub";
+} from "@/entities";
 
 type ResidentStatusTemplateProps = {
   state: DesktopResidentState;

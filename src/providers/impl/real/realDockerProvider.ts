@@ -1,4 +1,4 @@
-import type { HubEvent } from "../../../types/hub";
+import type { HubEvent } from "@/entities";
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 

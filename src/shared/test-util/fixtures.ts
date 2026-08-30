@@ -14,7 +14,7 @@ import type {
   DesktopUpdateState,
   GuestProviderSourceHealth,
   SystemPerformanceMetric,
-} from "../types/hub";
+} from "@/entities";
 
 // ── Metrics ────────────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ export function mockSourceHealth(
 ): GuestProviderSourceHealth {
   return {
     kind: "media",
-    quality: "live",
+    quality: "native",
     code: "available",
     safeToDisplay: true,
     lastCheckedAt: Date.now(),

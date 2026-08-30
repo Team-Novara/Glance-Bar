@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DownloadStatusTemplate } from "./DownloadStatusTemplate";
-import { mockDownloadState } from "../../../test/fixtures";
+import { mockDownloadState } from "../../../shared/test-util/fixtures";
 
 describe("DownloadStatusTemplate", () => {
   it("renders title, subtitle, and detail", () => {

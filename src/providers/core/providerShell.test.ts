@@ -13,7 +13,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createProviderShell } from "./providerShell";
-import type { HubEvent } from "../../types/hub";
+import type { HubEvent } from "@/entities";
 import type { HubProviderMetadata } from "./types";
 
 // ── Helpers ──────────────────────────────────────────────────────────

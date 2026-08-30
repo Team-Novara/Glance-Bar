@@ -7,7 +7,7 @@ import {
   type DockerStatus,
   type DockerStatusCode,
 } from "./realDockerProvider";
-import type { HubEvent } from "../../../types/hub";
+import type { HubEvent } from "@/entities";
 import type { HubProvider } from "../../core/types";
 
 function collectEvents(provider: HubProvider): HubEvent[] {

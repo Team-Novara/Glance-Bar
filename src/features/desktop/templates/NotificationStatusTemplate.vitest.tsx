@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { NotificationStatusTemplate } from "./NotificationStatusTemplate";
-import { mockNotificationState } from "../../../test/fixtures";
+import { mockNotificationState } from "../../../shared/test-util/fixtures";
 
 vi.mock("../../../runtime/actions/notificationDismissRuntime", () => ({
   dismissNotification: vi.fn().mockResolvedValue({ success: true }),
