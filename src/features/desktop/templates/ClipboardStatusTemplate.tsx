@@ -8,8 +8,8 @@ import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
 import type { DesktopClipboardState } from "@/entities";
+import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
 
 type ClipboardStatusTemplateProps = {
   state: DesktopClipboardState;

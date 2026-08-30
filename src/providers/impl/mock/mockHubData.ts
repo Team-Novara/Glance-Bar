@@ -1,11 +1,11 @@
 import { createSystemPerformanceMetricSnapshot } from '@/entities/status/config';
+import type { SystemPerformanceMetric } from '@/entities/status/performance';
 import type {
   HubTask,
   MusicState,
   NotificationState,
   ShowcaseStep,
 } from '@/entities/status/types';
-import type { SystemPerformanceMetric } from '@/entities/status/performance';
 
 export const systemPerformanceMetrics: SystemPerformanceMetric[] =
   createSystemPerformanceMetricSnapshot({

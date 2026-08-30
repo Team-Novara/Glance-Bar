@@ -2,10 +2,11 @@
  * Vitest global setup — initializes i18n, jest-dom matchers, and
  * auto-cleanup between tests.
  */
-import { afterEach, it, expect } from "vitest";
 import { cleanup } from "@testing-library/react";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { afterEach, it, expect } from "vitest";
+
 import "@testing-library/jest-dom/vitest";
 import en from "../../i18n/en.json";
 import zhCN from "../../i18n/zh-CN.json";
@@ -39,9 +40,9 @@ afterEach(() => {
 //     /`throws`/etc. keep working unmodified.
 // Once every legacy file migrates to native it()/expect(), delete this block.
 declare global {
-  // eslint-disable-next-line no-var
+   
   var test: (name: string, run: () => void) => void;
-  // eslint-disable-next-line no-var
+   
   var assert: {
     equal: (actual: unknown, expected: unknown, message?: string) => void;
     notEqual: (actual: unknown, expected: unknown, message?: string) => void;

@@ -5,11 +5,12 @@ import {
   createMockProvider,
   resolveNow,
 } from "./shared";
-import type { HubEvent } from "@/entities";
 import type {
   HubProvider,
   MockProviderOptions,
 } from "../../core/types";
+
+import type { HubEvent } from "@/entities";
 
 export const createMockNotificationEvent = (options: MockProviderOptions = {}): HubEvent => {
   const createdAt = resolveNow(options);

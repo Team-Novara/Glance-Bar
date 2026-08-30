@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Vite emits this as a separate chunk that loads only when the user
 // navigates to /showcase — the main bundle stays free of ~7KB of
 // showcase-only gzipped styles.
+// NOTE: CSS is a static asset, exempt from FSD boundary rules.
+// eslint-disable-next-line import/no-restricted-paths
 import "../../styles/showcase.css";
 import { EventPlaygroundPanel } from "./components/EventPlaygroundPanel";
 import { FluentStyleGuide } from "./components/FluentStyleGuide";
@@ -31,6 +33,7 @@ import {
   type HubDemoScenarioId,
 } from "../../state/hubScenarios";
 import { createHubEventBus } from "../../state/hubState";
+
 import type { HubMode, HubStoreState } from "@/entities";
 
 type ProviderDemoId = "music" | "ai" | "download" | "notification";

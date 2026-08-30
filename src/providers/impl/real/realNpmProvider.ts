@@ -1,6 +1,7 @@
-import type { HubEvent } from "@/entities";
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
+
+import type { HubEvent } from "@/entities";
 
 const PROVIDER_ID = "real-npm-provider";
 const POLL_INTERVAL_MS = 6_000;

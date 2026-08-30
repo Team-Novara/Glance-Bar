@@ -9,9 +9,9 @@ import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusRail } from "./StatusRail";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
+import type { DesktopDownloadState } from "@/entities";
 import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
 import { sendDownloadControl } from "@/runtime/actions/downloadControlRuntime";
-import type { DesktopDownloadState } from "@/entities";
 
 type DownloadStatusTemplateProps = {
   state: DesktopDownloadState;

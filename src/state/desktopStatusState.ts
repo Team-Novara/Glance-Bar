@@ -1,8 +1,5 @@
 import { scheduleDesktopStatus } from "./desktopStatusScheduler";
-import {
-  DESKTOP_STATUS_TEMPLATE_ORDER,
-  createDesktopStatusStateTemplates,
-} from "@/entities/status/config";
+
 import type {
   DesktopStatusKind,
   DesktopStatusResolverInput,
@@ -11,6 +8,10 @@ import type {
   SystemPerformanceMetric,
   SystemPerformanceSourceStatus,
 } from "@/entities";
+import {
+  DESKTOP_STATUS_TEMPLATE_ORDER,
+  createDesktopStatusStateTemplates,
+} from "@/entities/status/config";
 
 const DESKTOP_STATUS_DEFAULT_KIND: DesktopStatusKind = "resident";
 
