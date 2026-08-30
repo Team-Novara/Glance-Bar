@@ -2,10 +2,6 @@
 
 const DISMISS_NOTIFICATION_COMMAND = "dismiss_notification";
 
-export type NotificationDismissResult = {
-  success: boolean;
-};
-
 /**
  * Dismiss the active notification through the Tauri backend.
  *
@@ -19,7 +15,7 @@ export type NotificationDismissResult = {
  */
 export async function dismissNotification(
   invoke: TauriInvoke | undefined = getTauriInvoke(),
-): Promise<NotificationDismissResult | undefined> {
+): Promise<{ success: boolean } | undefined> {
   if (!invoke) {
     return undefined;
   }

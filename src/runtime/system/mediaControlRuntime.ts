@@ -4,16 +4,6 @@ const CLIPBOARD_SET_COMMAND = "set_clipboard_content";
 const CLIPBOARD_CHANGED_EVENT = "status-center://clipboard-changed";
 const MEDIA_CONTROL_COMMAND = "media_control";
 
-export type ClipboardContentPayload = {
-  text: string;
-  sourceApp: string;
-  copiedAt: number;
-};
-
-export type MediaActionResult = {
-  success: boolean;
-};
-
 export type MediaControlAction = "play-pause" | "next" | "previous";
 
 export async function setClipboardContent(
@@ -35,7 +25,7 @@ export async function setClipboardContent(
 export async function sendMediaControl(
   action: MediaControlAction,
   invoke: TauriInvoke | undefined = getTauriInvoke(),
-): Promise<MediaActionResult | undefined> {
+): Promise<{ success: boolean } | undefined> {
   if (!invoke) {
     return undefined;
   }
