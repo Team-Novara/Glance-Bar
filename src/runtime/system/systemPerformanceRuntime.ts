@@ -1,12 +1,24 @@
+import type { SystemPerformanceMetric, SystemPerformanceSnapshot } from "@/entities";
+import { createSystemPerformanceMetricSnapshot } from "@/entities/status/config";
+
 import i18n from "../../i18n";
 import { isRecord } from "../../shared/lib/runtimeGuards";
 import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
-import type { SystemPerformanceMetric, SystemPerformanceSnapshot } from "@/entities";
-import { systemPerformanceMetrics } from "@/providers/impl/mock/mockHubData";
-
 const TAURI_SYSTEM_PERFORMANCE_COMMAND = "get_system_performance";
 const DEFAULT_SYSTEM_STATUS_PREFLIGHT_TIMEOUT_MS = 1500;
+
+// Placeholder used when a caller supplies no fallback metrics. Mirrors the
+// mock provider's snapshot (providers/impl/mock/mockHubData) but is built
+// from the entities factory so runtime never imports providers —
+// runtime -> providers is a forbidden direction in the FSD zones.
+const DEFAULT_FALLBACK_METRICS: SystemPerformanceMetric[] =
+  createSystemPerformanceMetricSnapshot({
+    cpu: 23,
+    memory: 68,
+    downloadSpeed: 2_457_600,
+    uploadSpeed: 512_000,
+  });
 
 function getSystemPerformanceLabels() {
   return {
@@ -60,7 +72,7 @@ export async function loadSystemPerformance({
 
 export async function loadSystemPerformanceStatus({
   invoke = getTauriInvoke(),
-  fallbackMetrics = systemPerformanceMetrics,
+  fallbackMetrics = DEFAULT_FALLBACK_METRICS,
   lastSuccessfulSource,
   timeoutMs = DEFAULT_SYSTEM_STATUS_PREFLIGHT_TIMEOUT_MS,
 }: {

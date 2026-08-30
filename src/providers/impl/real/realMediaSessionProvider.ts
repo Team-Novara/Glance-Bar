@@ -1,3 +1,5 @@
+import type { HubEvent } from "@/entities";
+
 import {
   onMediaSessionChanged,
   type MediaSessionChangedPayload,
@@ -7,7 +9,6 @@ import { MEDIA_DISPLAY_WINDOW_MS, formatMediaTime } from "../../../shared/lib/me
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
-import type { HubEvent } from "@/entities";
 
 const PROVIDER_ID = "real-media-session-provider";
 const POLL_FALLBACK_MS = 30_000;

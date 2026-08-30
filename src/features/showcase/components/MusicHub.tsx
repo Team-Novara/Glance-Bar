@@ -1,9 +1,10 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Pause, SkipBack, SkipForward } from "lucide-react";
 
+import type { MusicState } from "@/entities";
+
 import { FluentIconChip, FluentProgressRail } from "./ShowcaseFluentTokens";
 
-import type { MusicState } from "@/entities";
 
 type MusicHubProps = {
   music: MusicState;

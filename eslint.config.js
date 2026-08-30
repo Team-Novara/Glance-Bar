@@ -51,6 +51,15 @@ export default tseslint.config(
     },
     settings: {
       react: { version: "detect" },
+      // Resolve `@/`-aliased imports through tsconfig paths so
+      // `import/no-restricted-paths` can actually see FSD boundary
+      // violations in aliased imports (not just relative paths).
+      "import/resolver": {
+        typescript: {
+          alwaysTryTypes: true,
+          project: "./tsconfig.app.json",
+        },
+      },
     },
     rules: {
       // React 19 + react-hooks 5
@@ -101,49 +110,73 @@ export default tseslint.config(
         },
       ],
 
-      // FSD directory boundaries (STRUCTURE_REFACTOR_PLAN.md §3).
+      // FSD layer boundaries (STRUCTURE_REFACTOR_PLAN.md §3, AGENTS.md §2).
       // `eslint-plugin-boundaries` is not yet installed; we use the
       // already-present `eslint-plugin-import` zone rule as the gate.
-      // NOTE: escalate from "warn" to "error" once violations are cleared (plan §9).
+      //
+      // Intended dependency matrix (G4-relaxed architecture — the ACTUAL
+      // layering, not the original "features -> entities, shared only" rule,
+      // which was superseded because hooks are infrastructure and may touch
+      // runtime/state):
+      //   app       -> everything (composition root, unrestricted)
+      //   features  -> everything (top consumer; the wall is that nothing
+      //                outside features imports INTO features — importer-side
+      //                restriction only, so that wall stays review-enforced)
+      //   providers -> providers(self), entities, shared, runtime, state
+      //                (state = EventBus hubState: the Provider -> Bus
+      //                connection IS the designed data flow)
+      //   runtime   -> runtime(self), entities, shared, state, i18n
+      //                (NEVER providers, NEVER features)
+      //   state     -> state(self), entities, shared, i18n
+      //   entities  -> entities(self), i18n (status config labels)
+      //   shared    -> shared(self), entities (runtimeGuards needs HubEvent)
+      //   i18n, styles -> leaves; importing them is unrestricted
+      //
+      // eslint-plugin-import semantics: `except` entries resolve RELATIVE TO
+      // the zone's `from` path (path.resolve(from, except)), so they must NOT
+      // repeat the "src/" prefix — `except: ["entities"]` means src/entities,
+      // while `except: ["src/entities"]` resolves to the nonexistent
+      // src/src/entities and silently excepts nothing. (The old config made
+      // exactly that mistake and flagged every import under src — 349
+      // false-positive warnings. Verified against the rule source: lib/rules
+      // /no-restricted-paths.js resolves each exception via
+      // path.resolve(absoluteFrom, exceptionPath).)
+      //
+      // NOTE: escalate from "warn" to "error" once the remaining genuine
+      // violations are cleared (plan §9).
       "import/no-restricted-paths": [
         "warn",
         {
           zones: [
-            // features -> entities, shared, providers, styles ONLY (NEVER runtime directly)
-            {
-              target: "src/features",
-              from: "src",
-              except: ["src/features", "src/entities", "src/shared", "src/providers", "src/styles"],
-            },
-            // providers -> entities, shared, runtime
+            // providers -> never features (Bus connection to state is designed)
             {
               target: "src/providers",
               from: "src",
-              except: ["src/providers", "src/entities", "src/shared", "src/runtime"],
+              except: ["providers", "entities", "shared", "runtime", "state"],
             },
-            // runtime -> entities, shared ONLY (NEVER features, NEVER providers)
+            // runtime -> never features, never providers
             {
               target: "src/runtime",
               from: "src",
-              except: ["src/runtime", "src/entities", "src/shared"],
+              except: ["runtime", "entities", "shared", "state", "i18n"],
             },
-            // entities -> import nothing inside src
-            {
-              target: "src/entities",
-              from: "src",
-              except: ["src/entities"],
-            },
-            // shared -> import nothing inside src (except test-util needs i18n)
-            {
-              target: "src/shared",
-              from: "src",
-              except: ["src/shared"],
-            },
-            // state -> entities, shared ONLY
+            // state -> never features, never providers, never runtime
             {
               target: "src/state",
               from: "src",
-              except: ["src/state", "src/entities", "src/shared"],
+              except: ["state", "entities", "shared", "i18n"],
+            },
+            // entities -> only itself + i18n (status config labels)
+            {
+              target: "src/entities",
+              from: "src",
+              except: ["entities", "i18n"],
+            },
+            // shared -> only itself + entities (runtimeGuards HubEvent types)
+            {
+              target: "src/shared",
+              from: "src",
+              except: ["shared", "entities"],
             },
           ],
         },

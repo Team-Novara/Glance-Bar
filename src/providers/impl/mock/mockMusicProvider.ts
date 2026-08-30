@@ -1,3 +1,5 @@
+import type { HubEvent, MusicState } from "@/entities";
+
 import {
   MOCK_MUSIC_PROGRESS_STEP,
   MOCK_MUSIC_TICK_MS,
@@ -14,7 +16,6 @@ import type {
   MockProviderOptions,
 } from "../../core/types";
 
-import type { HubEvent, MusicState } from "@/entities";
 
 export const createMockMusicEvent = (options: MockProviderOptions = {}): HubEvent => {
   const createdAt = resolveNow(options);

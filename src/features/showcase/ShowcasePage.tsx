@@ -6,8 +6,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // navigates to /showcase — the main bundle stays free of ~7KB of
 // showcase-only gzipped styles.
 // NOTE: CSS is a static asset, exempt from FSD boundary rules.
-// eslint-disable-next-line import/no-restricted-paths
+ 
 import "../../styles/showcase.css";
+import type { HubMode, HubStoreState } from "@/entities";
+
 import { EventPlaygroundPanel } from "./components/EventPlaygroundPanel";
 import { FluentStyleGuide } from "./components/FluentStyleGuide";
 import { HubShell } from "./components/HubShell";
@@ -34,7 +36,6 @@ import {
 } from "../../state/hubScenarios";
 import { createHubEventBus } from "../../state/hubState";
 
-import type { HubMode, HubStoreState } from "@/entities";
 
 type ProviderDemoId = "music" | "ai" | "download" | "notification";
 

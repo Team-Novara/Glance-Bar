@@ -1,3 +1,5 @@
+import type { HubEvent } from "@/entities";
+
 import {
   MOCK_NOTIFICATION_DURATION_MS,
   createMockCapabilities,
@@ -10,7 +12,6 @@ import type {
   MockProviderOptions,
 } from "../../core/types";
 
-import type { HubEvent } from "@/entities";
 
 export const createMockNotificationEvent = (options: MockProviderOptions = {}): HubEvent => {
   const createdAt = resolveNow(options);

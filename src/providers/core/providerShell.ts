@@ -1,3 +1,5 @@
+import type { HubEvent } from "@/entities";
+
 import type {
   HubProvider,
   HubProviderCapability,
@@ -6,7 +8,6 @@ import type {
   HubProviderStatus,
 } from "./types";
 
-import type { HubEvent } from "@/entities";
 
 export type ProviderShellHandle = {
   emit(events: HubEvent[]): void;

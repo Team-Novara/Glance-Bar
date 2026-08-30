@@ -160,14 +160,16 @@ src-tauri/src/
 Dependency rule (enforced by `eslint-plugin-boundaries` + `import/no-restricted-paths`):
 
 ```
-app -> features -> entities, providers, runtime, shared
-features -> entities, shared (NEVER runtime directly; desktop page via providers only)
-providers -> entities, shared, runtime        (providers is the ONLY layer allowed into runtime)
-runtime -> entities, shared (NEVER features, NEVER providers)
-shared -> (nothing inside src)
+app -> features -> (everything below)
+features -> entities, shared, providers, runtime, state, i18n, styles (top consumer, no restriction)
+providers -> entities, shared, runtime, state (Bus connection is the designed data flow)
+runtime -> entities, shared, state, i18n (NEVER features, NEVER providers)
+state -> entities, shared, i18n (NEVER features, NEVER providers, NEVER runtime)
+entities -> entities, i18n (config.ts i18n exception documented)
+shared -> shared, entities (runtimeGuards HubEvent types documented)
 ```
 
-**Key invariant:** `providers` is the **sole** consumer of `runtime`. `features/` talks to providers through `ProviderManager`, never calls `invoke` itself. This makes the data flow `Provider → Bus → Store → Resolver → UI` enforceable by lint, not convention.
+**Key invariant:** the wall protects the **leaf and data layers** — nothing imports INTO `features`; `providers` never imports UI; `runtime`/`state` never import each other's upstream. Data flow `Provider → Bus → Store → Resolver → UI` stays enforceable by lint. Hooks in `features/` may touch `runtime/` (G4 relaxed the original strict rule — they are infrastructure hooks, and the actual enforced zones live in `eslint.config.js`).
 
 ## 4. Five Minimal Rules
 

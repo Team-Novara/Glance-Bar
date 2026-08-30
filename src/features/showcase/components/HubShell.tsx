@@ -1,13 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 
-import { AiProgressHub } from "./AiProgressHub";
-import { DownloadHub } from "./DownloadHub";
-import { IdleHub } from "./IdleHub";
-import { MultiTaskHub } from "./MultiTaskHub";
-import { MusicHub } from "./MusicHub";
-import { NotificationHub } from "./NotificationHub";
-import { GlassPanel } from "../../../shared/ui/GlassPanel";
-
 import type { HubMode, HubTask, MusicState, NotificationState } from "@/entities";
 import {
   aiTask,
@@ -16,6 +8,15 @@ import {
   musicState,
   notificationState,
 } from "@/providers/impl/mock/mockHubData";
+
+import { AiProgressHub } from "./AiProgressHub";
+import { DownloadHub } from "./DownloadHub";
+import { IdleHub } from "./IdleHub";
+import { MultiTaskHub } from "./MultiTaskHub";
+import { MusicHub } from "./MusicHub";
+import { NotificationHub } from "./NotificationHub";
+import { GlassPanel } from "../../../shared/ui/GlassPanel";
+
 
 type HubShellProps = {
   mode: HubMode;

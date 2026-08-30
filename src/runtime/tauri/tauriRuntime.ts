@@ -1,13 +1,5 @@
 import { invoke as invokeCommand, isTauri } from "@tauri-apps/api/core";
 
-import {
-  isFiniteNumber,
-  isOptionalNumber,
-  isRecord,
-  parseHubEvents,
-  snapshotHubEvent,
-} from "../../shared/lib/runtimeGuards";
-
 import type {
   DesktopGuestStatusKind,
   GuestProviderDiagnosticCode,
@@ -16,6 +8,15 @@ import type {
   GuestProviderSourceQuality,
   HubEvent,
 } from "@/entities";
+
+import {
+  isFiniteNumber,
+  isOptionalNumber,
+  isRecord,
+  parseHubEvents,
+  snapshotHubEvent,
+} from "../../shared/lib/runtimeGuards";
+
 
 export const TAURI_FIXTURE_COMMAND = "get_hub_event_fixtures";
 export const TAURI_RUNTIME_CAPABILITIES_COMMAND = "get_runtime_capabilities";

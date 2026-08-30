@@ -1,4 +1,3 @@
-import { scheduleDesktopStatus } from "./desktopStatusScheduler";
 
 import type {
   DesktopStatusKind,
@@ -12,6 +11,8 @@ import {
   DESKTOP_STATUS_TEMPLATE_ORDER,
   createDesktopStatusStateTemplates,
 } from "@/entities/status/config";
+
+import { scheduleDesktopStatus } from "./desktopStatusScheduler";
 
 const DESKTOP_STATUS_DEFAULT_KIND: DesktopStatusKind = "resident";
 

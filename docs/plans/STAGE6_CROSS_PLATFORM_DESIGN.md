@@ -2,7 +2,7 @@
 
 > **Goal:** `Glance Bar` runs on **Windows / macOS / Linux** from one codebase.
 > **Baseline:** Windows is fully implemented. macOS/Linux are compilable stubs returning `unsupported`.
-> **Status:** trait structure in place (from G1a/G1b). This doc fills the implementation design.
+> **Status:** trait structure in place (from G1a/G1b). Phase 1 done (Wave 1): platform deps added (§5), 3-OS CI matrix live (§7). Phases 2-6 need real hardware.
 
 ## 1. Current State
 
@@ -21,8 +21,8 @@
 
 - macOS: NSWindow chrome, NSWorkspace fullscreen, MediaPlayer NowPlaying, DND/Focus
 - Linux: X11/Wayland window, EWMH fullscreen, MPRIS D-Bus, freedesktop Notifications
-- Dependencies: `objc2`* (macOS), `x11rb`/`zbus` (Linux) — NOT yet in Cargo.toml
-- CI: only Windows runner today
+- ~~Dependencies: `objc2`* (macOS), `x11rb`/`zbus` (Linux) — NOT yet in Cargo.toml~~ ✅ added (Wave 1, versions per §5)
+- ~~CI: only Windows runner today~~ ✅ 3-OS matrix added (`ci.yml` rust job, per §7)
 
 ## 2. Architecture
 
@@ -48,15 +48,19 @@ use crate::window::linux::LinuxPolicy as ActivePolicy;
 windows-sys = { ... }
 windows = { ... }
 
+# Aligned with the objc2 0.6.x / 0.3.x family that tauri / tray-icon / muda /
+# arboard already resolve on macOS (see §5 for the version rationale).
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.5"
-objc2-foundation = "0.2"
-objc2-app-kit = "0.2"
-objc2-media-player = "0.2"
+objc2 = "0.6"
+objc2-foundation = "0.3"
+objc2-app-kit = "0.3"
+objc2-media-player = "0.3"
 
+# x11rb 0.13 + zbus 5 match what arboard / global-hotkey / tauri-plugin-opener
+# already lock on Linux (see §5).
 [target.'cfg(target_os = "linux")'.dependencies]
 x11rb = "0.13"
-zbus = "4"
+zbus = "5"
 ```
 
 **Rule:** macOS code lives in `#[cfg(target_os = "macos")]` blocks. Linux code in `#[cfg(target_os = "linux")]`. Windows code in `#[cfg(windows)]`. No cross-contamination.
@@ -103,10 +107,12 @@ pub trait PlatformMediaProvider {
 
 | Crate | Version | Why |
 |---|---|---|
-| `objc2` | 0.5 | ObjC runtime bindings |
-| `objc2-foundation` | 0.2 | NSString, NSDictionary, NSArray |
-| `objc2-app-kit` | 0.2 | NSWindow, NSScreen, NSWorkspace |
-| `objc2-media-player` | 0.2 | MPNowPlayingInfoCenter, MPRemoteCommandCenter |
+| `objc2` | 0.6 | ObjC runtime bindings |
+| `objc2-foundation` | 0.3 | NSString, NSDictionary, NSArray |
+| `objc2-app-kit` | 0.3 | NSWindow, NSScreen, NSWorkspace |
+| `objc2-media-player` | 0.3 | MPNowPlayingInfoCenter, MPRemoteCommandCenter |
+
+> Versions differ from the original design draft (0.5/0.2) on purpose — see the §5 rationale. The 0.6/0.3 family is what tauri's existing macOS stack already resolves.
 
 #### Window chrome (`window/macos.rs`)
 
@@ -145,7 +151,7 @@ macOS WebView is positioned by Tauri at startup. The pill sits above the dock. `
 | Crate | Version | Why |
 |---|---|---|
 | `x11rb` | 0.13 | X11 protocol client (Rust-native, no C deps) |
-| `zbus` | 4 | D-Bus client (MPRIS + Notifications) |
+| `zbus` | 5 | D-Bus client (MPRIS + Notifications) |
 | `wayland-client` | 0.31 | (optional) Wayland layer-shell — only if targeting Wayland-only distros |
 
 **Decision:** Start with X11 (`x11rb`). Wayland is a separate session protocol — most "tray + taskbar skip" still works via XWayland. Add native Wayland later if needed.
@@ -182,18 +188,43 @@ macOS WebView is positioned by Tauri at startup. The pill sits above the dock. `
 ## 5. Dependency Matrix
 
 ```toml
-# src-tauri/Cargo.toml — add these
+# src-tauri/Cargo.toml — actual (Wave 1)
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.5"
-objc2-foundation = "0.2"
-objc2-app-kit = "0.2"
-objc2-media-player = "0.2"
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSString", "NSDictionary", "NSArray"] }
+objc2-app-kit = { version = "0.3", features = ["NSWindow", "NSScreen", "NSWorkspace"] }
+objc2-media-player = { version = "0.3", features = ["MPNowPlayingInfoCenter", "MPRemoteCommandCenter"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
-zbus = "4"
+zbus = "5"
 ```
+
+### Version rationale — alignment with tauri's resolved stack
+
+The original draft (this doc, pre-Wave-1) named `objc2 0.5` / `objc2-* 0.2` and
+`zbus 4`, which were current at design time. Those versions were **deliberately
+not** used when the deps were actually added, because the rest of the
+workspace already locks a newer family:
+
+- **macOS:** `tauri`, `tray-icon`, `muda`, and `arboard` all resolve the
+  `objc2 0.6.x` / `objc2-foundation|app-kit|media-player 0.3.x` family on the
+  macOS target. Pinning the draft's `0.5`/`0.2` would compile a **second,
+  duplicate ObjC runtime binding stack** into every macOS build (two copies of
+  the objc2 runtime crate via cargo's semver-parallel resolution), inflating
+  build time and binary size for zero benefit.
+- **Linux:** `arboard` / `global-hotkey` already pull `x11rb 0.13` and
+  `tauri-plugin-opener` already pulls `zbus 5.x` on Linux. The draft's
+  `zbus "4"` would likewise compile a second full D-Bus stack (zbus 4 + zbus 5
+  coexist as separate crates) into every Linux build.
+
+**Rule:** before adding any platform dependency, check what the existing
+workspace (tauri + plugins) already resolves with `cargo tree
+--manifest-path src-tauri/Cargo.toml -e no-dev` on that platform, and align
+versions with the already-locked family. Feature flags are the only thing we
+add on top (e.g. `allow-unsafe-code` on `x11rb`, the specific `objc2-*`
+framework features).
 
 **Windows deps stay unchanged.** No crate is added to `[dependencies]` (common) — all platform-specific.
 
@@ -205,9 +236,9 @@ zbus = "4"
 
 **Can be done NOW without macOS/Linux hardware.**
 
-- [ ] Add macOS/Linux deps to Cargo.toml
-- [ ] Verify `cargo check` passes on Windows (deps are `cfg`-gated, won't break Windows build)
-- [ ] Add CI matrix: `cargo check` on `windows-latest`, `macos-latest`, `ubuntu-latest`
+- [x] Add macOS/Linux deps to Cargo.toml (Wave 1 — versions aligned with tauri's stack, see §5)
+- [x] Verify `cargo check` passes on Windows (deps are `cfg`-gated, won't break Windows build)
+- [x] Add CI matrix: `cargo check` on `windows-latest`, `macos-latest`, `ubuntu-latest` (Wave 1 — `ci.yml` rust job)
 - [ ] Write trait-level docs + per-method pseudocode comments in stubs
 - [ ] Create tracking issues for each platform function (see §8)
 
@@ -265,23 +296,29 @@ zbus = "4"
 
 ## 7. CI Strategy
 
-### Matrix (`.github/workflows/ci.yml`)
+### Matrix (`.github/workflows/ci.yml` — actual, live as of Wave 1)
 
 ```yaml
 jobs:
   rust:
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3-platform check per this doc §7 — catches cfg-gated code
+        # that only compiles on its own platform.
+        os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with: { components: clippy, rustfmt }
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check --manifest-path src-tauri/Cargo.toml
-      - run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all --allow clippy::module_name_repetitions
-      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - name: Cargo check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: Cargo clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all -W clippy::pedantic --allow clippy::module_name_repetitions
+      - name: Cargo fmt check
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 ```
 
 **Why `cargo check` not `cargo build`?** Building Tauri on CI needs system deps (WebKitGTK on Linux, Xcode on macOS) that slow down CI. `check` verifies compilation without the full link step. Local `cargo tauri dev` is the real build test.
@@ -346,6 +383,10 @@ Each platform function gets one issue. Template:
 | 13 | [macOS] Read DND status | 6 | ✅ Mac |
 | 14 | [linux] Read notification DND | 6 | ✅ Linux |
 
+**Status:** issues **#1** and **#2** are complete (Wave 1 — deps added with
+tauri-aligned versions per §5; CI rust job runs the 3-OS matrix per §7).
+No separate GitHub issues were filed for them; this checklist is the record.
+
 ---
 
 ## 9. Risks & Mitigations
@@ -370,7 +411,7 @@ Stage 6 is **done** when:
 - [ ] Linux: pill window chrome works (same as macOS)
 - [ ] macOS: media session reads from MPNowPlayingInfoCenter
 - [ ] Linux: media session reads from MPRIS D-Bus
-- [ ] No regression on Windows (existing 699/699 tests + manual media/clipboard/focus)
+- [ ] No regression on Windows (existing 701/701 tests + manual media/clipboard/focus)
 
 **Stretch:** Focus/DND status on macOS + Linux.
 

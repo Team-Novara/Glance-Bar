@@ -63,9 +63,13 @@ jobs:
         run: npm run test:vitest:runtime
       - name: Run component & aggregation tests
         run: npx vitest run --reporter=verbose
+      # Coverage gate: fails the job when providers/runtime/state drop
+      # below 80% lines/functions. The include globs are passed as
+      # repeated flags on purpose — a single comma-separated value is
+      # parsed as one literal glob matching no files, which makes the
+      # thresholds pass vacuously (0 files measured).
       - name: Run tests with coverage (threshold 80% for providers/runtime/state)
-        run: npx vitest run --coverage --coverage.provider=v8 --coverage.reportsDirectory=coverage --coverage.thresholds.lines=80 --coverage.thresholds.functions=80 --coverage.include="src/providers/**,src/runtime/**,src/state/**"
-        continue-on-error: true
+        run: npx vitest run --coverage --coverage.provider=v8 --coverage.reportsDirectory=coverage --coverage.thresholds.lines=80 --coverage.thresholds.functions=80 --coverage.include="src/providers/**" --coverage.include="src/runtime/**" --coverage.include="src/state/**"
 
   typecheck:
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
@@ -84,10 +88,25 @@ jobs:
 
   rust:
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
-    name: rust (check + clippy + fmt)
-    runs-on: windows-latest
+    name: rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3-platform check per STAGE6_CROSS_PLATFORM_DESIGN.md §7 —
+        # catches cfg-gated code that only compiles on its own platform.
+        os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
+      # Tauri's Linux build chain (gtk/webkit crates) needs the dev headers
+      # even for `cargo check` — glib-sys's build script shells out to
+      # pkg-config and fails without libglib2.0-dev. webkit2gtk-4.1-dev pulls
+      # in the rest of the gtk stack as dependencies.
+      - name: Install Linux build deps (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libglib2.0-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
