@@ -1,13 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { DESKTOP_STATUS_TEMPLATE_ORDER } from "@/data/desktopStatusConfig";
-import i18n from "@/i18n";
-import { createProviderManager, type ProviderManager } from "@/providers";
-import type { ProviderRegistryRecord } from "@/providers";
-import { createSchedulerService, DESKTOP_STATUS_PREFERRED_WINDOW_MS } from "@/runtime/scheduler/schedulerService";
-import { aggregateDesktopStatusInput } from "@/state/desktopStatusAggregation";
-import { resolveDesktopStatusState } from "@/state/desktopStatusState";
-import { createHubEventBus } from "@/state/hubState";
+import {
+  defaultDesktopRuntimeDependencies,
+  type DesktopRuntimeDependencies,
+} from "./desktopRuntimeDependencies";
+
 import type {
   DesktopStatusKind,
   DesktopStatusState,
@@ -15,7 +12,14 @@ import type {
   HubStoreState,
   SystemPerformanceMetric,
   SystemPerformancePayload,
-} from "@/types/hub";
+} from "@/entities";
+import { DESKTOP_STATUS_TEMPLATE_ORDER } from "@/entities/status/config";
+import i18n from "@/i18n";
+import type { ProviderManager } from "@/providers";
+import type { ProviderRegistryRecord } from "@/providers";
+import { DESKTOP_STATUS_PREFERRED_WINDOW_MS } from "@/runtime/scheduler/schedulerService";
+import { aggregateDesktopStatusInput } from "@/state/desktopStatusAggregation";
+import { resolveDesktopStatusState } from "@/state/desktopStatusState";
 
 function systemPayloadToMetrics(payload: SystemPerformancePayload): SystemPerformanceMetric[] {
   return [
@@ -83,20 +87,32 @@ export type UseDesktopStatusRuntimeResult = {
   providerRecords: ProviderRegistryRecord[];
 };
 
+/**
+ * Runs the desktop status runtime: event bus + provider manager + scheduler.
+ *
+ * The optional `dependencies` parameter is an injection seam (see
+ * `desktopRuntimeDependencies.ts`): production callers omit it and get the
+ * real constructors; tests pass fakes so the hook can be exercised without
+ * wiring up Tauri-backed providers. The third argument is backward-compatible
+ * — existing two-argument callers are unaffected.
+ */
 export function useDesktopStatusRuntime(
   metrics: SystemPerformanceMetric[],
   systemPerformanceSourceQuality: string,
+  dependencies: DesktopRuntimeDependencies = defaultDesktopRuntimeDependencies,
 ): UseDesktopStatusRuntimeResult {
-  const busRef = useRef(createHubEventBus());
-  const managerRef = useRef<ProviderManager | undefined>(undefined);
-  const schedulerRef = useRef(createSchedulerService());
-
-  if (!managerRef.current) {
-    managerRef.current = createProviderManager(busRef.current, {
+  // Lazy useState initializers (not `useRef(factory())`, which would invoke
+  // the factories on every render and discard the result) hold the runtime
+  // objects for the lifetime of the hook instance, exactly once each. They
+  // come from the injected factories so tests can substitute fakes.
+  const [bus] = useState(() => dependencies.createEventBus());
+  const [scheduler] = useState(() => dependencies.createSchedulerService());
+  const [manager] = useState(() =>
+    dependencies.createProviderManager(bus, {
       realProviders: true,
       mockProviders: false,
-    });
-  }
+    }),
+  );
 
   const [hubState, setHubState] = useState<HubStoreState>({
     events: [],
@@ -108,17 +124,13 @@ export function useDesktopStatusRuntime(
   const [, setScheduledKind] = useState<DesktopStatusKind>("resident");
 
   const [providerRecords, setProviderRecords] = useState<ProviderRegistryRecord[]>(() =>
-    managerRef.current?.registry.list() ?? [],
+    manager.registry.list(),
   );
   const refreshProviderRecords = useCallback(() => {
-    setProviderRecords(managerRef.current?.registry.list() ?? []);
-  }, []);
+    setProviderRecords(manager.registry.list());
+  }, [manager]);
 
   useEffect(() => {
-    const manager = managerRef.current;
-    const bus = busRef.current;
-    const scheduler = schedulerRef.current;
-
     const unsubscribeBus = bus.subscribe((busState) => {
       setHubState((prev) => ({
         ...prev,
@@ -133,18 +145,18 @@ export function useDesktopStatusRuntime(
       setScheduledKind(decision.kind);
     });
 
-    manager?.start();
+    manager.start();
     scheduler.start();
     refreshProviderRecords();
 
     return () => {
-      manager?.stop();
+      manager.stop();
       scheduler.stop();
       refreshProviderRecords();
       unsubscribeBus();
       unsubscribeScheduler();
     };
-  }, [refreshProviderRecords]);
+  }, [bus, manager, scheduler, refreshProviderRecords]);
 
   const aggregatedStatus = useMemo(
     () =>
@@ -165,18 +177,18 @@ export function useDesktopStatusRuntime(
 
   const now = Date.now();
 
-  schedulerRef.current.updateKinds(
+  scheduler.updateKinds(
     aggregatedStatus.activeKinds,
     aggregatedStatus.availableKinds ?? [],
   );
 
   if (activeStatusKind && preferredUntil && preferredUntil > now) {
-    schedulerRef.current.setPreferred(activeStatusKind, preferredUntil);
+    scheduler.setPreferred(activeStatusKind, preferredUntil);
   } else {
-    schedulerRef.current.clearPreferred();
+    scheduler.clearPreferred();
   }
 
-  const schedulerSnapshot = schedulerRef.current.getSnapshot();
+  const schedulerSnapshot = scheduler.getSnapshot();
   const resolvedState = resolveDesktopStatusState({
     metrics: effectiveMetrics,
     systemPerformanceSourceStatus: {
@@ -225,7 +237,7 @@ export function useDesktopStatusRuntime(
     setPreferredUntil,
     refreshRuntime,
     preferredWindowMs: DESKTOP_STATUS_PREFERRED_WINDOW_MS,
-    providerManager: managerRef.current,
+    providerManager: manager,
     providerRecords,
   };
 }

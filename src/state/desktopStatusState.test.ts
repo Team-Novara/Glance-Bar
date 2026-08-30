@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
-import { createSystemPerformanceMetricSnapshot } from "../data/desktopStatusConfig";
+import { createSystemPerformanceMetricSnapshot } from "@/entities/status/config";
 import { createDesktopStatusStateMap, resolveDesktopStatusState } from "./desktopStatusState";
-import type { SystemPerformanceSourceStatus } from "../types/hub";
+import type { SystemPerformanceSourceStatus } from "@/entities";
 
 import { describe, it } from "vitest";
 describe("desktopStatusState.test", () => {

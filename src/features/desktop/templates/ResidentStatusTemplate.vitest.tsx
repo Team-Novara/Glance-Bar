@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ResidentStatusTemplate } from "./ResidentStatusTemplate";
-import { mockResidentState } from "../../../test/fixtures";
+import { mockResidentState } from "../../../shared/test-util/fixtures";
 
 describe("ResidentStatusTemplate", () => {
   it("renders CPU and memory bars plus network speed display", () => {

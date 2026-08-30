@@ -93,7 +93,7 @@ pub fn execute_media_action(action: &str) -> Result<crate::types::MediaControlRe
 
     let async_op = windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
         .map_err(|e| format!("media manager request failed: {e}"))?;
-    let manager = crate::media::mta_wait_async(async_op, timeout)
+    let manager = crate::media::windows::mta_wait_async(async_op, timeout)
         .map_err(|e| format!("media manager get failed: {e}"))?;
 
     let session = manager
@@ -111,25 +111,25 @@ pub fn execute_media_action(action: &str) -> Result<crate::types::MediaControlRe
             if is_playing {
                 let op = session.TryPauseAsync()
                     .map_err(|e| format!("pause dispatch failed: {e}"))?;
-                crate::media::mta_wait_async(op, timeout)
+                crate::media::windows::mta_wait_async(op, timeout)
                     .map_err(|e| format!("pause failed: {e}"))?
             } else {
                 let op = session.TryPlayAsync()
                     .map_err(|e| format!("play dispatch failed: {e}"))?;
-                crate::media::mta_wait_async(op, timeout)
+                crate::media::windows::mta_wait_async(op, timeout)
                     .map_err(|e| format!("play failed: {e}"))?
             }
         }
         "next" => {
             let op = session.TrySkipNextAsync()
                 .map_err(|e| format!("skip next dispatch failed: {e}"))?;
-            crate::media::mta_wait_async(op, timeout)
+            crate::media::windows::mta_wait_async(op, timeout)
                 .map_err(|e| format!("skip next failed: {e}"))?
         }
         "previous" => {
             let op = session.TrySkipPreviousAsync()
                 .map_err(|e| format!("skip previous dispatch failed: {e}"))?;
-            crate::media::mta_wait_async(op, timeout)
+            crate::media::windows::mta_wait_async(op, timeout)
                 .map_err(|e| format!("skip previous failed: {e}"))?
         }
         _ => return Err(format!("unknown media action: {action}")),

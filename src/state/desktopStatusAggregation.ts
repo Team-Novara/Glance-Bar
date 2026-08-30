@@ -22,7 +22,7 @@ import type {
   HubTask,
   MediaSessionPayload,
   MusicState,
-} from "../types/hub";
+} from "@/entities";
 
 const DESKTOP_STATUS_AVAILABLE_KINDS: DesktopStatusKind[] = [
   "resident",

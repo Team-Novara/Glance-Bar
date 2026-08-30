@@ -3,7 +3,7 @@ import {
   FluentProgressRail,
   type ShowcaseFluentMode,
 } from "./ShowcaseFluentTokens";
-import type { HubTask } from "../../../types/hub";
+import type { HubTask } from "@/entities";
 
 type MultiTaskHubProps = {
   tasks: HubTask[];

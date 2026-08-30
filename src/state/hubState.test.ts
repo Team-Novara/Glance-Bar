@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import type { HubEvent } from "../types/hub";
+import type { HubEvent } from "@/entities";
 import {
   createAutoDemoSequence,
   createHubDemoScenario,

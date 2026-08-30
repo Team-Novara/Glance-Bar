@@ -18,7 +18,7 @@ import {
   SYSTEM_STATUS_DIAGNOSTIC_CODES,
   type SystemStatusDiagnosticCode,
 } from "../system/systemPerformanceRuntime";
-import type { HubEvent } from "../../types/hub";
+import type { HubEvent } from "@/entities";
 import type { HubProviderCapability } from "../../providers/types";
 
 import { describe, it } from "vitest";

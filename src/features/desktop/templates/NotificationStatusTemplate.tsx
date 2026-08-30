@@ -7,9 +7,9 @@ import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-import { getDesktopStatusTemplateChromeCopy } from "@/data/desktopStatusConfig";
+import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
 import { dismissNotification } from "@/runtime/actions/notificationDismissRuntime";
-import type { DesktopNotificationState } from "@/types/hub";
+import type { DesktopNotificationState } from "@/entities";
 
 type NotificationStatusTemplateProps = {
   state: DesktopNotificationState;

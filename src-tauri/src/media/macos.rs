@@ -1,3 +1,33 @@
-// TODO Stage6: MediaPlayer.framework NowPlaying
-#[cfg(target_os = "macos")]
-pub fn get_media_status() {}
+// ---------------------------------------------------------------------------
+// macOS Media Session stub — MediaPlayer.framework NowPlaying (Stage 6).
+// ---------------------------------------------------------------------------
+
+use crate::types::MediaSessionStatus;
+use super::PlatformMediaProvider;
+
+/// Read the current media session status. macOS is not yet supported; returns
+/// an `unsupported` status.
+fn read_media_session_status_at(checked_at: u64) -> MediaSessionStatus {
+    MediaSessionStatus {
+        available: false,
+        playback_status: "unsupported",
+        progress: 0,
+        position_ms: None,
+        duration_ms: None,
+        title: String::new(),
+        artist: String::new(),
+        code: "unsupported",
+        checked_at,
+    }
+}
+
+/// Concrete macOS implementor of [`PlatformMediaProvider`].
+pub struct MacosMediaProvider;
+
+impl PlatformMediaProvider for MacosMediaProvider {
+    type Cache = ();
+
+    fn read_status(_cache: &mut Option<Self::Cache>, checked_at: u64) -> MediaSessionStatus {
+        read_media_session_status_at(checked_at)
+    }
+}

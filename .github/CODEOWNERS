@@ -1,18 +1,21 @@
-# CODEOWNERS — framework only, all lines default to @jay77721 until team grows
+# CODEOWNERS — Glance Bar (Team-Novara/Glance-Bar)
 # New code under new structure must be reviewed by owner; old paths remain fallback.
+# Dependency: STRUCTURE_REFACTOR_PLAN.md §3 FSD directory ownership.
 
+# Fallback: until @glance/* team accounts exist, everything defaults here.
 *                              @jay77721
 
-# New structure ownership (STRUCTURE_REFACTOR_PLAN.md §4)
-# Uncomment and assign when team splits:
-/src/features/desktop/    @jay77721
-/src/features/showcase/   @jay77721
-/src/entities/            @jay77721
-/src/providers/           @jay77721
-/src/runtime/             @jay77721
-/src/shared/              @jay77721
-/src-tauri/src/window/    @jay77721
-/src-tauri/src/media/     @jay77721
-/src-tauri/src/commands/  @jay77721
-/src-tauri/src/monitoring/ @jay77721
-/src/app/                 @jay77721
+# New structure ownership (STRUCTURE_REFACTOR_PLAN.md §4).
+# @glance/* accounts fall back to @jay77721 until the team grows.
+/src/features/desktop/    @glance/desktop
+/src/features/showcase/   @glance/showcase
+/src/entities/            @glance/core
+/src/providers/           @glance/provider
+/src/runtime/             @glance/runtime
+/src/shared/              @glance/core
+/src/state/               @glance/core
+/src/app/                 @glance/core
+/src-tauri/src/window/    @glance/runtime
+/src-tauri/src/media/     @glance/runtime
+/src-tauri/src/commands/  @glance/runtime
+/src-tauri/src/monitoring/@glance/runtime

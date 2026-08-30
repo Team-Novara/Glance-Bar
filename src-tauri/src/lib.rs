@@ -1,11 +1,10 @@
 mod types;
-#[cfg(windows)]
-#[allow(dead_code)]
 mod window;
 mod media;
 mod tray;
 mod preferences;
 mod commands;
+mod monitoring;
 
 pub use crate::types::*;
 
@@ -26,10 +25,6 @@ const STATUS_WINDOW_LABEL: &str = "main";
 const STATUS_CENTER_MENU_ACTION_EVENT: &str = "status-center://menu-action";
 const STATUS_CENTER_SETTINGS_EVENT: &str = "status-center://settings";
 const STATUS_CENTER_OPEN_SETTINGS_EVENT: &str = "status-center://open-settings";
-const STATUS_CENTER_CLIPBOARD_EVENT: &str = "status-center://clipboard-changed";
-const STATUS_CENTER_FOCUS_ASSIST_EVENT: &str = "status-center://focus-assist-changed";
-const STATUS_CENTER_NOTIFICATION_EVENT: &str = "status-center://notifications-changed";
-const FOCUS_ASSIST_MONITOR_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
 const GLOBAL_SHORTCUT_RECALL: &str = "Alt+Shift+Space";
 
 const MENU_REFRESH_DATA: &str = "refresh-data";
@@ -314,67 +309,9 @@ pub fn run() {
 
             let app_shutdown = app.handle().state::<Arc<AtomicBool>>().inner().clone();
 
-            {
-                let clipboard_app_handle = app.handle().clone();
-                let clipboard_shutdown = Arc::clone(&app_shutdown);
-                std::thread::spawn(move || {
-                    let mut clipboard = match arboard::Clipboard::new() {
-                        Ok(c) => c,
-                        Err(_) => return,
-                    };
-                    loop {
-                        std::thread::sleep(std::time::Duration::from_millis(800));
-                        if clipboard_shutdown.load(Ordering::Relaxed) {
-                            break;
-                        }
-                        if let Ok(text) = clipboard.get_text() {
-                            if !text.is_empty() {
-                                let payload = ClipboardContent {
-                                    text,
-                                    source_app: String::new(),
-                                    copied_at: unix_time_ms(),
-                                };
-                                let _ = clipboard_app_handle.emit(STATUS_CENTER_CLIPBOARD_EVENT, &payload);
-                            }
-                        }
-                    }
-                });
-            }
-
-            {
-                let monitor_app_handle = app.handle().clone();
-                let monitor_shutdown = Arc::clone(&app_shutdown);
-                std::thread::spawn(move || {
-                    let mut last_focus_active = false;
-                    let mut last_profile = String::new();
-                    let mut last_notif_active = false;
-                    loop {
-                        std::thread::sleep(FOCUS_ASSIST_MONITOR_INTERVAL);
-                        if monitor_shutdown.load(Ordering::Relaxed) {
-                            break;
-                        }
-                        let focus_state = crate::commands::focus::read_focus_assist_state();
-                        if focus_state.active != last_focus_active || focus_state.profile != last_profile {
-                            last_focus_active = focus_state.active;
-                            last_profile = focus_state.profile.clone();
-                            let _ = monitor_app_handle.emit(STATUS_CENTER_FOCUS_ASSIST_EVENT, &focus_state);
-                        }
-                        if focus_state.active != last_notif_active {
-                            last_notif_active = focus_state.active;
-                            let summary = NotificationSummaryPayload {
-                                focus_assist_active: focus_state.active,
-                                checked_at: unix_time_ms(),
-                            };
-                            let _ = monitor_app_handle.emit(STATUS_CENTER_NOTIFICATION_EVENT, &summary);
-                        }
-                    }
-                });
-            }
-
-            #[cfg(windows)]
-            if let Some(media_sender) = crate::media::start_mta_media_thread(app.handle().clone(), Arc::clone(&app_shutdown)) {
-                app.manage(media_sender);
-            }
+            monitoring::start_clipboard_monitor(app.handle().clone(), Arc::clone(&app_shutdown));
+            monitoring::start_focus_monitor(app.handle().clone(), Arc::clone(&app_shutdown));
+            monitoring::start_media_monitor(app.handle(), Arc::clone(&app_shutdown));
 
             Ok(())
         })

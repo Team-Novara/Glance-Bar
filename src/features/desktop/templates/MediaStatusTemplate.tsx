@@ -8,10 +8,10 @@ import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusRail } from "./StatusRail";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-import { getDesktopStatusTemplateChromeCopy } from "@/data/desktopStatusConfig";
+import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
 import { sendMediaControl, type MediaControlAction } from "@/runtime/system/mediaControlRuntime";
 import { formatMediaTime } from "@/shared/lib/mediaTime";
-import type { DesktopMediaState } from "@/types/hub";
+import type { DesktopMediaState } from "@/entities";
 
 type MediaStatusTemplateProps = {
   state: DesktopMediaState;

@@ -1,130 +1,26 @@
 // ---------------------------------------------------------------------------
-// Media provider module — WinRT/GSMTC media session handling.
+// Windows Media Session (GSMTC) implementation — WinRT + MTA thread helpers.
 // ---------------------------------------------------------------------------
-// Owns the MTA media thread and all WinRT async helpers. The actual
-// #[tauri::command] handlers live in crate::commands::media.
+// All GSMTC session-manager caching, async polling, and debug logging lives
+// here so the shared thread spawner (../mod.rs) stays platform-agnostic.
 
 use crate::types::*;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tauri::Emitter;
 
-#[cfg(windows)]
 use windows::Media::Control::{
     GlobalSystemMediaTransportControlsSessionManager,
     GlobalSystemMediaTransportControlsSessionPlaybackStatus,
 };
 
-pub(super) const MEDIA_SESSION_EVENT: &str = "status-center://media-session-changed";
-pub(super) const MEDIA_REFRESH_INTERVAL: Duration = Duration::from_secs(20);
-pub(super) const MEDIA_POLL_INTERVAL: Duration = Duration::from_secs(1);
+use super::PlatformMediaProvider;
 
-#[cfg(windows)]
-pub fn start_mta_media_thread(
-    app_handle: tauri::AppHandle,
-    shutdown: Arc<AtomicBool>,
-) -> Option<MediaRequestSender> {
-    use std::sync::mpsc as std_mpsc;
-    use windows::Win32::System::WinRT::{RoInitialize, RO_INIT_MULTITHREADED};
-    use windows_sys::Win32::System::Com::CoInitializeEx;
-    use windows_sys::Win32::System::Com::COINIT_MULTITHREADED;
-
-    let (request_tx, request_rx) = std_mpsc::channel::<MediaRequest>();
-    let sender: MediaRequestSender = Arc::new(Mutex::new(request_tx));
-    let sender_clone = Arc::clone(&sender);
-
-    std::thread::Builder::new()
-        .name("winrt-mta".into())
-        .spawn(move || {
-            unsafe {
-                let _ = CoInitializeEx(std::ptr::null_mut(), COINIT_MULTITHREADED as u32);
-                match RoInitialize(RO_INIT_MULTITHREADED) {
-                    Ok(()) => append_media_log("[media-thread] RoInitialize MTA OK"),
-                    Err(e) => {
-                        append_media_log(&format!("[media-thread] RoInitialize MTA FAILED: {e}"))
-                    }
-                }
-            }
-
-            let mut last_available = false;
-            let mut last_playback_status = String::new();
-            let mut last_progress: u8 = 255;
-            let mut last_title = String::new();
-            let mut last_artist = String::new();
-            let mut last_refresh_at: u64 = 0;
-            let mut cached_manager: Option<GlobalSystemMediaTransportControlsSessionManager> = None;
-
-            loop {
-                while let Ok(MediaRequest::Action(action, reply_tx)) = request_rx.try_recv() {
-                    let result = crate::commands::media::execute_media_action(&action);
-                    let _ = reply_tx.send(result);
-                }
-
-                let status = read_media_session_status_with_cache(&mut cached_manager);
-
-                let now_ms = crate::unix_time_ms();
-                if status.available
-                    && status.playback_status == "playing"
-                    && now_ms.saturating_sub(last_refresh_at) >= MEDIA_REFRESH_INTERVAL.as_millis() as u64
-                {
-                    last_refresh_at = now_ms;
-                    let _ = app_handle.emit(MEDIA_SESSION_EVENT, &status);
-                    append_media_log("[refresh] re-emitted playing session");
-                }
-
-                let changed = status.available != last_available
-                    || status.playback_status != last_playback_status
-                    || status.progress.abs_diff(last_progress) > 1
-                    || status.title != last_title
-                    || status.artist != last_artist;
-
-                if changed {
-                    last_available = status.available;
-                    last_playback_status = status.playback_status.to_string();
-                    last_progress = status.progress;
-                    last_title = status.title.clone();
-                    last_artist = status.artist.clone();
-                    let _ = app_handle.emit(MEDIA_SESSION_EVENT, &status);
-                }
-
-                while let Ok(MediaRequest::Read(reply_tx)) = request_rx.try_recv() {
-                    let _ = reply_tx.send(status.clone());
-                }
-
-                if shutdown.load(Ordering::Relaxed) {
-                    break;
-                }
-
-                std::thread::sleep(MEDIA_POLL_INTERVAL);
-            }
-        })
-        .expect("failed to spawn WinRT media thread");
-
-    Some(sender_clone)
-}
-
-#[cfg(not(windows))]
-pub fn start_mta_media_thread(
-    _app_handle: tauri::AppHandle,
-    _shutdown: Arc<AtomicBool>,
-) -> Option<MediaRequestSender> {
-    None
-}
-
-#[cfg(windows)]
-fn read_media_session_status_with_cache(
-    cache: &mut Option<GlobalSystemMediaTransportControlsSessionManager>,
-) -> MediaSessionStatus {
-    read_media_session_status_at_cached(crate::unix_time_ms(), cache)
-}
-
-#[cfg(windows)]
+/// Read the current media session status, caching the `SessionManager` across
+/// calls so we do not re-request the WinRT async op on every poll tick.
 fn read_media_session_status_at_cached(
     checked_at: u64,
     cache: &mut Option<GlobalSystemMediaTransportControlsSessionManager>,
 ) -> MediaSessionStatus {
-    let timeout = std::time::Duration::from_secs(5);
+    let timeout = Duration::from_secs(5);
 
     let manager: Option<GlobalSystemMediaTransportControlsSessionManager> =
         if let Some(manager) = cache.as_ref() {
@@ -257,22 +153,6 @@ fn read_media_session_status_at_cached(
     }
 }
 
-#[cfg(not(windows))]
-fn read_media_session_status_at(checked_at: u64) -> MediaSessionStatus {
-    MediaSessionStatus {
-        available: false,
-        playback_status: "unsupported",
-        progress: 0,
-        position_ms: None,
-        duration_ms: None,
-        title: String::new(),
-        artist: String::new(),
-        code: "unsupported",
-        checked_at,
-    }
-}
-
-#[cfg(windows)]
 fn playback_status_label(
     status: GlobalSystemMediaTransportControlsSessionPlaybackStatus,
 ) -> &'static str {
@@ -283,10 +163,12 @@ fn playback_status_label(
     }
 }
 
-#[cfg(windows)]
+/// Poll a WinRT `IAsyncOperation` to completion on the MTA thread. The MTA
+/// apartment lets the thread pool signal async completions without a dedicated
+/// message pump.
 pub fn mta_wait_async<T>(
     async_op: windows::Foundation::IAsyncOperation<T>,
-    timeout: std::time::Duration,
+    timeout: Duration,
 ) -> windows::core::Result<T>
 where
     T: windows::core::RuntimeType + Clone + Send + 'static,
@@ -308,28 +190,46 @@ where
             append_media_log("[wait] TIMEOUT");
             return Err(windows::core::Error::from(windows::core::HRESULT(0x800705B4u32 as i32)));
         }
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::thread::sleep(Duration::from_millis(10));
     }
 }
 
-#[cfg(windows)]
-fn append_media_log(msg: &str) {
+/// Append a line to the media debug log. Only writes in debug builds; in
+/// release builds this is a no-op. Writes to the process temp dir (never a
+/// hard-coded user path).
+#[cfg(debug_assertions)]
+pub(crate) fn append_media_log(msg: &str) {
     use std::io::Write;
-    let path = r"C:\Users\jay\Desktop\media-debug.log";
+    let path = std::env::temp_dir().join("glance-bar-media-debug.log");
     if let Ok(mut f) = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open(path)
+        .open(&path)
     {
         let _ = writeln!(f, "{msg}");
     }
 }
 
-#[cfg(windows)]
+/// Release-build no-op counterpart of [`append_media_log`].
+#[cfg(not(debug_assertions))]
+pub(crate) fn append_media_log(_msg: &str) {}
+
+/// Convert a 100-nanosecond interval to milliseconds. Returns `None` for
+/// non-positive values.
 fn duration_100ns_to_ms(value: i64) -> Option<u64> {
     if value <= 0 {
         return None;
     }
-
     Some((value as u64) / 10_000)
 }
+
+impl PlatformMediaProvider for WindowsMediaProvider {
+    type Cache = GlobalSystemMediaTransportControlsSessionManager;
+
+    fn read_status(cache: &mut Option<Self::Cache>, checked_at: u64) -> MediaSessionStatus {
+        read_media_session_status_at_cached(checked_at, cache)
+    }
+}
+
+/// Concrete Windows implementor of [`PlatformMediaProvider`].
+pub struct WindowsMediaProvider;

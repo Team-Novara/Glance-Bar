@@ -4,7 +4,7 @@ import {
   loadSystemPerformanceStatus,
   normalizeSystemStatusDiagnostic,
 } from "./systemPerformanceRuntime";
-import type { SystemPerformanceMetric } from "../../types/hub";
+import type { SystemPerformanceMetric } from "@/entities";
 
 import { describe, it } from "vitest";
 describe("systemPerformanceRuntime.test", () => {

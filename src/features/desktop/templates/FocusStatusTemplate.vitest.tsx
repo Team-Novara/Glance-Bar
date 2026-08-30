@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { FocusStatusTemplate } from "./FocusStatusTemplate";
-import { mockFocusState } from "../../../test/fixtures";
+import { mockFocusState } from "../../../shared/test-util/fixtures";
 
 describe("FocusStatusTemplate", () => {
   it("renders title, subtitle, session label, and detail", () => {

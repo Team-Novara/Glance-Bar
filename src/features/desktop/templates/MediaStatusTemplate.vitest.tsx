@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MediaStatusTemplate } from "./MediaStatusTemplate";
-import { mockMediaState } from "../../../test/fixtures";
+import { mockMediaState } from "../../../shared/test-util/fixtures";
 
 vi.mock("../../../runtime/system/mediaControlRuntime", () => ({
   sendMediaControl: vi.fn().mockResolvedValue({ success: true }),

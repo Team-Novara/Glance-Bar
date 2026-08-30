@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { guestSourceQualityLabel } from "./GuestSourceHealthIndicator";
-import type { GuestProviderSourceQuality } from "../../../types/hub";
+import type { GuestProviderSourceQuality } from "@/entities";
 
 describe("GuestSourceHealthIndicator", () => {
   it("renders the quality label text", () => {

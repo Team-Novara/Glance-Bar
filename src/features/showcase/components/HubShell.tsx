@@ -12,9 +12,9 @@ import {
   multiTasks,
   musicState,
   notificationState,
-} from "../../../data/mockHubData";
+} from "@/providers/impl/mock/mockHubData";
 import { GlassPanel } from "../../../shared/ui/GlassPanel";
-import type { HubMode, HubTask, MusicState, NotificationState } from "../../../types/hub";
+import type { HubMode, HubTask, MusicState, NotificationState } from "@/entities";
 
 type HubShellProps = {
   mode: HubMode;

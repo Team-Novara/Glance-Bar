@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { systemPerformanceMetrics } from "@/data/mockHubData";
+import { systemPerformanceMetrics } from "@/providers/impl/mock/mockHubData";
 import {
   loadSystemPerformanceStatus,
   type SystemStatusDiagnostic,
 } from "@/runtime/system/systemPerformanceRuntime";
 import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
-import type { SystemPerformanceMetric } from "@/types/hub";
+import type { SystemPerformanceMetric } from "@/entities";
 
 const STATUS_REFRESH_MS = 1800;
 

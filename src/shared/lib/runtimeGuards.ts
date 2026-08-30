@@ -1,4 +1,4 @@
-import type { HubEvent } from "../../types/hub";
+import type { HubEvent } from "@/entities";
 
 /**
  * Type guard: checks if a value is a non-null, non-array object.

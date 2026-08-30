@@ -11,7 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import type { HubEvent, HubMode } from "../../../types/hub";
+import type { HubEvent, HubMode } from "@/entities";
 
 type EventPlaygroundPanelProps = {
   activeEvents: HubEvent[];

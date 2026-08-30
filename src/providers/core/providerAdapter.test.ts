@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { connectProviderToEventBus, type ProviderConnection } from "./providerAdapter";
 import { createHubEventBus, type HubEventBus } from "../../state/hubState";
 import { createProviderShell, type ProviderShellHandle } from "./providerShell";
-import type { HubEvent } from "../../types/hub";
+import type { HubEvent } from "@/entities";
 import type { HubProviderMetadata, HubProviderCapability } from "./types";
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ describe("connectProviderToEventBus", () => {
       // Arrange -- use a bus that throws on a specific event id
       const { handle, provider } = createStartedProvider();
       let callCount = 0;
-      const subscribers = new Set<(state: import("../types/hub").HubStoreState) => void>();
+      const subscribers = new Set<(state: import("@/entities").HubStoreState) => void>();
       const throwingBus: HubEventBus = {
         getState: () => ({
           events: [],

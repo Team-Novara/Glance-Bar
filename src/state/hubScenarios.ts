@@ -1,5 +1,5 @@
 import type { HubEventBus } from "./hubState";
-import type { HubEvent, HubMode } from "../types/hub";
+import type { HubEvent, HubMode } from "@/entities";
 
 export type HubDemoScenarioId =
   | "idle"

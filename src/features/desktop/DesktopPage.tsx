@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback } from "react";
 
 import { SettingsPanel } from "./components/SettingsPanel";
 import {
+  useAppWindow,
+  useAutostart,
   useContextMenu,
   useDesktopStatusRuntime,
   useDragController,
   useOverlayPolicy,
   usePreferences,
+  useRefreshAction,
   useSettingsActions,
   useSettingsUI,
   useSystemPerformance,
@@ -20,14 +23,9 @@ import { MediaStatusTemplate } from "./templates/MediaStatusTemplate";
 import { NotificationStatusTemplate } from "./templates/NotificationStatusTemplate";
 import { ResidentStatusTemplate } from "./templates/ResidentStatusTemplate";
 import { UpdateStatusTemplate } from "./templates/UpdateStatusTemplate";
-import { getDesktopStatusShellCopy } from "../../data/desktopStatusConfig";
-import { emitTauriFixtureEvents, getTauriInvoke } from "../../runtime/tauri/tauriRuntime";
-import {
-  getAutostartEnabled,
-  setAutostartEnabled as applyAutostart,
-} from "../../runtime/window/autostartRuntime";
-import { getSafeCurrentWindow, type TauriAppWindow } from "../../shared/lib/tauriWindow";
-import type { DesktopStatusKind, DesktopStatusState } from "../../types/hub";
+
+import type { DesktopStatusKind, DesktopStatusState } from "@/entities";
+import { getDesktopStatusShellCopy } from "@/entities/status/config";
 
 function renderDesktopStatusTemplate(state: DesktopStatusState) {
   switch (state.kind) {
@@ -51,51 +49,38 @@ function renderDesktopStatusTemplate(state: DesktopStatusState) {
 }
 
 export function DesktopPage() {
-  const appWindowRef = useRef<TauriAppWindow | undefined>(getSafeCurrentWindow());
   const shellCopy = getDesktopStatusShellCopy();
-  const [autostartEnabled, setAutostartEnabled] = useState(false);
 
-  // Load initial autostart state
-  useEffect(() => {
-    void getAutostartEnabled().then(setAutostartEnabled);
-  }, []);
+  // Tauri window handle (shadow-disable backup for Rust DWM calls)
+  const { appWindowRef } = useAppWindow();
 
-  // Explicitly disable window shadow from the frontend (backup for Rust DWM calls)
-  useEffect(() => {
-    const win = appWindowRef.current;
-    if (win) {
-      void win.setShadow(false);
-    }
-  }, []);
+  // Launch-at-login toggle — the native autostart IPC stays inside the
+  // hook; the page must not import runtime modules directly.
+  const { autostartEnabled, toggleAutostart } = useAutostart();
 
-  // Drag controller
-  const { isDraggingRef, lockPositionRef, handlePointerDown } = useDragController();
+  // Preferences
+  const { preferences, updatePreferences } = usePreferences();
+
+  // Drag controller (lock-position preference synced inside the hook)
+  const { isDraggingRef, handlePointerDown } = useDragController({
+    lockPosition: preferences.lockPosition,
+  });
 
   // System performance polling
   const { metrics, diagnostic, refreshMetrics } = useSystemPerformance();
 
-  // Desktop status runtime + aggregation + state resolution
+  // Desktop status runtime + aggregation + state resolution.
+  // Preferred-kind timer expiry is handled inside this hook as well.
   // Unified Provider pipeline handles media, clipboard, focus, and system perf.
   const {
     resolvedState,
     activeStatusKind,
-    preferredUntil,
     setActiveStatusKind,
     setPreferredUntil,
     refreshRuntime,
     preferredWindowMs,
     providerRecords,
   } = useDesktopStatusRuntime(metrics, diagnostic.quality);
-
-  // Preferences
-  const { preferences, updatePreferences } = usePreferences();
-
-  // Sync lockPosition to drag controller ref.
-  // This is a render-time ref write — it's safe because the drag controller
-  // reads the ref lazily inside its event handler, not synchronously during
-  // render. Doing it via useEffect would just push the write one frame later
-  // and risk a window where the drag controller sees a stale value.
-  lockPositionRef.current = preferences.lockPosition;
 
   // Overlay policy (fullscreen avoidance + floating)
   const { overlayStateRef } = useOverlayPolicy({
@@ -117,43 +102,15 @@ export function DesktopPage() {
     appWindowRef,
   });
 
-  // Preferred kind timer expiry
-  useEffect(() => {
-    if (preferredUntil === undefined) {
-      return;
-    }
+  // -- Action handlers (memoized in hooks to prevent unnecessary child re-renders) --
 
-    if (preferredUntil <= Date.now()) {
-      setPreferredUntil(undefined);
-      setActiveStatusKind(null);
-      return;
-    }
-
-    const timer = window.setTimeout(
-      () => {
-        setPreferredUntil(undefined);
-        setActiveStatusKind(null);
-      },
-      Math.max(0, preferredUntil - Date.now()),
-    );
-
-    return () => window.clearTimeout(timer);
-  }, [preferredUntil, setPreferredUntil, setActiveStatusKind]);
-
-  // -- Action handlers (useCallback to prevent unnecessary child re-renders) --
-
-  const refresh = useCallback(async () => {
-    if (isDraggingRef.current) {
-      return;
-    }
-
-    const invoke = getTauriInvoke();
-    if (invoke) {
-      await emitTauriFixtureEvents({ invoke });
-    }
-
-    await Promise.all([refreshMetrics(), refreshRuntime()]);
-  }, [refreshMetrics, refreshRuntime, isDraggingRef]);
+  // Manual refresh: fixture replay over IPC, then metrics + runtime resync.
+  // Runtime access stays in the hook per the features boundary rule.
+  const { refresh } = useRefreshAction({
+    isDraggingRef,
+    refreshMetrics,
+    refreshRuntime,
+  });
 
   // Settings panel open state + native context menu + native settings launch
   const { settingsOpen, closeSettings, showNativeContextMenu, handleOpenSettingsClick } =
@@ -167,13 +124,6 @@ export function DesktopPage() {
     [preferredWindowMs, setActiveStatusKind, setPreferredUntil],
   );
 
-  const toggleAutostart = useCallback(async () => {
-    const nextValue = !autostartEnabled;
-    const success = await applyAutostart(nextValue);
-    if (success) {
-      setAutostartEnabled(nextValue);
-    }
-  }, [autostartEnabled]);
   // Global context menu + Escape key
   useContextMenu({ settingsOpen, closeSettings, showNativeContextMenu });
 

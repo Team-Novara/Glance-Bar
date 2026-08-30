@@ -6,7 +6,7 @@ import {
   createTickingProvider,
   resolveNow,
 } from "./shared";
-import type { HubEvent, HubTask } from "../../../types/hub";
+import type { HubEvent, HubTask } from "@/entities";
 import type {
   HubProvider,
   MockProviderOptions,

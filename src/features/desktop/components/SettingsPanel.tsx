@@ -29,9 +29,9 @@ import { ProviderStatusPanel } from "./ProviderStatusPanel";
 import {
   getDesktopStatusTemplateDescriptors,
   getDesktopStatusSettingsCopy,
-} from "@/data/desktopStatusConfig";
+} from "@/entities/status/config";
 import type { ProviderRegistryRecord } from "@/providers";
-import type { DesktopStatusKind, DesktopStatusPreferences } from "@/types/hub";
+import type { DesktopStatusKind, DesktopStatusPreferences } from "@/entities";
 
 export type SettingsPanelProps = {
   preferences: DesktopStatusPreferences;

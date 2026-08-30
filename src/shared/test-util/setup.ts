@@ -1,29 +1,43 @@
 /**
- * Vitest setup file for the legacy *.test.ts files.
- *
- * The 14 .test.ts files predate vitest. They use:
- *   1. A local `function test(name, run) { ... }` helper
- *      (already stripped by scripts/strip-legacy-test-fn.py).
- *   2. A `import { strict as assert } from "node:assert"` (or
- *      `import assert from "node:assert/strict"`) for assertions.
- *
- * Rather than rewrite all 14 files (each with 20-100 test cases), this
- * shim:
- *   - Installs a global `test()` that delegates to vitest's tracked `it()`.
- *   - Installs a global `assert` that wraps vitest's `expect()` so the
- *     legacy `assert.equal(x, y)` / `assert.deepEqual(a, b)` / etc.
- *     syntax keeps working unmodified.
- *
- * The setupFile is loaded by vitest.config.ts and runs once per test
- * file. The legacy files strip their local `function test(name, run)`
- * declarations (see scripts/strip-legacy-test-fn.py); without that
- * step, the local function would shadow the global below.
- *
- * Note: the `ok ${name}` log line is preserved so the existing
- * `npm run test:state` QA scripts that grep on it still work.
+ * Vitest global setup — initializes i18n, jest-dom matchers, and
+ * auto-cleanup between tests.
  */
-import { it, expect } from "vitest";
+import { afterEach, it, expect } from "vitest";
+import { cleanup } from "@testing-library/react";
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import "@testing-library/jest-dom/vitest";
+import en from "../../i18n/en.json";
+import zhCN from "../../i18n/zh-CN.json";
 
+// Standalone i18n init (no LanguageDetector) — English by default for assertions.
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    "zh-CN": { translation: zhCN },
+  },
+  lng: "en",
+  fallbackLng: "en",
+  interpolation: { escapeValue: false },
+});
+
+// Ensure the DOM is torn down between tests so render() doesn't accumulate.
+afterEach(() => {
+  cleanup();
+});
+
+// ── Legacy *.test.ts globals ────────────────────────────────────────
+//
+// The 14 (now ~34) legacy `.test.ts` files predate vitest. They use a bare
+// `test(name, run)` helper and a node:assert-style `assert` object rather
+// than vitest's it()/expect(). Rewriting every case is out of scope for the
+// directory collapse, so this setupFile installs the same globals that the
+// now-deleted `src/test/legacy-test-shim.ts` previously provided:
+//   - `test()` delegates to vitest's tracked `it()` (and logs `ok ${name}`
+//     so the QA grep hooks in `npm run test:state` still fire).
+//   - `assert` wraps vitest's `expect()` so legacy `assert.equal`/`deepEqual`
+//     /`throws`/etc. keep working unmodified.
+// Once every legacy file migrates to native it()/expect(), delete this block.
 declare global {
   // eslint-disable-next-line no-var
   var test: (name: string, run: () => void) => void;
@@ -55,8 +69,8 @@ globalThis.test = (name: string, run: () => void): void => {
 };
 
 // Polyfill the node:assert API surface so the legacy test files
-// keep working unmodified. The polyfill uses vitest's expect() under
-// the hood, so failure messages and stack traces are vitest-quality.
+// keep working unmodified. Uses vitest's expect() under the hood so
+// failure messages and stack traces are vitest-quality.
 function buildAssertMessage(message: string | undefined, suffix: string): string {
   return message ? `${message} (${suffix})` : suffix;
 }
