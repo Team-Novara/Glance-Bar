@@ -1,32 +1,8 @@
 export type HubMode = "idle" | "music" | "aiProgress" | "download" | "notification" | "multiTask";
 
-export type HubTaskType =
-  | "music"
-  | "ai"
-  | "download"
-  | "notification"
-  | "media"
-  | "clipboard"
-  | "focus"
-  | "system";
-
-export type HubEventSource =
-  | "mock"
-  | "system"
-  | "music"
-  | "download"
-  | "ai"
-  | "notification"
-  | "media"
-  | "clipboard"
-  | "focus"
-  | "git"
-  | "docker"
-  | "npm";
-
 export type HubTask = {
   id: string;
-  type: HubTaskType;
+  type: "music" | "ai" | "download" | "notification" | "media" | "clipboard" | "focus" | "system";
   title: string;
   subtitle: string;
   progress?: number;
@@ -65,8 +41,8 @@ export type SystemPerformancePayload = {
 
 export type HubEvent = {
   id: string;
-  type: HubTaskType;
-  source: HubEventSource;
+  type: "music" | "ai" | "download" | "notification" | "media" | "clipboard" | "focus" | "system";
+  source: "mock" | "system" | "music" | "download" | "ai" | "notification" | "media" | "clipboard" | "focus" | "git" | "docker" | "npm";
   createdAt: number;
   expiresAt?: number;
   progress?: number;

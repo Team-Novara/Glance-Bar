@@ -13,8 +13,6 @@ export type DesktopStatusKind =
 
 export type DesktopGuestStatusKind = Exclude<DesktopStatusKind, "resident">;
 
-export type DesktopStatusAttentionReason = "new" | "near-complete" | "completion" | "urgent";
-
 type DesktopStatusSource = "default" | "mock" | "system";
 
 export type GuestProviderSourceQuality =
@@ -155,7 +153,7 @@ export type DesktopStatusResolverInput = {
   previousChangedAt?: number;
   preferredUntil?: number;
   activatedAtByKind?: Partial<Record<DesktopStatusKind, number>>;
-  attentionByKind?: Partial<Record<DesktopStatusKind, DesktopStatusAttentionReason>>;
+  attentionByKind?: Partial<Record<DesktopStatusKind, "new" | "near-complete" | "completion" | "urgent">>;
   sourceHealthByKind?: GuestProviderSourceHealthMap;
   userInteractedAt?: number;
   lastGuestKind?: DesktopStatusKind;
@@ -186,12 +184,10 @@ export type DesktopStatusAggregationResult = {
   activeKinds: DesktopStatusKind[];
   availableKinds?: DesktopStatusKind[];
   states?: Partial<DesktopStatusStateMap>;
-  attentionByKind?: Partial<Record<DesktopStatusKind, DesktopStatusAttentionReason>>;
+  attentionByKind?: Partial<Record<DesktopStatusKind, "new" | "near-complete" | "completion" | "urgent">>;
 };
 
-export type DesktopStatusPreferenceKey = "alwaysFloat" | "avoidFullscreen" | "lockPosition";
-
-export type DesktopStatusPreferences = Record<DesktopStatusPreferenceKey, boolean>;
+export type DesktopStatusPreferences = Record<"alwaysFloat" | "avoidFullscreen" | "lockPosition", boolean>;
 
 export type DesktopStatusMenuActionId =
   | "refresh-data"

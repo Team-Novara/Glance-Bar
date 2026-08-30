@@ -2,13 +2,9 @@ import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const STOP_FOCUS_COMMAND = "stop_focus_session";
 
-export type FocusStopResult = {
-  success: boolean;
-};
-
 export async function stopFocusSession(
   invoke: TauriInvoke | undefined = getTauriInvoke(),
-): Promise<FocusStopResult | undefined> {
+): Promise<{ success: boolean } | undefined> {
   if (!invoke) {
     return undefined;
   }

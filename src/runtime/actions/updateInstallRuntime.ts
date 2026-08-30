@@ -2,13 +2,9 @@ import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const INSTALL_UPDATE_COMMAND = "install_update";
 
-export type UpdateInstallResult = {
-  success: boolean;
-};
-
 export async function installUpdate(
   invoke: TauriInvoke | undefined = getTauriInvoke(),
-): Promise<UpdateInstallResult | undefined> {
+): Promise<{ success: boolean } | undefined> {
   if (!invoke) {
     return undefined;
   }

@@ -6,14 +6,10 @@ const CANCEL_COMMAND = "cancel_download";
 
 export type DownloadAction = "pause" | "resume" | "cancel";
 
-export type DownloadControlResult = {
-  success: boolean;
-};
-
 async function invokeDownloadCommand(
   command: string,
   invoke: TauriInvoke | undefined = getTauriInvoke(),
-): Promise<DownloadControlResult | undefined> {
+): Promise<{ success: boolean } | undefined> {
   if (!invoke) {
     return undefined;
   }
@@ -35,7 +31,7 @@ async function invokeDownloadCommand(
 export function sendDownloadControl(
   action: DownloadAction,
   invoke: TauriInvoke | undefined = getTauriInvoke(),
-): Promise<DownloadControlResult | undefined> {
+): Promise<{ success: boolean } | undefined> {
   const command =
     action === "pause" ? PAUSE_COMMAND : action === "resume" ? RESUME_COMMAND : CANCEL_COMMAND;
   return invokeDownloadCommand(command, invoke);

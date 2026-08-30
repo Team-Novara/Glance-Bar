@@ -27,14 +27,6 @@ type ProviderRegistryRegisterResult =
       id: string;
     };
 
-export type ProviderRegistryCapabilitySupportRecord = {
-  providerId: string;
-  providerName: string;
-  providerKind: HubProviderKind;
-  registrationOrder: number;
-  capability: HubProviderCapability;
-};
-
 type ProviderRegistryCapabilitySupportSummary = {
   kind: HubProviderCapability["kind"];
   origin: HubProviderCapability["origin"];
@@ -65,7 +57,13 @@ function snapshotProvider(entry: ProviderRegistryEntry): ProviderRegistryRecord 
 
 function snapshotCapabilitySupport(
   entry: ProviderRegistryEntry,
-): ProviderRegistryCapabilitySupportRecord[] {
+): {
+  providerId: string;
+  providerName: string;
+  providerKind: HubProviderKind;
+  registrationOrder: number;
+  capability: HubProviderCapability;
+}[] {
   const { provider, registrationOrder } = entry;
 
   return provider.capabilities.map((capability) => ({
@@ -78,7 +76,13 @@ function snapshotCapabilitySupport(
 }
 
 function summarizeCapabilitySupportRecords(
-  records: ProviderRegistryCapabilitySupportRecord[],
+  records: {
+    providerId: string;
+    providerName: string;
+    providerKind: HubProviderKind;
+    registrationOrder: number;
+    capability: HubProviderCapability;
+  }[],
 ): ProviderRegistryCapabilitySupportSummary[] {
   const summaries = new Map<string, ProviderRegistryCapabilitySupportSummary>();
 
@@ -111,8 +115,20 @@ function summarizeCapabilitySupportRecords(
 }
 
 function sortByOrigin(
-  records: ProviderRegistryCapabilitySupportRecord[],
-): ProviderRegistryCapabilitySupportRecord[] {
+  records: {
+    providerId: string;
+    providerName: string;
+    providerKind: HubProviderKind;
+    registrationOrder: number;
+    capability: HubProviderCapability;
+  }[],
+): {
+  providerId: string;
+  providerName: string;
+  providerKind: HubProviderKind;
+  registrationOrder: number;
+  capability: HubProviderCapability;
+}[] {
   const order: Record<string, number> = { real: 0, native: 1, mock: 2 };
 
   return [...records].sort((a, b) => {
@@ -202,7 +218,13 @@ export function createProviderRegistry() {
         .map(snapshotProvider);
     },
 
-    listAvailableCapabilities(): ProviderRegistryCapabilitySupportRecord[] {
+    listAvailableCapabilities(): {
+      providerId: string;
+      providerName: string;
+      providerKind: HubProviderKind;
+      registrationOrder: number;
+      capability: HubProviderCapability;
+    }[] {
       return sortByOrigin(
         [...entries.values()]
           .flatMap(snapshotCapabilitySupport)
