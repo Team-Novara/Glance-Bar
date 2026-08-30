@@ -7,13 +7,17 @@
 
 pub mod linux;
 pub mod macos;
+// `windows.rs` is pure WinRT/GSMTC code and the `windows` crate is a
+// cfg(windows)-only dependency — compiling the file on other platforms
+// fails on every `windows::*` path. Gate the module itself: non-Windows
+// builds get their trait impls from macos.rs / linux.rs instead.
+#[cfg(windows)]
 pub mod windows;
 
 use crate::types::*;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
 use std::time::Duration;
-use tauri::Emitter;
 
 pub(super) const MEDIA_SESSION_EVENT: &str = "status-center://media-session-changed";
 pub(super) const MEDIA_REFRESH_INTERVAL: Duration = Duration::from_secs(20);
@@ -41,7 +45,10 @@ pub fn start_mta_media_thread(
     app_handle: tauri::AppHandle,
     shutdown: Arc<AtomicBool>,
 ) -> Option<MediaRequestSender> {
+    use std::sync::atomic::Ordering;
     use std::sync::mpsc as std_mpsc;
+    use std::sync::Mutex;
+    use tauri::Emitter;
     // Leading `::` disambiguates the external `windows` crate from our local
     // `media::windows` submodule.
     use ::windows::Win32::System::WinRT::{RoInitialize, RO_INIT_MULTITHREADED};

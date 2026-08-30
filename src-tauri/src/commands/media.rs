@@ -5,6 +5,10 @@
 use crate::types::MediaSessionStatus;
 use tauri::State;
 
+// Only the Windows command variants take the media-thread sender in their
+// signatures; the non-Windows stubs below do not, so this import would be
+// unused there.
+#[cfg(windows)]
 use crate::types::MediaRequestSender;
 
 #[cfg(windows)]

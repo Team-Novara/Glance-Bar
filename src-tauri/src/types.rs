@@ -8,14 +8,17 @@ use tauri::menu::Menu;
 /// Request types sent to the MTA media thread.
 /// All WinRT async calls run on this thread; the MTA apartment lets the
 /// thread pool signal async completions without a dedicated message pump.
-#[cfg(windows)]
+/// The enum is defined unconditionally: it only carries plain channel
+/// senders, and the non-Windows `start_mta_media_thread` stub must still
+/// name the type in its signature.
 pub enum MediaRequest {
     Read(std_mpsc::Sender<MediaSessionStatus>),
     Action(String, std_mpsc::Sender<Result<MediaControlResult, String>>),
 }
 
 /// Channel sender for routing requests to the STA media thread.
-#[cfg(windows)]
+/// Unconditional for the same reason as [`MediaRequest`] — it is a plain
+/// channel alias used by both the Windows thread and the non-Windows stub.
 pub type MediaRequestSender = Arc<Mutex<std_mpsc::Sender<MediaRequest>>>;
 
 /// How often the media refresh timer re-publishes a playing session so the
@@ -102,7 +105,7 @@ impl<R: tauri::Runtime> Default for DesktopProductState<R> {
 
 pub type SharedDesktopProductState<R> = Arc<Mutex<DesktopProductState<R>>>;
 
-// MediaRequest and MediaRequestSender are defined above (cfg(windows) gated).
+// MediaRequest and MediaRequestSender are defined above (unconditional).
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

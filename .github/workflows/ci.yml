@@ -98,6 +98,15 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
+      # Tauri's Linux build chain (gtk/webkit crates) needs the dev headers
+      # even for `cargo check` — glib-sys's build script shells out to
+      # pkg-config and fails without libglib2.0-dev. webkit2gtk-4.1-dev pulls
+      # in the rest of the gtk stack as dependencies.
+      - name: Install Linux build deps (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libglib2.0-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt

@@ -16,6 +16,8 @@ import {
   FOCUS_ASSIST_CHANGED_EVENT,
   MEDIA_SESSION_CHANGED_EVENT,
   NOTIFICATIONS_CHANGED_EVENT,
+  getFocusAssistState,
+  getNotificationSummary,
   onClipboardChanged,
   onFocusAssistChanged,
   onMediaSessionChanged,
@@ -25,6 +27,7 @@ import {
   type MediaSessionChangedPayload,
   type NotificationSummary,
 } from "./systemMonitorRuntime";
+import type { TauriInvoke } from "../tauri/tauriRuntime";
 
 /**
  * Configure listenMock to capture the registered handler and return a
@@ -363,6 +366,172 @@ describe("systemMonitorRuntime.test", () => {
       assert.equal(typeof unlistenFn, "function");
       unlistenFn();
       assert.equal(unlisten.mock.calls.length, 1);
+    });
+  });
+
+  // ── getFocusAssistState (polling fetcher) ────────────────────
+
+  describe("getFocusAssistState", () => {
+    function makeInvoke(
+      result: unknown,
+      calls: string[],
+    ): TauriInvoke {
+      return async (command) => {
+        calls.push(command);
+        return result;
+      };
+    }
+
+    it("returns undefined when no Tauri invoke is available", async () => {
+      const result = await getFocusAssistState(undefined);
+
+      assert.equal(result, undefined);
+    });
+
+    it("invokes get_focus_assist_state and maps a well-formed payload", async () => {
+      const calls: string[] = [];
+      const invoke = makeInvoke(
+        { active: true, profile: "priority-only", checkedAt: 1_780_743_600_000 },
+        calls,
+      );
+
+      const result = await getFocusAssistState(invoke);
+
+      assert.deepEqual(calls, ["get_focus_assist_state"]);
+      assert.deepEqual(result, {
+        active: true,
+        profile: "priority-only",
+        checkedAt: 1_780_743_600_000,
+      });
+    });
+
+    it("normalizes non-boolean active to false", async () => {
+      const invoke = makeInvoke({ active: "yes", profile: "off", checkedAt: 1 }, []);
+      const result = await getFocusAssistState(invoke);
+
+      assert.equal(result?.active, false);
+    });
+
+    it("normalizes a non-string profile to an empty string", async () => {
+      const invoke = makeInvoke({ active: true, profile: 42, checkedAt: 1 }, []);
+      const result = await getFocusAssistState(invoke);
+
+      assert.equal(result?.profile, "");
+    });
+
+    it("stamps checkedAt with the current time when the payload omits it", async () => {
+      const before = Date.now();
+      const invoke = makeInvoke({ active: false, profile: "off" }, []);
+      const result = await getFocusAssistState(invoke);
+      const after = Date.now();
+
+      assert.ok(result?.checkedAt !== undefined);
+      assert.ok(result?.checkedAt >= before && result.checkedAt <= after);
+    });
+
+    it("stamps checkedAt when the payload carries a non-number value", async () => {
+      const invoke = makeInvoke({ active: false, profile: "off", checkedAt: "soon" }, []);
+      const result = await getFocusAssistState(invoke);
+
+      assert.ok(typeof result?.checkedAt === "number");
+    });
+
+    it("returns undefined for a primitive payload", async () => {
+      const invoke = makeInvoke(true, []);
+      const result = await getFocusAssistState(invoke);
+
+      assert.equal(result, undefined);
+    });
+
+    it("returns undefined for a null payload", async () => {
+      const invoke = makeInvoke(null, []);
+      const result = await getFocusAssistState(invoke);
+
+      assert.equal(result, undefined);
+    });
+
+    it("returns undefined when the native boundary rejects", async () => {
+      const invoke: TauriInvoke = async () => {
+        throw new Error("focus assist unavailable");
+      };
+      const result = await getFocusAssistState(invoke);
+
+      assert.equal(result, undefined);
+    });
+  });
+
+  // ── getNotificationSummary (polling fetcher) ────────────────
+
+  describe("getNotificationSummary", () => {
+    function makeInvoke(
+      result: unknown,
+      calls: string[],
+    ): TauriInvoke {
+      return async (command) => {
+        calls.push(command);
+        return result;
+      };
+    }
+
+    it("returns undefined when no Tauri invoke is available", async () => {
+      const result = await getNotificationSummary(undefined);
+
+      assert.equal(result, undefined);
+    });
+
+    it("invokes get_notification_summary and maps a well-formed payload", async () => {
+      const calls: string[] = [];
+      const invoke = makeInvoke(
+        { focusAssistActive: true, checkedAt: 1_780_743_600_000 },
+        calls,
+      );
+
+      const result = await getNotificationSummary(invoke);
+
+      assert.deepEqual(calls, ["get_notification_summary"]);
+      assert.deepEqual(result, {
+        focusAssistActive: true,
+        checkedAt: 1_780_743_600_000,
+      });
+    });
+
+    it("normalizes a non-boolean focusAssistActive to false", async () => {
+      const invoke = makeInvoke({ focusAssistActive: 1, checkedAt: 1 }, []);
+      const result = await getNotificationSummary(invoke);
+
+      assert.equal(result?.focusAssistActive, false);
+    });
+
+    it("stamps checkedAt with the current time when the payload omits it", async () => {
+      const before = Date.now();
+      const invoke = makeInvoke({ focusAssistActive: false }, []);
+      const result = await getNotificationSummary(invoke);
+      const after = Date.now();
+
+      assert.ok(result?.checkedAt >= before && result.checkedAt <= after);
+    });
+
+    it("stamps checkedAt when the payload carries a non-number value", async () => {
+      const invoke = makeInvoke({ focusAssistActive: false, checkedAt: null }, []);
+      const result = await getNotificationSummary(invoke);
+
+      assert.ok(typeof result?.checkedAt === "number");
+    });
+
+    it("returns undefined for a primitive payload", async () => {
+      const invoke = makeInvoke("nope", []);
+      const result = await getNotificationSummary(invoke);
+
+      assert.equal(result, undefined);
+    });
+
+    it("returns undefined when the native boundary rejects", async () => {
+      const invoke: TauriInvoke = async () => {
+        throw new Error("notification summary failed");
+      };
+      const result = await getNotificationSummary(invoke);
+
+      assert.equal(result, undefined);
     });
   });
 });
