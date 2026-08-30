@@ -6,11 +6,12 @@ import {
   createTickingProvider,
   resolveNow,
 } from "./shared";
-import type { HubEvent, HubTask } from "@/entities";
 import type {
   HubProvider,
   MockProviderOptions,
 } from "../../core/types";
+
+import type { HubEvent, HubTask } from "@/entities";
 
 export const createMockAiTaskEvent = (options: MockProviderOptions = {}): HubEvent => {
   const createdAt = resolveNow(options);

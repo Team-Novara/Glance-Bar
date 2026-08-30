@@ -26,12 +26,12 @@ import { useTranslation } from "react-i18next";
 
 import { ProviderStatusPanel } from "./ProviderStatusPanel";
 
+import type { DesktopStatusKind, DesktopStatusPreferences } from "@/entities";
 import {
   getDesktopStatusTemplateDescriptors,
   getDesktopStatusSettingsCopy,
 } from "@/entities/status/config";
 import type { ProviderRegistryRecord } from "@/providers";
-import type { DesktopStatusKind, DesktopStatusPreferences } from "@/entities";
 
 export type SettingsPanelProps = {
   preferences: DesktopStatusPreferences;

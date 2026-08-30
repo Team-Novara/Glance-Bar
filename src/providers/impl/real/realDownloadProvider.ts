@@ -1,7 +1,8 @@
 import { sendDownloadControl, type DownloadAction } from "../../../runtime/actions/downloadControlRuntime";
-import type { HubEvent } from "@/entities";
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
+
+import type { HubEvent } from "@/entities";
 
 const PROVIDER_ID = "real-download-provider";
 const TICK_INTERVAL_MS = 1_000;

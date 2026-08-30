@@ -6,6 +6,9 @@ import { IdleHub } from "./IdleHub";
 import { MultiTaskHub } from "./MultiTaskHub";
 import { MusicHub } from "./MusicHub";
 import { NotificationHub } from "./NotificationHub";
+import { GlassPanel } from "../../../shared/ui/GlassPanel";
+
+import type { HubMode, HubTask, MusicState, NotificationState } from "@/entities";
 import {
   aiTask,
   downloadTask,
@@ -13,8 +16,6 @@ import {
   musicState,
   notificationState,
 } from "@/providers/impl/mock/mockHubData";
-import { GlassPanel } from "../../../shared/ui/GlassPanel";
-import type { HubMode, HubTask, MusicState, NotificationState } from "@/entities";
 
 type HubShellProps = {
   mode: HubMode;

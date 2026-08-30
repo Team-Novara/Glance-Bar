@@ -1,10 +1,10 @@
+mod commands;
+mod media;
+mod monitoring;
+mod preferences;
+mod tray;
 mod types;
 mod window;
-mod media;
-mod tray;
-mod preferences;
-mod commands;
-mod monitoring;
 
 pub use crate::types::*;
 
@@ -14,9 +14,9 @@ use tauri::menu::{CheckMenuItemBuilder, MenuBuilder};
 use tauri::{Emitter, Manager, PhysicalPosition, WindowEvent};
 
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
-use tauri_plugin_global_shortcut::ShortcutState;
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use tauri_plugin_autostart::MacosLauncher;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use tauri_plugin_global_shortcut::ShortcutState;
 
 // ---------------------------------------------------------------------------
 // Constants (kept in lib.rs as crate-wide singletons).
@@ -64,10 +64,12 @@ fn create_status_center_menu<R: tauri::Runtime>(
         CheckMenuItemBuilder::with_id(MENU_ALWAYS_FLOAT, "\u{603B}\u{662F}\u{60AC}\u{6D6E}")
             .checked(preferences.always_float)
             .build(app)?;
-    let avoid_fullscreen =
-        CheckMenuItemBuilder::with_id(MENU_AVOID_FULLSCREEN, "\u{5168}\u{5C4F}\u{65F6}\u{907F}\u{8BA9}")
-            .checked(preferences.avoid_fullscreen)
-            .build(app)?;
+    let avoid_fullscreen = CheckMenuItemBuilder::with_id(
+        MENU_AVOID_FULLSCREEN,
+        "\u{5168}\u{5C4F}\u{65F6}\u{907F}\u{8BA9}",
+    )
+    .checked(preferences.avoid_fullscreen)
+    .build(app)?;
     let lock_position =
         CheckMenuItemBuilder::with_id(MENU_LOCK_POSITION, "\u{9501}\u{5B9A}\u{4F4D}\u{7F6E}")
             .checked(preferences.lock_position)
@@ -106,7 +108,10 @@ fn emit_status_center_settings<R: tauri::Runtime>(
     );
 }
 
-fn emit_open_settings_requested<R: tauri::Runtime>(app: &tauri::AppHandle<R>, source: &'static str) {
+fn emit_open_settings_requested<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    source: &'static str,
+) {
     let _ = app.emit_to(
         STATUS_WINDOW_LABEL,
         STATUS_CENTER_OPEN_SETTINGS_EVENT,
@@ -153,7 +158,11 @@ fn handle_status_center_menu_event<R: tauri::Runtime>(
                 crate::preferences::apply_preference_menu_state(menu_items, &state.preferences);
             }
             emit_status_center_settings(app, &state.preferences);
-            emit_status_center_action(app, "toggle-always-float", Some(state.preferences.always_float));
+            emit_status_center_action(
+                app,
+                "toggle-always-float",
+                Some(state.preferences.always_float),
+            );
         }
         MENU_AVOID_FULLSCREEN => {
             state.preferences.avoid_fullscreen = !state.preferences.avoid_fullscreen;
@@ -175,7 +184,11 @@ fn handle_status_center_menu_event<R: tauri::Runtime>(
                 crate::preferences::apply_preference_menu_state(menu_items, &state.preferences);
             }
             emit_status_center_settings(app, &state.preferences);
-            emit_status_center_action(app, "toggle-lock-position", Some(state.preferences.lock_position));
+            emit_status_center_action(
+                app,
+                "toggle-lock-position",
+                Some(state.preferences.lock_position),
+            );
         }
         MENU_RESET_POSITION => emit_status_center_action(app, "reset-position", None),
         MENU_OPEN_SETTINGS => request_open_settings(app, "menu"),
@@ -254,7 +267,9 @@ pub fn run() {
                     .with_shortcut(GLOBAL_SHORTCUT_RECALL)?
                     .with_handler(|app, shortcut, event| {
                         if event.state == ShortcutState::Pressed
-                            && shortcut.to_string().eq_ignore_ascii_case(GLOBAL_SHORTCUT_RECALL)
+                            && shortcut
+                                .to_string()
+                                .eq_ignore_ascii_case(GLOBAL_SHORTCUT_RECALL)
                         {
                             reveal_status_center_window(app);
                         }
@@ -263,17 +278,19 @@ pub fn run() {
             )?;
 
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
-            app.handle().plugin(
-                tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--minimized"])),
-            )?;
+            app.handle().plugin(tauri_plugin_autostart::init(
+                MacosLauncher::LaunchAgent,
+                Some(vec!["--minimized"]),
+            ))?;
 
             let preferences = crate::preferences::load_status_center_preferences(app.handle());
             let menu_items = create_status_center_menu(app.handle(), &preferences)?;
             let tray_menu = crate::tray::create_tray_menu(app.handle())?;
 
-            let _tray = crate::tray::build_tray_icon(app.handle().clone(), &tray_menu, |app_handle| {
-                toggle_status_center_window(app_handle);
-            })?;
+            let _tray =
+                crate::tray::build_tray_icon(app.handle().clone(), &tray_menu, |app_handle| {
+                    toggle_status_center_window(app_handle);
+                })?;
 
             if let Ok(mut state) = setup_state.lock() {
                 state.preferences = preferences.clone();
@@ -290,8 +307,12 @@ pub fn run() {
                         let window_width = (303.0 * scale) as i32;
                         let window_height = (64.0 * scale) as i32;
                         let margin = (8.0 * scale) as i32;
-                        let x = work_area.position.x + work_area.size.width as i32 - window_width - margin;
-                        let y = work_area.position.y + work_area.size.height as i32 - window_height - margin;
+                        let x = work_area.position.x + work_area.size.width as i32
+                            - window_width
+                            - margin;
+                        let y = work_area.position.y + work_area.size.height as i32
+                            - window_height
+                            - margin;
                         let _ = window.set_position(PhysicalPosition::new(x, y));
                     }
                 }

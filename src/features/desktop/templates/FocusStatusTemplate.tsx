@@ -7,9 +7,9 @@ import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
+import type { DesktopFocusState } from "@/entities";
 import { getDesktopStatusTemplateChromeCopy } from "@/entities/status/config";
 import { stopFocusSession } from "@/runtime/actions/focusStopRuntime";
-import type { DesktopFocusState } from "@/entities";
 
 type FocusStatusTemplateProps = {
   state: DesktopFocusState;

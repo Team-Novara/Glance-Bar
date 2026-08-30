@@ -15,7 +15,8 @@ const STATUS_CENTER_CLIPBOARD_EVENT: &str = "status-center://clipboard-changed";
 const STATUS_CENTER_FOCUS_ASSIST_EVENT: &str = "status-center://focus-assist-changed";
 const STATUS_CENTER_NOTIFICATION_EVENT: &str = "status-center://notifications-changed";
 const FOCUS_ASSIST_MONITOR_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
-const CLIPBOARD_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(800);/// Spawns the clipboard polling thread. Every 800ms it reads the system
+const CLIPBOARD_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(800);
+/// Spawns the clipboard polling thread. Every 800ms it reads the system
 /// clipboard via `arboard` and emits a [`STATUS_CENTER_CLIPBOARD_EVENT`] when
 /// non-empty text is detected. Exits its loop when `shutdown` is set.
 pub fn start_clipboard_monitor(app_handle: tauri::AppHandle, shutdown: Arc<AtomicBool>) {
@@ -57,7 +58,8 @@ pub fn start_focus_monitor(app_handle: tauri::AppHandle, shutdown: Arc<AtomicBoo
             if shutdown.load(Ordering::Relaxed) {
                 break;
             }
-            let focus_state: FocusAssistStatePayload = crate::commands::focus::read_focus_assist_state();
+            let focus_state: FocusAssistStatePayload =
+                crate::commands::focus::read_focus_assist_state();
             if focus_state.active != last_focus_active || focus_state.profile != last_profile {
                 last_focus_active = focus_state.active;
                 last_profile = focus_state.profile.clone();

@@ -109,11 +109,11 @@ export default tseslint.config(
         "warn",
         {
           zones: [
-            // features -> entities, shared, providers ONLY (NEVER runtime directly)
+            // features -> entities, shared, providers, styles ONLY (NEVER runtime directly)
             {
               target: "src/features",
               from: "src",
-              except: ["src/features", "src/entities", "src/shared", "src/providers"],
+              except: ["src/features", "src/entities", "src/shared", "src/providers", "src/styles"],
             },
             // providers -> entities, shared, runtime
             {
@@ -133,7 +133,7 @@ export default tseslint.config(
               from: "src",
               except: ["src/entities"],
             },
-            // shared -> import nothing inside src
+            // shared -> import nothing inside src (except test-util needs i18n)
             {
               target: "src/shared",
               from: "src",
@@ -169,6 +169,14 @@ export default tseslint.config(
       // GuestSourceHealthIndicator.tsx). Demote to warn for now
       // and revisit during a dedicated cleanup.
       "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    // Test + setup files: exempt from boundary rules (they load fixtures/i18n
+    // across the FSD boundary by design).
+    files: ["src/**/*.test.ts", "src/**/*.vitest.ts", "src/test/**/*.ts", "src/shared/test-util/setup.ts"],
+    rules: {
+      "import/no-restricted-paths": "off",
     },
   },
 );

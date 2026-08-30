@@ -1,5 +1,4 @@
 // Barrel: desktop status config — owns TEMPLATE_ORDER/PRIORITY
-import i18n from '@/i18n';
 import type {
   DesktopStatusKind,
   DesktopStatusStateMap,
@@ -9,6 +8,8 @@ import type {
   SystemPerformanceMetric,
   SystemPerformanceMetricId,
 } from './performance';
+
+import i18n from '@/i18n';
 
 const DESKTOP_STATUS_METRIC_TONES: Record<
   SystemPerformanceMetricId,

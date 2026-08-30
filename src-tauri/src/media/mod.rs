@@ -5,9 +5,9 @@
 // #[tauri::command] handlers live in crate::commands::media; the per-platform
 // impls live in the windows/macos/linux sub-modules.
 
-pub mod windows;
-pub mod macos;
 pub mod linux;
+pub mod macos;
+pub mod windows;
 
 use crate::types::*;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -62,7 +62,9 @@ pub fn start_mta_media_thread(
                 match RoInitialize(RO_INIT_MULTITHREADED) {
                     Ok(()) => windows::append_media_log("[media-thread] RoInitialize MTA OK"),
                     Err(e) => {
-                        windows::append_media_log(&format!("[media-thread] RoInitialize MTA FAILED: {e}"));
+                        windows::append_media_log(&format!(
+                            "[media-thread] RoInitialize MTA FAILED: {e}"
+                        ));
                     }
                 }
             }
@@ -73,7 +75,8 @@ pub fn start_mta_media_thread(
             let mut last_title = String::new();
             let mut last_artist = String::new();
             let mut last_refresh_at: u64 = 0;
-            let mut cache: Option<<windows::WindowsMediaProvider as PlatformMediaProvider>::Cache> = None;
+            let mut cache: Option<<windows::WindowsMediaProvider as PlatformMediaProvider>::Cache> =
+                None;
 
             loop {
                 while let Ok(MediaRequest::Action(action, reply_tx)) = request_rx.try_recv() {
@@ -81,12 +84,14 @@ pub fn start_mta_media_thread(
                     let _ = reply_tx.send(result);
                 }
 
-                let status = windows::WindowsMediaProvider::read_status(&mut cache, crate::unix_time_ms());
+                let status =
+                    windows::WindowsMediaProvider::read_status(&mut cache, crate::unix_time_ms());
 
                 let now_ms = crate::unix_time_ms();
                 if status.available
                     && status.playback_status == "playing"
-                    && now_ms.saturating_sub(last_refresh_at) >= MEDIA_REFRESH_INTERVAL.as_millis() as u64
+                    && now_ms.saturating_sub(last_refresh_at)
+                        >= MEDIA_REFRESH_INTERVAL.as_millis() as u64
                 {
                     last_refresh_at = now_ms;
                     let _ = app_handle.emit(MEDIA_SESSION_EVENT, &status);

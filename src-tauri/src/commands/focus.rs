@@ -10,13 +10,19 @@ pub(crate) fn read_focus_assist_state() -> FocusAssistStatePayload {
     use winreg::RegKey;
 
     let active = RegKey::predef(HKEY_CURRENT_USER)
-        .open_subkey_with_flags(r"Software\Microsoft\Windows\CurrentVersion\QuietHours", KEY_READ)
+        .open_subkey_with_flags(
+            r"Software\Microsoft\Windows\CurrentVersion\QuietHours",
+            KEY_READ,
+        )
         .and_then(|key| key.get_value::<u32, _>("NFPEnabled"))
         .map(|v| v == 1)
         .unwrap_or(false);
 
     let profile = RegKey::predef(HKEY_CURRENT_USER)
-        .open_subkey_with_flags(r"Software\Microsoft\Windows\CurrentVersion\QuietHours", KEY_READ)
+        .open_subkey_with_flags(
+            r"Software\Microsoft\Windows\CurrentVersion\QuietHours",
+            KEY_READ,
+        )
         .and_then(|key| key.get_value::<String, _>("Profile"))
         .unwrap_or_default();
 

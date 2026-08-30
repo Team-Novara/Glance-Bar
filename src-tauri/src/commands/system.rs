@@ -4,7 +4,7 @@
 
 use crate::clamp_percent;
 use crate::types::{
-    DownloadControlResult, OverlayPolicy, SystemPerformanceSnapshot, SharedDesktopProductState,
+    DownloadControlResult, OverlayPolicy, SharedDesktopProductState, SystemPerformanceSnapshot,
 };
 use sysinfo::{Networks, System};
 use tauri::State;
@@ -35,11 +35,18 @@ pub async fn get_system_performance(
 
     let (download_speed, upload_speed) = sample_network_speeds(&state);
 
-    Ok(SystemPerformanceSnapshot { cpu, memory, download_speed, upload_speed })
+    Ok(SystemPerformanceSnapshot {
+        cpu,
+        memory,
+        download_speed,
+        upload_speed,
+    })
 }
 
 #[tauri::command]
-pub fn get_overlay_policy(state: State<'_, SharedDesktopProductState<tauri::Wry>>) -> OverlayPolicy {
+pub fn get_overlay_policy(
+    state: State<'_, SharedDesktopProductState<tauri::Wry>>,
+) -> OverlayPolicy {
     let foreground_fullscreen = crate::commands::window::foreground_window_is_fullscreen();
     let avoid_fullscreen = state
         .lock()
@@ -68,7 +75,9 @@ pub(crate) fn sample_network_speeds(state: &SharedDesktopProductState<tauri::Wry
     if let Ok(mut guard) = state.lock() {
         let cache = &mut guard.perf_cache;
 
-        let networks = cache.networks.get_or_insert_with(Networks::new_with_refreshed_list);
+        let networks = cache
+            .networks
+            .get_or_insert_with(Networks::new_with_refreshed_list);
         networks.refresh();
 
         let received_bytes: u64 = networks.values().map(|data| data.received()).sum();
@@ -113,9 +122,13 @@ pub fn set_autostart_enabled(
     enabled: bool,
 ) -> Result<(), String> {
     if enabled {
-        autostart.enable().map_err(|e| format!("enable autostart failed: {e}"))?;
+        autostart
+            .enable()
+            .map_err(|e| format!("enable autostart failed: {e}"))?;
     } else {
-        autostart.disable().map_err(|e| format!("disable autostart failed: {e}"))?;
+        autostart
+            .disable()
+            .map_err(|e| format!("disable autostart failed: {e}"))?;
     }
     Ok(())
 }

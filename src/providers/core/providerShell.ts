@@ -5,6 +5,7 @@ import type {
   HubProviderMetadata,
   HubProviderStatus,
 } from "./types";
+
 import type { HubEvent } from "@/entities";
 
 export type ProviderShellHandle = {

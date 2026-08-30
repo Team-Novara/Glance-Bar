@@ -2,8 +2,8 @@
 // macOS Media Session stub — MediaPlayer.framework NowPlaying (Stage 6).
 // ---------------------------------------------------------------------------
 
-use crate::types::MediaSessionStatus;
 use super::PlatformMediaProvider;
+use crate::types::MediaSessionStatus;
 
 /// Read the current media session status. macOS is not yet supported; returns
 /// an `unsupported` status.

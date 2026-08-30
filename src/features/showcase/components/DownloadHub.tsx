@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 
 import { FluentIconChip, FluentProgressRail } from "./ShowcaseFluentTokens";
+
 import type { HubTask } from "@/entities";
 
 type DownloadHubProps = {

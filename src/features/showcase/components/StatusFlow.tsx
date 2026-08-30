@@ -1,6 +1,7 @@
 import { HubShell } from "./HubShell";
-import { showcaseSteps } from "@/providers/impl/mock/mockHubData";
+
 import type { HubMode } from "@/entities";
+import { showcaseSteps } from "@/providers/impl/mock/mockHubData";
 
 type StatusFlowProps = {
   activeMode: HubMode;

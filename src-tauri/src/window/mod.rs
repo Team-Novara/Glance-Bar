@@ -6,9 +6,9 @@
 // commands/window.rs selects the active policy via #[cfg] and delegates the
 // unsafe / platform-specific work here, so the command layer stays thin.
 
-pub mod windows;
-pub mod macos;
 pub mod linux;
+pub mod macos;
+pub mod windows;
 
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;

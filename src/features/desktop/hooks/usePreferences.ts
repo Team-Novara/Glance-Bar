@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
+import type { DesktopStatusPreferences, DesktopStatusPreferencesPayload } from "@/entities";
 import { listenStatusCenterSettings } from "@/runtime/tauri/desktopProductRuntime";
 import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
-import type { DesktopStatusPreferences, DesktopStatusPreferencesPayload } from "@/entities";
 
 const STATUS_CENTER_SETTINGS_COMMAND = "get_status_center_settings";
 const SET_STATUS_CENTER_PREFERENCES_COMMAND = "set_status_center_preferences";
