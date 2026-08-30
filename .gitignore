@@ -27,3 +27,4 @@ screenshotScript.js
 work/
 scripts/diag-missing.mjs
 media-debug.log
+coverage/
