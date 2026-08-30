@@ -1,61 +1,90 @@
 # Glance Bar
 
-Glance Bar is a cross-platform desktop status hub built with Tauri 2, Rust, React, TypeScript, and Vite. It presents the most relevant desktop status in a compact status-center window and keeps native collection separate from UI rendering.
+> A Windows-first desktop status hub for seeing the important things happening on your computer without switching between apps.
 
-## What is implemented
+Glance Bar keeps a compact status-center window close at hand. It is designed to surface useful desktop activity—such as what is playing, download progress, and focus sessions—while staying quiet when there is nothing worth interrupting you for.
 
-- A product desktop surface at `/desktop` and a lazy-loaded demo and visual-QA surface at `/showcase`.
-- A single event pipeline: `Provider -> HubEventBus -> aggregation -> resolver/scheduler -> template UI`.
-- Real providers for clipboard, Docker, downloads, focus, Git, media session, npm, system performance, and updates; mock providers for music, downloads, AI, and notifications.
-- A Tauri shell with tray controls, preferences, window policy, autostart, native commands, and Windows/macOS/Linux platform modules.
-- Scheduler rules for priority, manual preference, stability, pre-emption, and media/resident alternation.
+## MVP focus
 
-## Start here
+The first product release is focused on three everyday states:
 
-1. Read [the repository guide](docs/README.md).
-2. Read [the architecture overview](docs/architecture/ARCHITECTURE.md).
-3. Read [the unified execution plan](docs/plans/GLANCE_BAR_PLAN.md) before planning product work.
-4. Read [the contribution guide](CONTRIBUTING.md) before changing code.
+- **Media** — see what is playing and use available playback actions.
+- **Downloads** — follow meaningful progress, completion, and failure states.
+- **Focus** — see an active focus session and its completion state.
 
-## Development
+System performance and provider health support those experiences. Developer-oriented sources such as Git, Docker, npm, and AI tasks are engineering capabilities, not the success criteria for the first user-facing release.
+
+## Why Glance Bar
+
+- **Less context switching:** understand a state change without hunting for its source app.
+- **Predictable display:** priority, manual selection, and automatic return rules determine what is visible.
+- **Privacy-safe by design:** platform data is normalized into coarse, bounded facts before it reaches the UI.
+- **Desktop-native controls:** tray actions, preferences, window positioning, fullscreen avoidance, and autostart belong to the desktop shell.
+
+## Platform status
+
+| Platform | Status |
+|---|---|
+| Windows | Primary development and validation target. |
+| macOS | Platform modules compile; individual capabilities may report unsupported. |
+| Linux | Platform modules compile; individual capabilities may report unsupported. |
+
+Do not treat compile-time support as feature parity. A capability is only available when its native path, provider state, fallback behavior, and validation evidence all exist.
+
+## Quick start
+
+### Prerequisites
+
+- Node.js 20 or later
+- Rust stable toolchain
+- The platform prerequisites required by Tauri 2 for your operating system
+
+### Run the web surfaces
 
 ```bash
 npm install
 npm run dev
+```
+
+Open `/desktop` for the product-facing surface or `/showcase` for the demo and visual-QA surface.
+
+### Run the desktop application
+
+```bash
 npm run tauri -- dev
 ```
 
-The Vite application serves `/desktop` and `/showcase`. `npm run tauri -- dev` launches the desktop shell.
+## How it works
+
+```text
+Provider -> HubEventBus -> aggregation -> resolver/scheduler -> template UI
+```
+
+Native commands and events stay behind Tauri/runtime boundaries. Providers normalize source data; the scheduler decides which useful status to show; React templates render the selected state.
+
+For the full design, read the [architecture overview](docs/architecture/ARCHITECTURE.md) and [event flow](docs/architecture/EVENT_FLOW.md).
 
 ## Quality checks
 
 ```bash
 npm run typecheck
-npm run lint -- --max-warnings=0
+npm run lint
 npm run test:vitest
 npm run qa
 cargo check --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all
 ```
 
-The current verified JavaScript test baseline is 50 test files and 783 passing tests (2026-08-30). Do not copy this count into future change-specific documentation; run the command and report its output instead.
+## Documentation
 
-## Repository layout
+- [MVP launch plan](docs/product/MVP_LAUNCH_PLAN.md)
+- [Product requirements](docs/product/PRD.md)
+- [Product roadmap](docs/product/ROADMAP.md)
+- [Repository guide](docs/README.md)
+- [Provider SDK](docs/providers/PROVIDER_SDK.md)
+- [Contribution guide](CONTRIBUTING.md)
 
-```text
-src/
-  app/          application entry and route switch
-  entities/     status and provider domain contracts
-  features/     desktop product UI and showcase UI
-  providers/    core provider infrastructure plus mock/real implementations
-  runtime/      Tauri, system, window, scheduler, and action boundaries
-  shared/       reusable UI, utilities, configuration, and test helpers
-  state/        event bus, aggregation, resolver, and pure scheduling policy
-src-tauri/src/  commands, platform modules, monitoring, tray, preferences, app glue
-docs/           current product, architecture, provider, QA, and plan documents
-```
-
-Historical material is retained under `docs/archive/`. It is not a description of the current codebase.
+Historical material lives in `docs/archive/` and does not describe the current implementation.
 
 ## License
 
