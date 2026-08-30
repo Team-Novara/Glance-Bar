@@ -1,69 +1,22 @@
-# Cober-Windows-Bar UI Spec
+# UI Specification
 
-## 1. 视觉方向
+## Surfaces
 
-整体采用 Windows 11 Fluent Design，重点模拟 Acrylic、Mica、圆角、半透明边框、冷蓝阴影和柔和动画。
+- `/desktop`: the product-facing status-center window.
+- `/showcase`: a lazy-loaded demo and QA surface for visual and interaction review.
+- Settings: an in-window panel for display preference, autostart, provider health, and window controls.
 
-## 2. 页面布局
+## Visual direction
 
-- 左侧：项目标题、产品说明、显示模式列表。
-- 右侧上方：当前悬浮栏预览。
-- 右侧中部：六种状态展示网格。
-- 右侧下方：任务栏融合模式、视觉风格、位置示意。
+The desktop surface uses compact Fluent-inspired styling: rounded geometry, restrained translucency, strong hierarchy, clear semantic color, and compositor-friendly motion. Tokens and shared styling live in `src/styles/` and shared UI primitives live in `src/shared/ui/`.
 
-## 3. Hub 规格
+## States
 
-- Idle：约 `196px × 64px`。
-- 展开卡片：宽度约 `300px-350px`。
-- 主圆角：`22px-24px`。
-- 图标容器：`44px × 44px`，圆角 `14px`。
-- Multi Task：固定三行，不滚动。
+Status templates are selected by the scheduler from the configured desktop status kinds. Every template must present a clear label, an accessible status or progress indicator where applicable, and a safe empty/fallback state.
 
-## 4. 颜色
+## Interaction
 
-- 页面背景：深蓝黑。
-- 卡片背景：半透明深蓝灰。
-- 边框：低透明度浅蓝白。
-- 主文字：白色。
-- 次级文字：浅灰蓝。
-- Music 进度：粉色。
-- AI 进度：蓝色。
-- Download 进度：绿色。
-
-## 5. 材质
-
-卡片使用：
-
-```css
-backdrop-filter: blur(30px) saturate(145%);
-border: 1px solid rgba(174, 214, 255, 0.2);
-```
-
-目标是形成 Acrylic / Mica 的玻璃质感。
-
-## 6. 动画
-
-- 状态切换使用 Framer Motion。
-- 时长：`180ms-260ms`。
-- easing：`[0.16, 1, 0.3, 1]`。
-- 进入：轻微上移、透明度变化、scale 变化。
-- 退出：轻微上移或下移、透明度变化。
-- 支持 `prefers-reduced-motion`。
-
-## 7. 响应式
-
-必须检查：
-
-- `1366 × 768`
-- `1440 × 900`
-- `1920 × 1080`
-
-小屏下右侧内容允许从多列变成单列，但文字不能重叠或溢出。
-
-## 8. 验收清单
-
-- Idle、Music、AI、Download、Notification、Multi Task 均可见。
-- 卡片边框、阴影、blur 不脏不糊。
-- 进度条颜色区分清晰。
-- 中文和英文在卡片内都能正常截断。
-- 左侧模式列表点击反馈明确。
+- Pointer dragging respects the lock-position preference.
+- Context menu and tray actions route through feature hooks and native events.
+- Keyboard and pointer interactions must not require Tauri to be present in tests.
+- Animation should use transform and opacity rather than layout-affecting properties.
