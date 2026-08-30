@@ -27,7 +27,6 @@ export type HubProviderKind =
   | "update"
   | "git"
   | "docker"
-  | "wsl"
   | "npm";
 
 export type HubProviderMetadata = {

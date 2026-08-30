@@ -140,7 +140,6 @@ describe("isHubEventSource", () => {
     expect(isHubEventSource("focus")).toBe(true);
     expect(isHubEventSource("git")).toBe(true);
     expect(isHubEventSource("docker")).toBe(true);
-    expect(isHubEventSource("wsl")).toBe(true);
     expect(isHubEventSource("npm")).toBe(true);
   });
 

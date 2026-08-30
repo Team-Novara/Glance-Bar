@@ -61,7 +61,6 @@ const HUB_EVENT_SOURCES = new Set([
   "focus",
   "git",
   "docker",
-  "wsl",
   "npm",
 ]);
 

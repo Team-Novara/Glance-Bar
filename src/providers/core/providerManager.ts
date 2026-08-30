@@ -17,7 +17,6 @@ import { createRealMediaSessionProvider } from "../impl/real/realMediaSessionPro
 import { createRealNpmProvider } from "../impl/real/realNpmProvider";
 import { createRealSystemPerformanceProvider } from "../impl/real/realSystemPerformanceProvider";
 import { createRealUpdateProvider } from "../impl/real/realUpdateProvider";
-import { createRealWslProvider } from "../impl/real/realWslProvider";
 
 export type ProviderManagerOptions = {
   /** When true, register real (Tauri-backed) providers. Default: true. */
@@ -82,7 +81,6 @@ export function createProviderManager(
     registerProvider(createRealNpmProvider());
     registerProvider(createRealSystemPerformanceProvider());
     registerProvider(createRealUpdateProvider());
-    registerProvider(createRealWslProvider());
   }
 
   // Register mock providers as fallback/demo data sources

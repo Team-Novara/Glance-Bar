@@ -8,4 +8,3 @@ export * from "./realMediaSessionProvider";
 export * from "./realNpmProvider";
 export * from "./realSystemPerformanceProvider";
 export * from "./realUpdateProvider";
-export * from "./realWslProvider";

@@ -273,11 +273,11 @@ function deriveStateOverrides(hubState: HubStoreState): Partial<DesktopStatusSta
     overrides.update = snapshotAiTask(aiTask);
   }
 
-  // --- Developer events (git/docker/wsl/npm real providers) ---
+  // --- Developer events (git/docker/npm real providers) ---
   const developerEvent = hubState.events.find(
     (event) =>
       event.type === "ai" &&
-      (event.source === "git" || event.source === "docker" || event.source === "wsl" || event.source === "npm"),
+      (event.source === "git" || event.source === "docker" || event.source === "npm"),
   );
   if (developerEvent) {
     overrides.developer = snapshotDeveloperEvent(developerEvent);
@@ -354,12 +354,12 @@ function deriveActiveKinds(hubState: HubStoreState, events: HubEvent[]): Desktop
     activeKinds.push("update");
   }
 
-  // Developer events (git/docker/wsl/npm real providers)
+  // Developer events (git/docker/npm real providers)
   if (
     events.some(
       (event) =>
         event.type === "ai" &&
-        (event.source === "git" || event.source === "docker" || event.source === "wsl" || event.source === "npm"),
+        (event.source === "git" || event.source === "docker" || event.source === "npm"),
     )
   ) {
     activeKinds.push("developer");

@@ -22,7 +22,6 @@ export type HubEventSource =
   | "focus"
   | "git"
   | "docker"
-  | "wsl"
   | "npm";
 
 export type HubTask = {

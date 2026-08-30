@@ -54,8 +54,10 @@ describe("useDesktopStatusRuntime", () => {
   it("returns a resident resolved state when no providers are emitting", () => {
     const { result } = renderHook(() => useDesktopStatusRuntime(baseMetrics, "fallback"));
 
-    expect(result.current.activeKinds).toEqual(["developer"]);
-    expect(result.current.resolvedState.kind).toBe("developer");
+    // mockProviders: false in the hook → no mock events → no active kinds →
+    // scheduler falls back to the default "resident" kind.
+    expect(result.current.activeKinds).toEqual([]);
+    expect(result.current.resolvedState.kind).toBe("resident");
   });
 
   it("exposes the preferred window constant via the result", () => {
