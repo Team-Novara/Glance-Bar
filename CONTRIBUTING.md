@@ -1,102 +1,49 @@
 # Contributing
 
-## First Read
+## Read first
 
-Before opening a PR, read in this order:
+1. [Repository guide](docs/README.md)
+2. [Architecture](docs/architecture/ARCHITECTURE.md)
+3. [Unified execution plan](docs/plans/GLANCE_BAR_PLAN.md)
+4. [Structure and dependency guide](docs/plans/STRUCTURE_REFACTOR_PLAN.md)
+5. [Provider SDK](docs/providers/PROVIDER_SDK.md), when changing a provider
 
-1. [README](README.md)
-2. [Repository Guide](docs/README.md)
-3. [Glance Bar Unified Plan](docs/plans/GLANCE_BAR_PLAN.md) — single source of truth
-4. [Structure Refactor Plan](docs/plans/STRUCTURE_REFACTOR_PLAN.md) — new `src/{app,entities,providers,runtime,shared}` ownership
-5. [Architecture Overview](docs/architecture/ARCHITECTURE.md)
-6. [Roadmap](docs/product/ROADMAP.md)
+## Architecture rules
 
-## How To Navigate The Repo
+- Keep the data path `Provider -> HubEventBus -> aggregation -> resolver/scheduler -> UI`.
+- New providers implement `HubProvider` and are registered through `createProviderManager`.
+- UI components do not call Tauri `invoke` directly. Use a runtime module or a feature hook.
+- Native data crosses the boundary only through Tauri commands or events and must remain coarse and privacy-safe.
+- Use barrels such as `@/entities/status`, `@/providers/core`, and `@/runtime/tauri` for new imports.
 
-Use this mental model (post `STRUCTURE_REFACTOR_PLAN.md` scaffold — old paths still work via barrel re-exports):
+## Directory ownership
 
-- `src/app/` — App shell + routing (new)
-- `src/features/desktop|showcase` — product vs demo surfaces
-- `src/entities/{status,provider}` — domain types (new, re-exports `src/types/hub.ts`)
-- `src/providers/{core,impl/{mock,real,platform}}` — contracts + impls (new barrels re-export old)
-- `src/runtime/{tauri,window,scheduler,system,actions}` — Tauri bridge split (new barrels)
-- `src/shared/{ui,lib,config}` — UI + guards + constants (new)
-- `src/state/` — event bus/store/resolver
-- `src-tauri/src/{commands,window/{win,mac,linux},media/{win,mac,linux},monitoring}` — Rust split scaffolds
+- `src/app`: composition only.
+- `src/features`: product and showcase UI; desktop hooks may call runtime modules.
+- `src/entities`: pure domain types and configuration.
+- `src/providers`: provider contracts, registry/adapter/manager, and provider implementations.
+- `src/runtime`: Tauri, system, scheduler, window, and action boundaries; never imports features or providers.
+- `src/shared`: reusable UI and utilities.
+- `src/state`: event bus, aggregation, resolver, and pure scheduling policy.
+- `src-tauri/src`: native leaf modules and command handlers.
 
-Old paths (`src/types/hub.ts`, `src/runtime/tauriRuntime.ts`, `src/providers/providerManager.ts`, `src-tauri/src/lib.rs:1754`) still work; new code **must** use new barrels (`@/entities/status`, `@/runtime/tauri`, `@/providers/core`).
-
-## What Kind Of PR To Open
-
-Prefer small PRs with one clear purpose.
-
-Good examples:
-
-- improve desktop status center UI without changing showcase behavior
-- add or refine runtime boundary logic in `src/runtime`
-- add a new mock provider or provider diagnostic path
-- improve docs for a specific subsystem
-
-Avoid mixing these together in one PR:
-
-- desktop UI redesign
-- runtime/window behavior changes
-- native Rust command changes
-- broad doc rewrites
-
-## Suggested PR Paths
-
-If you are working on desktop product behavior:
-
-- start in `src/features/desktop`
-- then inspect `src/runtime`
-- then inspect `src-tauri/src/lib.rs` if native behavior is needed
-
-If you are working on the showcase:
-
-- start in `src/features/showcase`
-- then inspect `src/state` and `src/providers`
-
-If you are working on system/provider boundaries:
-
-- start in `src/providers`, `src/runtime`, and `src/types`
-
-## Validation Before PR
-
-Run the checks that match your change. For most PRs:
+## Verify before requesting review
 
 ```bash
-npm run build
-npm run test:runtime
-```
-
-For broader UI/state/provider work:
-
-```bash
+npm run typecheck
+npm run lint -- --max-warnings=0
+npm run test:vitest
 npm run qa
+cargo check --manifest-path src-tauri/Cargo.toml
+cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all
 ```
 
-## Documentation Rules
+Run the checks relevant to the change at minimum. A provider, runtime, resolver, or scheduler change requires focused Vitest coverage.
 
-When you move or reshape project structure:
+## Git workflow
 
-- update `README.md`
-- update `docs/README.md`
-- update any active doc links that point at moved files
+`main` is protected. Use a focused `feat/*`, `fix/*`, `refactor/*`, `chore/*`, or `docs/*` branch and create a PR. Do not push directly to `main`; push only when requested. Keep one logical change and one ownership area per PR where possible.
 
-Historical files under `docs/archive/` are archival context and should not be treated as the current source of truth.
+## Documentation
 
-## Ground Rules
-
-- Keep product-facing desktop work separate from showcase-only demo work.
-- Reuse `src/shared/ui` instead of duplicating primitives.
-- Put domain types in `src/entities/` (new), not `src/types/` (legacy barrel).
-- Keep runtime behavior in `src/runtime/{tauri,window,scheduler,system,actions}` — do not scatter across UI components.
-- Respect `CODEOWNERS` ownership per folder; do not edit outside your dir without review.
-- Do not add fake "website preview" flows to the desktop product path.
-
-## Questions To Ask Before A Large PR
-
-- Is this a `desktop` change, a `showcase` change, or a `runtime/native` change?
-- Does this belong in `shared`, or is it feature-specific?
-- Does this need a doc update so a new contributor can still follow the repo?
+Update the current documentation when behavior, public contracts, structure, or quality gates change. Do not edit `docs/archive/`; it is retained as historical evidence. When a current plan becomes historical, add a clear superseded banner and update [docs/README.md](docs/README.md).
