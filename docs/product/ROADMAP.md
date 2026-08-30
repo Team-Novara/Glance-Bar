@@ -2,6 +2,8 @@
 
 This is the product-facing summary. [GLANCE_BAR_PLAN.md](../plans/GLANCE_BAR_PLAN.md) is the authoritative execution plan.
 
+The near-term product-validation scope and release criteria are defined in [MVP_LAUNCH_PLAN.md](MVP_LAUNCH_PLAN.md).
+
 ## Current product baseline
 
 Glance Bar has a functional Tauri shell, desktop and showcase surfaces, a provider-driven event pipeline, mock and real provider implementations, status scheduling, preferences, tray interaction, and automated unit coverage.
