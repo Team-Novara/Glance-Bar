@@ -8,12 +8,12 @@
 use crate::types::{SharedDesktopProductState, WindowPositionCorrection};
 use tauri::{Manager, PhysicalPosition, State, WebviewWindow};
 
-#[cfg(windows)]
-use crate::window::windows::WindowsPolicy as ActivePolicy;
-#[cfg(target_os = "macos")]
-use crate::window::macos::MacPolicy as ActivePolicy;
 #[cfg(target_os = "linux")]
 use crate::window::linux::LinuxPolicy as ActivePolicy;
+#[cfg(target_os = "macos")]
+use crate::window::macos::MacPolicy as ActivePolicy;
+#[cfg(windows)]
+use crate::window::windows::WindowsPolicy as ActivePolicy;
 
 // Bring PlatformWindowPolicy into scope so trait methods are callable on the
 // selected ActivePolicy via path-style dispatch (ActivePolicy::method).
@@ -38,7 +38,9 @@ pub fn set_status_window_floating(window: WebviewWindow, floating: bool) -> Resu
 }
 
 #[tauri::command]
-pub fn correct_status_window_position(window: WebviewWindow) -> Result<WindowPositionCorrection, String> {
+pub fn correct_status_window_position(
+    window: WebviewWindow,
+) -> Result<WindowPositionCorrection, String> {
     correct_status_window_position_for_window(&window)
 }
 
@@ -48,7 +50,9 @@ pub(crate) fn correct_status_window_position_for_window<R: tauri::Runtime>(
 ) -> Result<WindowPositionCorrection, String> {
     let position = window.outer_position().map_err(|error| error.to_string())?;
     let size = window.outer_size().map_err(|error| error.to_string())?;
-    let monitors = window.available_monitors().map_err(|error| error.to_string())?;
+    let monitors = window
+        .available_monitors()
+        .map_err(|error| error.to_string())?;
     let width = size.width.min(i32::MAX as u32) as i32;
     let height = size.height.min(i32::MAX as u32) as i32;
     let (x, y) = corrected_window_position(position.x, position.y, width, height, &monitors);

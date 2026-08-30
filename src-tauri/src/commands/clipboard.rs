@@ -18,8 +18,11 @@ pub fn open_url_in_browser(url: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn get_clipboard_content() -> Result<ClipboardContent, String> {
-    let mut clipboard = arboard::Clipboard::new().map_err(|e| format!("clipboard init failed: {e}"))?;
-    let text = clipboard.get_text().map_err(|e| format!("clipboard read failed: {e}"))?;
+    let mut clipboard =
+        arboard::Clipboard::new().map_err(|e| format!("clipboard init failed: {e}"))?;
+    let text = clipboard
+        .get_text()
+        .map_err(|e| format!("clipboard read failed: {e}"))?;
     let source_app = String::new();
 
     Ok(ClipboardContent {
@@ -31,7 +34,10 @@ pub fn get_clipboard_content() -> Result<ClipboardContent, String> {
 
 #[tauri::command]
 pub fn set_clipboard_content(text: String) -> Result<(), String> {
-    let mut clipboard = arboard::Clipboard::new().map_err(|e| format!("clipboard init failed: {e}"))?;
-    clipboard.set_text(&text).map_err(|e| format!("clipboard write failed: {e}"))?;
+    let mut clipboard =
+        arboard::Clipboard::new().map_err(|e| format!("clipboard init failed: {e}"))?;
+    clipboard
+        .set_text(&text)
+        .map_err(|e| format!("clipboard write failed: {e}"))?;
     Ok(())
 }

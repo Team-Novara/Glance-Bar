@@ -62,7 +62,13 @@ pub(crate) fn apply_preference_menu_state<R: tauri::Runtime>(
     menu_items: &StatusCenterMenuItems<R>,
     preferences: &DesktopStatusPreferences,
 ) {
-    let _ = menu_items.always_float.set_checked(preferences.always_float);
-    let _ = menu_items.avoid_fullscreen.set_checked(preferences.avoid_fullscreen);
-    let _ = menu_items.lock_position.set_checked(preferences.lock_position);
+    let _ = menu_items
+        .always_float
+        .set_checked(preferences.always_float);
+    let _ = menu_items
+        .avoid_fullscreen
+        .set_checked(preferences.avoid_fullscreen);
+    let _ = menu_items
+        .lock_position
+        .set_checked(preferences.lock_position);
 }

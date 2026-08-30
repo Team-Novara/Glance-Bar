@@ -2,8 +2,8 @@
 // Linux Media Session stub — MPRIS D-Bus via zbus (Stage 6).
 // ---------------------------------------------------------------------------
 
-use crate::types::MediaSessionStatus;
 use super::PlatformMediaProvider;
+use crate::types::MediaSessionStatus;
 
 /// Read the current media session status. Linux is not yet supported; returns
 /// an `unsupported` status.

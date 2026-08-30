@@ -91,8 +91,9 @@ pub async fn media_control(action: String) -> Result<crate::types::MediaControlR
 pub fn execute_media_action(action: &str) -> Result<crate::types::MediaControlResult, String> {
     let timeout = std::time::Duration::from_secs(5);
 
-    let async_op = windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
-        .map_err(|e| format!("media manager request failed: {e}"))?;
+    let async_op =
+        windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
+            .map_err(|e| format!("media manager request failed: {e}"))?;
     let manager = crate::media::windows::mta_wait_async(async_op, timeout)
         .map_err(|e| format!("media manager get failed: {e}"))?;
 
@@ -102,32 +103,37 @@ pub fn execute_media_action(action: &str) -> Result<crate::types::MediaControlRe
 
     let success = match action {
         "play-pause" => {
-            let playback_info = session.GetPlaybackInfo()
+            let playback_info = session
+                .GetPlaybackInfo()
                 .map_err(|e| format!("playback info failed: {e}"))?;
             let is_playing = playback_info.PlaybackStatus()
                 .map(|s| s == windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
                 .unwrap_or(false);
 
             if is_playing {
-                let op = session.TryPauseAsync()
+                let op = session
+                    .TryPauseAsync()
                     .map_err(|e| format!("pause dispatch failed: {e}"))?;
                 crate::media::windows::mta_wait_async(op, timeout)
                     .map_err(|e| format!("pause failed: {e}"))?
             } else {
-                let op = session.TryPlayAsync()
+                let op = session
+                    .TryPlayAsync()
                     .map_err(|e| format!("play dispatch failed: {e}"))?;
                 crate::media::windows::mta_wait_async(op, timeout)
                     .map_err(|e| format!("play failed: {e}"))?
             }
         }
         "next" => {
-            let op = session.TrySkipNextAsync()
+            let op = session
+                .TrySkipNextAsync()
                 .map_err(|e| format!("skip next dispatch failed: {e}"))?;
             crate::media::windows::mta_wait_async(op, timeout)
                 .map_err(|e| format!("skip next failed: {e}"))?
         }
         "previous" => {
-            let op = session.TrySkipPreviousAsync()
+            let op = session
+                .TrySkipPreviousAsync()
                 .map_err(|e| format!("skip previous dispatch failed: {e}"))?;
             crate::media::windows::mta_wait_async(op, timeout)
                 .map_err(|e| format!("skip previous failed: {e}"))?

@@ -119,8 +119,14 @@ fn read_media_session_status_at_cached(
         }
     };
 
-    let position_ms = timeline.Position().ok().and_then(|t| duration_100ns_to_ms(t.Duration));
-    let duration_ms = timeline.EndTime().ok().and_then(|t| duration_100ns_to_ms(t.Duration));
+    let position_ms = timeline
+        .Position()
+        .ok()
+        .and_then(|t| duration_100ns_to_ms(t.Duration));
+    let duration_ms = timeline
+        .EndTime()
+        .ok()
+        .and_then(|t| duration_100ns_to_ms(t.Duration));
     let progress = match (position_ms, duration_ms) {
         (Some(position), Some(duration)) if duration > 0 => {
             crate::clamp_percent((position as f64 / duration as f64) * 100.0)
@@ -188,7 +194,9 @@ where
         }
         if std::time::Instant::now() >= deadline {
             append_media_log("[wait] TIMEOUT");
-            return Err(windows::core::Error::from(windows::core::HRESULT(0x800705B4u32 as i32)));
+            return Err(windows::core::Error::from(windows::core::HRESULT(
+                0x800705B4u32 as i32,
+            )));
         }
         std::thread::sleep(Duration::from_millis(10));
     }
