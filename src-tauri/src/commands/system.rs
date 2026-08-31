@@ -53,7 +53,12 @@ pub fn get_overlay_policy(
     let foreground_fullscreen = crate::commands::window::foreground_window_is_fullscreen();
     let (always_float, avoid_fullscreen) = state
         .lock()
-        .map(|state| (state.preferences.always_float, state.preferences.avoid_fullscreen))
+        .map(|state| {
+            (
+                state.preferences.always_float,
+                state.preferences.avoid_fullscreen,
+            )
+        })
         .unwrap_or((true, true));
     let should_float =
         compute_overlay_policy(always_float, avoid_fullscreen, foreground_fullscreen);

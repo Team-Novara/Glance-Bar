@@ -11,7 +11,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::Emitter;
 
-use crate::types::{ClipboardContent, DownloadFolderStatus, FocusAssistStatePayload, NotificationSummaryPayload};
+use crate::types::{
+    ClipboardContent, DownloadFolderStatus, FocusAssistStatePayload, NotificationSummaryPayload,
+};
 
 const STATUS_CENTER_CLIPBOARD_EVENT: &str = "status-center://clipboard-changed";
 const STATUS_CENTER_FOCUS_ASSIST_EVENT: &str = "status-center://focus-assist-changed";
@@ -110,7 +112,8 @@ const DOWNLOAD_MONITOR_INTERVAL: std::time::Duration = std::time::Duration::from
 /// Progress is only re-emitted when it changes by at least this much, so a
 /// near-complete download does not spam an event per poll.
 const DOWNLOAD_PROGRESS_EMIT_THRESHOLD: u8 = 5;
-const TEMP_DOWNLOAD_EXTENSIONS: &[&str] = &[".part", ".crdownload", ".tmp", ".download", ".opdownload"];
+const TEMP_DOWNLOAD_EXTENSIONS: &[&str] =
+    &[".part", ".crdownload", ".tmp", ".download", ".opdownload"];
 
 /// Resolve the user's Downloads folder. On Windows we use %USERPROFILE%;
 /// falling back to the home dir keeps the helper robust to profile redirects.
@@ -127,7 +130,9 @@ pub(crate) fn downloads_dir() -> Option<PathBuf> {
 
 pub(crate) fn is_temp_download(name: &str) -> bool {
     let lower = name.to_lowercase();
-    TEMP_DOWNLOAD_EXTENSIONS.iter().any(|ext| lower.ends_with(ext))
+    TEMP_DOWNLOAD_EXTENSIONS
+        .iter()
+        .any(|ext| lower.ends_with(ext))
 }
 
 /// Snapshot the Downloads folder: the in-progress downloads (name -> size),
