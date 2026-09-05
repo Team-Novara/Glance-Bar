@@ -2,6 +2,10 @@
 
 Windows currently has the broadest native implementation. macOS and Linux platform modules are present so the application can compile and return explicit unsupported results for capabilities that have not yet been implemented.
 
+## Current checkpoint — 2026-09-05
+
+Cross-platform parity is intentionally paused. The active delivery plan remains Windows-first; macOS and Linux must continue to report explicit unsupported results until each capability is implemented and validated on real target hardware. The latest merged production-composition guards do not broaden platform availability claims.
+
 ## Goal
 
 Deliver platform capability parity without hiding platform gaps or weakening privacy boundaries.

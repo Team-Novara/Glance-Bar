@@ -1,10 +1,12 @@
 # 2026-09-05 Windows MVP 30-Day Execution Plan
 
-> Status: active delivery plan for 2026-09-05 through 2026-10-04
+> Status: paused after the 2026-09-05 automated checkpoint; the evidence plan remains the source of truth through 2026-10-04
 >
 > Parent plans: [GLANCE_BAR_PLAN.md](GLANCE_BAR_PLAN.md) and [MVP_LAUNCH_PLAN.md](../product/MVP_LAUNCH_PLAN.md)
 >
 > Product contract: [MVP_SCENARIO_MATRIX.md](../product/MVP_SCENARIO_MATRIX.md)
+
+> **Current status (2026-09-05): paused after the automated implementation checkpoint.** PR #39 is merged on `main` at `9aa9512`; local QA and the post-merge CI matrix are green. Gate A's code contract and automated evidence are complete, while Windows hardware, packaged-shell, soak, and tester evidence for Gates B–D remain open.
 
 ## 1. Outcome
 

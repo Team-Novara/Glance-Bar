@@ -3,6 +3,8 @@
 > 生成时间: 2026-08-31
 > 目标: 并行推进 MVP 六周计划全部工作，满足发布标准
 
+> **状态（2026-09-05）：已由 [2026-09-05_WINDOWS_MVP_30_DAY_EXECUTION_PLAN.md](2026-09-05_WINDOWS_MVP_30_DAY_EXECUTION_PLAN.md) 取代。** 本文保留为历史执行快照；当前代码已完成 Download Provider 可信化、生产组合隔离和自动化质量门禁，开发现阶段暂停，剩余工作以 Windows 实机证据为准。
+
 ## 当前基线（来自代码验证）
 
 - ✅ Media Provider: 真实（Windows GSMTC API）
