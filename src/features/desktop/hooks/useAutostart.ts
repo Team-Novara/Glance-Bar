@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   getAutostartEnabled,
@@ -20,23 +20,62 @@ export type UseAutostartResult = {
  */
 export function useAutostart(): UseAutostartResult {
   const [autostartEnabled, setAutostartEnabled] = useState(false);
+  const mutationVersionRef = useRef(0);
+  const nativeAutostartRef = useRef(false);
+  const requestedAutostartRef = useRef(false);
+  const toggleQueueRef = useRef(Promise.resolve());
+
+  const commitAutostartEnabled = useCallback((value: boolean) => {
+    nativeAutostartRef.current = value;
+    requestedAutostartRef.current = value;
+    setAutostartEnabled(value);
+  }, []);
 
   // Load the initial autostart state from the native shell. The IPC
   // layer falls back to `false` when Tauri is unavailable, so the
   // settings panel simply shows the toggle off in mock/browser mode.
   useEffect(() => {
-    void getAutostartEnabled().then(setAutostartEnabled);
-  }, []);
+    let disposed = false;
+    const readVersion = mutationVersionRef.current;
+
+    void getAutostartEnabled().then((value) => {
+      // A user can toggle the setting while the initial native read is still
+      // in flight. Do not let that stale read roll back the user's choice.
+      if (!disposed && mutationVersionRef.current === readVersion) {
+        commitAutostartEnabled(value);
+      }
+    });
+
+    return () => {
+      disposed = true;
+    };
+  }, [commitAutostartEnabled]);
 
   const toggleAutostart = useCallback(async () => {
-    const nextValue = !autostartEnabled;
-    const success = await applyAutostart(nextValue);
+    const nextValue = !requestedAutostartRef.current;
+    requestedAutostartRef.current = nextValue;
+    const mutationVersion = ++mutationVersionRef.current;
+    // Keep native writes ordered. This makes a rapid double-toggle represent
+    // two user intents instead of two writes derived from the same render.
+    const operation = toggleQueueRef.current.then(async () => {
+      const success = await applyAutostart(nextValue);
+      if (success) {
+        nativeAutostartRef.current = nextValue;
+      }
+      return success;
+    });
+    toggleQueueRef.current = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    const success = await operation;
     // Commit the local state only when the native shell accepted the
-    // change — keeps the toggle honest on IPC failure.
-    if (success) {
-      setAutostartEnabled(nextValue);
+    // change — keeps the toggle honest on IPC failure. Ignore late results
+    // from an older click so a rapid double-toggle cannot undo a newer one.
+    if (mutationVersion === mutationVersionRef.current) {
+      commitAutostartEnabled(success ? nextValue : nativeAutostartRef.current);
     }
-  }, [autostartEnabled]);
+  }, [commitAutostartEnabled]);
 
   return { autostartEnabled, toggleAutostart };
 }

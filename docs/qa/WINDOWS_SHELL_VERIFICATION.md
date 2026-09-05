@@ -12,7 +12,7 @@
 
 | # | Requirement | Status |
 |---|---|---|
-| 1 | Installs, launches, recalls from tray, respects saved preferences | **PASS** |
+| 1 | Installs, launches, recalls from tray, respects saved preferences | **AUTOMATED PASS** (physical run pending) |
 | 5a | Fullscreen avoidance works | **PASS** |
 | 5b | Lock position prevents drag | **PASS** |
 | 5c | Always-float works as described | **PASS** (after fix — see below) |
@@ -21,6 +21,27 @@
 One correctness bug was found and fixed (always-float). Position persistence is
 now implemented with bounded, DPI-aware geometry; the physical Windows restart
 and multi-monitor matrix remains follow-up evidence.
+
+## Day 17 automated regression checkpoint — 2026-09-05
+
+The shell-facing frontend contracts now have focused regression coverage in the
+same branch as the behavior they protect:
+
+- `usePreferences` hydrates from native settings, sends a synchronously merged
+  payload, keeps its listener alive when the initial read fails, and ignores a
+  stale startup read after a user mutation.
+- `useAutostart` keeps the toggle unchanged on native failure, ignores a stale
+  startup read, and ignores late results from older toggle requests.
+- `useDragController` refuses locked or interactive-child drags, persists once
+  after a successful drag, and clears state when native drag is unavailable.
+- `desktopProductRuntime` accepts every tray/context-menu action and drops
+  malformed `checked` values.
+
+These tests prove the browser/runtime protocol and failure semantics. They do
+not replace the required physical Windows matrix for install, tray recovery,
+autostart registration, restart, DPI changes, or monitor removal. Until that
+matrix is recorded, the release criteria above must not be reported as a full
+hardware pass.
 
 ---
 

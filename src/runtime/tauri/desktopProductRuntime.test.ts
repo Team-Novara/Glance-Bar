@@ -42,6 +42,29 @@ describe("desktopProductRuntime.test", () => {
     );
   });
 
+  it("accepts every shell menu action used by the tray and context menu", () => {
+    const actions = [
+      "refresh-data",
+      "toggle-always-float",
+      "toggle-avoid-fullscreen",
+      "toggle-lock-position",
+      "reset-position",
+      "open-settings",
+      "quit",
+    ] as const;
+
+    for (const action of actions) {
+      assert.deepEqual(parseStatusCenterMenuActionPayload({ action }), { action });
+    }
+  });
+
+  it("drops malformed checked values instead of widening the shell contract", () => {
+    assert.deepEqual(
+      parseStatusCenterMenuActionPayload({ action: "open-settings", checked: "true" }),
+      { action: "open-settings", checked: undefined },
+    );
+  });
+
   it("rejects malformed menu payloads", () => {
     assert.equal(parseStatusCenterMenuActionPayload(null), undefined);
     assert.equal(parseStatusCenterMenuActionPayload({ action: "bad-action" }), undefined);
