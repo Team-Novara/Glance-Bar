@@ -306,6 +306,36 @@ describe("createRealDownloadProvider", () => {
 
       expect(events).toHaveLength(0);
     });
+
+    it("does not let a delayed initial snapshot overwrite a newer terminal event", async () => {
+      const { fire } = captureListen();
+      let resolveInitial!: (value: unknown) => void;
+      stubTauriDownloadState(
+        makeDownloadInvoke(
+          new Promise((resolve) => {
+            resolveInitial = resolve;
+          }),
+        ),
+      );
+      const provider = createRealDownloadProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      await flushMicrotasks();
+
+      fire({
+        status: "ended_unknown",
+        activeDownloads: 0,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: 1_780_743_600_100,
+      });
+      resolveInitial(makeDownloadingState({ checkedAt: 1_780_743_600_000 }));
+      await flushMicrotasks();
+
+      expect(events).toHaveLength(1);
+      expect(events[0]?.metadata?.status).toBe("ended_unknown");
+    });
   });
 
   describe("listener emissions", () => {

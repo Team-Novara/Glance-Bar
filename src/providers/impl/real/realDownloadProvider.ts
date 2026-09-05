@@ -83,6 +83,9 @@ function downloadPayloadToEvent(payload: DownloadChangedPayload): HubEvent | und
 export function createRealDownloadProvider(): HubProvider {
   let unlisten: (() => void) | undefined;
   let listenerGeneration = 0;
+  let lastPublishedObservation:
+    | { checkedAt: number; source: "initial" | "event" }
+    | undefined;
 
   const metadata: HubProviderMetadata = {
     id: PROVIDER_ID,
@@ -111,6 +114,33 @@ export function createRealDownloadProvider(): HubProvider {
         return;
       }
 
+      const generation = ++listenerGeneration;
+      lastPublishedObservation = undefined;
+
+      const publishObservation = (
+        payload: DownloadChangedPayload,
+        source: "initial" | "event",
+      ) => {
+        if (generation !== listenerGeneration) {
+          return;
+        }
+        const previous = lastPublishedObservation;
+        if (
+          previous &&
+          (source === "initial"
+            ? payload.checkedAt <= previous.checkedAt
+            : payload.checkedAt < previous.checkedAt)
+        ) {
+          return;
+        }
+        const event = downloadPayloadToEvent(payload);
+        if (!event) {
+          return;
+        }
+        lastPublishedObservation = { checkedAt: payload.checkedAt, source };
+        handle.emit([event]);
+      };
+
       // Seed the bar with the current state so we don't wait for the next change
       // event before reflecting an already-active download.
       loadDownloadState()
@@ -118,22 +148,15 @@ export function createRealDownloadProvider(): HubProvider {
           if (!result || result.status === "idle") {
             return;
           }
-          const event = downloadPayloadToEvent(result);
-          if (event) {
-            handle.emit([event]);
-          }
+          publishObservation(result, "initial");
         })
         .catch(() => {
           // Initial fetch failed — non-critical, the listener below catches
           // future changes.
         });
 
-      const generation = ++listenerGeneration;
       onDownloadChanged((payload) => {
-        const event = downloadPayloadToEvent(payload);
-        if (event) {
-          handle.emit([event]);
-        }
+        publishObservation(payload, "event");
       })
         .then((unlistenFn) => {
           if (generation !== listenerGeneration) {
@@ -143,7 +166,9 @@ export function createRealDownloadProvider(): HubProvider {
           unlisten = unlistenFn;
         })
         .catch(() => {
-          handle.markDegraded();
+          if (generation === listenerGeneration) {
+            handle.markDegraded();
+          }
         });
     },
 

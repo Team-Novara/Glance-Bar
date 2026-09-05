@@ -126,7 +126,7 @@ Record browser version, application commit, expected result, actual result, and 
   implemented on `feat/download-provider-truthfulness`.
 - Implementation PR: [#32](https://github.com/Team-Novara/Glance-Bar/pull/32).
 - Automated evidence: `npm run typecheck`, `npm run lint -- --max-warnings=0`,
-  `npm run test:vitest` (51 files / 846 tests), and `npm run build` pass.
+  `npm run test:vitest` (51 files / 847 tests), and `npm run build` pass.
 - `npm run qa` reaches the existing Showcase interaction check but remains blocked
   by its timeout waiting for `Open /desktop` at
   `scripts/qa-showcase-interactions.mjs:406`.
