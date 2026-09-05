@@ -324,7 +324,8 @@ mod tests {
         File::create(path.join("video.crdownload")).expect("create temporary download");
         File::create(path.join("finished.zip")).expect("create completed file");
 
-        let (temps, _largest, count) = scan_downloads(&path).expect("scan temporary download folder");
+        let (temps, _largest, count) =
+            scan_downloads(&path).expect("scan temporary download folder");
         assert_eq!(count, 1);
         assert!(temps.contains_key("video.crdownload"));
         assert!(!temps.contains_key("finished.zip"));
