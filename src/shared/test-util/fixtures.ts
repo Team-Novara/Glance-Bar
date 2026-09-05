@@ -102,6 +102,8 @@ export function mockDownloadState(overrides?: Partial<DesktopDownloadState>): De
     source: "mock",
     detail: "3.1 GB / 5.4 GB",
     progress: 57,
+    progressAccuracy: "exact",
+    controllable: true,
     accent: "green",
     sourceHealth: mockSourceHealth({ kind: "download", quality: "mock" }),
     ...overrides,

@@ -225,7 +225,9 @@ pub struct DownloadControlResult {
 pub struct DownloadFolderStatus {
     pub status: &'static str,
     pub active_downloads: u32,
-    pub progress: u8,
+    pub progress: Option<u8>,
+    pub progress_accuracy: &'static str,
+    pub controllable: bool,
     pub code: &'static str,
     pub checked_at: u64,
 }

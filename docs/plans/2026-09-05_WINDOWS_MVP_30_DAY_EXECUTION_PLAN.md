@@ -29,7 +29,7 @@ Baseline commit when this plan was written: `a969b04`.
 | Area | Current state | Gap to close |
 |---|---|---|
 | Provider pipeline | Provider -> HubEventBus -> aggregation -> resolver/scheduler -> UI is established. | Preserve boundaries while tightening capability and lifecycle behavior. |
-| Downloads | Windows Downloads-folder polling emits coarse events. | Estimated progress is presented too precisely; completion versus cancellation/failure is not reliable; pause/resume/cancel commands are success stubs. |
+| Downloads | Windows Downloads-folder polling now emits bounded lifecycle observations with explicit accuracy and control facts. | Windows browser matrix, Rust verification, and clean-checkout packaging evidence remain to be recorded. |
 | Media | Windows GSMTC path and UI controls exist. | Prove session detection, timeline handling, controls, cleanup, malformed payloads, and restart behavior on Windows. |
 | Focus | Windows Focus Assist path and fallback exist. | Prove activation/completion behavior and verify whether the stop action is genuinely supported. |
 | Scheduler | Pure policy, 250 ms service, and display-policy tests exist. | Confirm real provider transitions match the scenario matrix and do not leave stale cards. |
@@ -118,6 +118,20 @@ Record browser version, application commit, expected result, actual result, and 
 - Update `MVP_SCENARIO_MATRIX.md`, `WINDOWS_SHELL_VERIFICATION.md`, and current provider documentation with the verified result.
 - Merge only when no exact percentage or successful control is shown without supporting evidence.
 - Carry non-blocking browser-specific limitations into the release known-limitations list.
+
+### Gate A implementation checkpoint — 2026-09-05
+
+- The Download observation contract, Windows folder scan, truthful provider mapping,
+  indeterminate UI, explicit source provenance, and bounded terminal expiry are
+  implemented on `feat/download-provider-truthfulness`.
+- Automated evidence: `npm run typecheck`, `npm run lint -- --max-warnings=0`,
+  `npm run test:vitest` (51 files / 846 tests), and `npm run build` pass.
+- `npm run qa` reaches the existing Showcase interaction check but remains blocked
+  by its timeout waiting for `Open /desktop` at
+  `scripts/qa-showcase-interactions.mjs:406`.
+- Rust verification remains pending on a machine with Cargo/Rust installed;
+  this environment reports `cargo` as unavailable. The Windows browser matrix
+  and clean-checkout packaging evidence remain Week 1 follow-up work.
 
 ## 5. Week 2 — Media, Focus, and runtime lifecycle hardening
 

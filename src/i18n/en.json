@@ -225,7 +225,8 @@
     "pause": "Pause download",
     "resume": "Resume download",
     "cancel": "Cancel download",
-    "controlFailed": "Download control failed"
+    "controlFailed": "Download control failed",
+    "progressUnknown": "Download progress unavailable"
   },
   "update": {
     "installNow": "Install now",

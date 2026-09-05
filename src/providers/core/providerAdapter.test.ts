@@ -106,6 +106,7 @@ describe("connectProviderToEventBus", () => {
       expect(state.events).toHaveLength(1);
       expect(state.events[0].id).toBe("e1");
       expect(state.events[0].type).toBe("clipboard");
+      expect(state.events[0].origin).toBe("mock");
 
       connection.disconnect();
     });

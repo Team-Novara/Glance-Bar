@@ -109,9 +109,6 @@ pub fn start_media_monitor(_app_handle: &tauri::AppHandle, _shutdown: Arc<Atomic
 
 const STATUS_CENTER_DOWNLOAD_CHANGED: &str = "status-center://download-changed";
 const DOWNLOAD_MONITOR_INTERVAL: std::time::Duration = std::time::Duration::from_millis(1000);
-/// Progress is only re-emitted when it changes by at least this much, so a
-/// near-complete download does not spam an event per poll.
-const DOWNLOAD_PROGRESS_EMIT_THRESHOLD: u8 = 5;
 const TEMP_DOWNLOAD_EXTENSIONS: &[&str] =
     &[".part", ".crdownload", ".tmp", ".download", ".opdownload"];
 
@@ -135,19 +132,33 @@ pub(crate) fn is_temp_download(name: &str) -> bool {
         .any(|ext| lower.ends_with(ext))
 }
 
-/// Snapshot the Downloads folder: the in-progress downloads (name -> size),
-/// the largest temp-file size (for coarse progress), and the total count.
-pub(crate) fn scan_downloads(dir: &PathBuf) -> (HashMap<String, u64>, u64, u32) {
+fn scan_error_code(error: &std::io::Error) -> &'static str {
+    if error.kind() == std::io::ErrorKind::PermissionDenied {
+        "permission-denied"
+    } else {
+        "error"
+    }
+}
+
+/// Snapshot the Downloads folder. File names and sizes remain native-only;
+/// callers use the result to derive only a bounded active count and status.
+pub(crate) fn scan_downloads(
+    dir: &PathBuf,
+) -> Result<(HashMap<String, u64>, u64, u32), &'static str> {
     let mut temps = HashMap::new();
     let mut largest_temp: u64 = 0;
 
-    let entries = std::fs::read_dir(dir).into_iter().flatten();
-    for entry in entries.flatten() {
+    let entries = std::fs::read_dir(dir).map_err(|error| scan_error_code(&error))?;
+    for entry in entries {
+        let entry = entry.map_err(|error| scan_error_code(&error))?;
         let name = entry.file_name().to_string_lossy().to_string();
         if !is_temp_download(&name) {
             continue;
         }
-        let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+        let size = entry
+            .metadata()
+            .map_err(|error| scan_error_code(&error))?
+            .len();
         if size > largest_temp {
             largest_temp = size;
         }
@@ -155,35 +166,28 @@ pub(crate) fn scan_downloads(dir: &PathBuf) -> (HashMap<String, u64>, u64, u32) 
     }
 
     let count = temps.len() as u32;
-    (temps, largest_temp, count)
+    Ok((temps, largest_temp, count))
 }
 
-/// Coarse, self-adapting progress estimate for a single download.
-///
-/// We do not know the final size from the filesystem alone, so we maintain a
-/// per-file `expected_total` seeded to the first size we observe and only ever
-/// revised upward when the file outgrows it. `progress = size / expected_total`
-/// is therefore bounded in [0, 100] and climbs as the file grows past each
-/// estimate. It is intentionally coarse: it is a rough gauge, not a byte-accurate
-/// percentage, and is capped at 99 until a real completion is observed.
-pub(crate) fn compute_progress(size: u64, expected_total: &mut u64) -> u8 {
-    if size == 0 {
-        return 0;
+/// Classifies a folder snapshot without inspecting or exposing any file name.
+/// A temporary-file set disappearing is deliberately not called completion:
+/// the filesystem alone cannot prove whether a browser finished, cancelled, or
+/// failed the transfer.
+pub(crate) fn classify_download_status(previous_active: bool, active_count: u32) -> &'static str {
+    if previous_active && active_count == 0 {
+        "ended_unknown"
+    } else if active_count > 0 {
+        "active"
+    } else {
+        "idle"
     }
-    if *expected_total == 0 {
-        *expected_total = size;
-    }
-    if size > *expected_total {
-        *expected_total = size;
-    }
-    let progress = (size as f64 / *expected_total as f64) * 100.0;
-    (progress as u8).min(99)
 }
 
 /// Spawns the download-folder polling thread (Windows only). Emits a
 /// `STATUS_CENTER_DOWNLOAD_CHANGED` event when the download state changes:
-/// going idle -> downloading, the active count changing, progress crossing the
-/// coarse emit threshold, or a download completing.
+/// going idle -> active, the active count changing, or a download ending. The
+/// folder observer cannot distinguish successful completion from cancellation
+/// or failure, so an emptied temporary-file set is reported as `ended_unknown`.
 #[cfg(windows)]
 pub fn start_download_monitor(app_handle: tauri::AppHandle, shutdown: Arc<AtomicBool>) {
     std::thread::spawn(move || {
@@ -194,8 +198,6 @@ pub fn start_download_monitor(app_handle: tauri::AppHandle, shutdown: Arc<Atomic
 
         let mut prev_status: &str = "idle";
         let mut prev_count: u32 = 0;
-        let mut prev_progress: u8 = 0;
-        let mut expected_total: u64 = 0;
         let mut prev_temps: HashMap<String, u64> = HashMap::new();
 
         loop {
@@ -203,33 +205,48 @@ pub fn start_download_monitor(app_handle: tauri::AppHandle, shutdown: Arc<Atomic
                 break;
             }
 
-            let (temps, largest_temp, count) = scan_downloads(&dir);
+            let scan = scan_downloads(&dir);
             let now = crate::unix_time_ms();
 
-            // Completion: we previously saw temp files and now there are none.
-            let completed = !prev_temps.is_empty() && temps.is_empty();
-            let status = if completed {
-                "completed"
-            } else if count > 0 {
-                "downloading"
-            } else {
-                "idle"
+            let (temps, _largest_temp, count) = match scan {
+                Ok(snapshot) => snapshot,
+                Err(code) => {
+                    if prev_status != "error" {
+                        let event = DownloadFolderStatus {
+                            status: "error",
+                            active_downloads: 0,
+                            progress: None,
+                            progress_accuracy: "none",
+                            controllable: false,
+                            code,
+                            checked_at: now,
+                        };
+                        let _ = app_handle.emit(STATUS_CENTER_DOWNLOAD_CHANGED, &event);
+                        prev_status = "error";
+                        prev_count = 0;
+                        prev_temps = HashMap::new();
+                    }
+                    std::thread::sleep(DOWNLOAD_MONITOR_INTERVAL);
+                    continue;
+                }
             };
-            let progress = compute_progress(largest_temp, &mut expected_total);
+
+            let status = classify_download_status(!prev_temps.is_empty(), count);
+            let ended = status == "ended_unknown";
 
             let status_changed = status != prev_status;
             let count_changed = count != prev_count;
-            let progress_changed =
-                progress.abs_diff(prev_progress) >= DOWNLOAD_PROGRESS_EMIT_THRESHOLD;
 
-            if status_changed || count_changed || progress_changed {
-                let event = if completed {
-                    // Emit a one-shot completion snapshot, then reset tracking so
-                    // the next poll returns to idle without re-completing.
+            if status_changed || count_changed {
+                let event = if ended {
+                    // Emit a one-shot terminal observation, then reset tracking so
+                    // the next poll returns to idle without re-emitting it.
                     DownloadFolderStatus {
                         status,
                         active_downloads: 0,
-                        progress: 100,
+                        progress: None,
+                        progress_accuracy: "none",
+                        controllable: false,
                         code: "available",
                         checked_at: now,
                     }
@@ -237,7 +254,9 @@ pub fn start_download_monitor(app_handle: tauri::AppHandle, shutdown: Arc<Atomic
                     DownloadFolderStatus {
                         status,
                         active_downloads: count,
-                        progress,
+                        progress: None,
+                        progress_accuracy: "none",
+                        controllable: false,
                         code: "available",
                         checked_at: now,
                     }
@@ -246,12 +265,10 @@ pub fn start_download_monitor(app_handle: tauri::AppHandle, shutdown: Arc<Atomic
 
                 prev_status = status;
                 prev_count = count;
-                prev_progress = progress;
             }
 
-            if completed {
-                // Reset completion tracking for the next download cycle.
-                expected_total = 0;
+            if ended {
+                // Reset terminal tracking for the next download cycle.
                 prev_temps = HashMap::new();
             } else {
                 prev_temps = temps;
@@ -265,3 +282,56 @@ pub fn start_download_monitor(app_handle: tauri::AppHandle, shutdown: Arc<Atomic
 /// Non-Windows stub — download folder monitoring is unsupported off Windows.
 #[cfg(not(windows))]
 pub fn start_download_monitor(_app_handle: tauri::AppHandle, _shutdown: Arc<AtomicBool>) {}
+
+#[cfg(test)]
+mod tests {
+    use super::{classify_download_status, is_temp_download, scan_downloads};
+    use std::fs::{self, File};
+    use std::path::PathBuf;
+
+    #[test]
+    fn classifies_download_lifecycle_conservatively() {
+        assert_eq!(classify_download_status(false, 0), "idle");
+        assert_eq!(classify_download_status(false, 2), "active");
+        assert_eq!(classify_download_status(true, 1), "active");
+        assert_eq!(classify_download_status(true, 0), "ended_unknown");
+    }
+
+    #[test]
+    fn recognizes_browser_temporary_extensions_case_insensitively() {
+        assert!(is_temp_download("video.CRDOWNLOAD"));
+        assert!(is_temp_download("archive.part"));
+        assert!(is_temp_download("payload.opdownload"));
+        assert!(!is_temp_download("payload.zip"));
+    }
+
+    #[test]
+    fn scans_only_temporary_downloads() {
+        let path: PathBuf = std::env::temp_dir().join(format!(
+            "glance-bar-download-monitor-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&path);
+        fs::create_dir_all(&path).expect("create temporary download folder");
+        File::create(path.join("video.crdownload")).expect("create temporary download");
+        File::create(path.join("finished.zip")).expect("create completed file");
+
+        let (temps, _largest, count) = scan_downloads(&path).expect("scan temporary download folder");
+        assert_eq!(count, 1);
+        assert!(temps.contains_key("video.crdownload"));
+        assert!(!temps.contains_key("finished.zip"));
+
+        fs::remove_dir_all(path).expect("remove temporary download folder");
+    }
+
+    #[test]
+    fn reports_an_unreadable_download_folder_instead_of_idle() {
+        let path = std::env::temp_dir().join(format!(
+            "glance-bar-download-monitor-missing-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&path);
+
+        assert_eq!(scan_downloads(&path), Err("error"));
+    }
+}

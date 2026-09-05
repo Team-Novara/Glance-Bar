@@ -396,9 +396,11 @@ describe("systemMonitorRuntime.test", () => {
       await onDownloadChanged((status) => received.push(status));
 
       const payload: DownloadChangedPayload = {
-        status: "downloading",
+        status: "active",
         activeDownloads: 2,
         progress: 33,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1_780_743_600_000,
       };
@@ -416,7 +418,8 @@ describe("systemMonitorRuntime.test", () => {
       fire({
         status: "completed",
         activeDownloads: 0,
-        progress: 100,
+        progressAccuracy: "none",
+        controllable: false,
         code: "available",
         checkedAt: 12345,
       });
@@ -426,8 +429,25 @@ describe("systemMonitorRuntime.test", () => {
         throw new Error("expected payload to be forwarded");
       }
       assert.equal(first.status, "completed");
-      assert.equal(first.progress, 100);
+      assert.equal(first.progress, undefined);
       assert.equal(first.checkedAt, 12345);
+    });
+
+    it("ignores malformed native event payloads", async () => {
+      const { fire } = captureListen();
+      const received: DownloadChangedPayload[] = [];
+      await onDownloadChanged((status) => received.push(status));
+
+      fire({
+        status: "active",
+        activeDownloads: 1,
+        progressAccuracy: "not-real",
+        controllable: false,
+        code: "available",
+        checkedAt: 12345,
+      });
+
+      assert.equal(received.length, 0);
     });
 
     it("returns the unlisten function for cleanup", async () => {
@@ -456,16 +476,20 @@ describe("systemMonitorRuntime.test", () => {
   describe("parseDownloadChangedPayload", () => {
     it("maps a well-formed downloading payload", () => {
       const result = parseDownloadChangedPayload({
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: 42,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1_780_743_600_000,
       });
       assert.deepEqual(result, {
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: 42,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1_780_743_600_000,
       });
@@ -475,32 +499,52 @@ describe("systemMonitorRuntime.test", () => {
       const result = parseDownloadChangedPayload({
         status: "completed",
         activeDownloads: 0,
-        progress: 100,
+        progressAccuracy: "none",
+        controllable: false,
         code: "available",
         checkedAt: 1,
       });
       assert.equal(result?.status, "completed");
-      assert.equal(result?.progress, 100);
+      assert.equal(result?.progress, undefined);
     });
 
-    it("clamps an out-of-range progress into [0, 100]", () => {
+    it("maps an ended observation without inventing a successful completion", () => {
+      const result = parseDownloadChangedPayload({
+        status: "ended_unknown",
+        activeDownloads: 0,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: 1,
+      });
+
+      assert.equal(result?.status, "ended_unknown");
+      assert.equal(result?.progress, undefined);
+      assert.equal(result?.controllable, false);
+    });
+
+    it("rejects out-of-range progress instead of inventing a percentage", () => {
       const tooHigh = parseDownloadChangedPayload({
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: 250,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1,
       });
-      assert.equal(tooHigh?.progress, 100);
+      assert.equal(tooHigh, undefined);
 
       const tooLow = parseDownloadChangedPayload({
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: -10,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1,
       });
-      assert.equal(tooLow?.progress, 0);
+      assert.equal(tooLow, undefined);
     });
 
     it("returns undefined for a primitive payload", () => {
@@ -513,9 +557,11 @@ describe("systemMonitorRuntime.test", () => {
 
     it("returns undefined when a required field is missing", () => {
       const result = parseDownloadChangedPayload({
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: 42,
+        progressAccuracy: "exact",
+        controllable: false,
         // code + checkedAt missing
       });
       assert.equal(result, undefined);
@@ -530,6 +576,89 @@ describe("systemMonitorRuntime.test", () => {
         checkedAt: 1,
       });
       assert.equal(result, undefined);
+    });
+
+    it("returns undefined when progress accuracy is missing or invalid", () => {
+      const missingAccuracy = parseDownloadChangedPayload({
+        status: "active",
+        activeDownloads: 1,
+        controllable: false,
+        code: "available",
+        checkedAt: 1,
+      });
+      const invalidAccuracy = parseDownloadChangedPayload({
+        status: "active",
+        activeDownloads: 1,
+        progressAccuracy: "guess",
+        controllable: false,
+        code: "available",
+        checkedAt: 1,
+      });
+
+      assert.equal(missingAccuracy, undefined);
+      assert.equal(invalidAccuracy, undefined);
+    });
+
+    it("returns undefined when exact progress has no numeric value", () => {
+      const result = parseDownloadChangedPayload({
+        status: "active",
+        activeDownloads: 1,
+        progressAccuracy: "exact",
+        controllable: false,
+        code: "available",
+        checkedAt: 1,
+      });
+
+      assert.equal(result, undefined);
+    });
+
+    it("rejects unbounded counts, negative timestamps, and inconsistent status facts", () => {
+      const tooMany = parseDownloadChangedPayload({
+        status: "active",
+        activeDownloads: 1_001,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: 1,
+      });
+      const negativeTimestamp = parseDownloadChangedPayload({
+        status: "active",
+        activeDownloads: 1,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: -1,
+      });
+      const activeWithoutDownloads = parseDownloadChangedPayload({
+        status: "active",
+        activeDownloads: 0,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: 1,
+      });
+      const terminalWithDownloads = parseDownloadChangedPayload({
+        status: "ended_unknown",
+        activeDownloads: 1,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: 1,
+      });
+      const implausiblyFuture = parseDownloadChangedPayload({
+        status: "active",
+        activeDownloads: 1,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: Date.now() + 2 * 24 * 60 * 60 * 1_000,
+      });
+
+      assert.equal(tooMany, undefined);
+      assert.equal(negativeTimestamp, undefined);
+      assert.equal(activeWithoutDownloads, undefined);
+      assert.equal(terminalWithDownloads, undefined);
+      assert.equal(implausiblyFuture, undefined);
     });
   });
 
@@ -555,9 +684,11 @@ describe("systemMonitorRuntime.test", () => {
       const calls: string[] = [];
       const invoke = makeInvoke(
         {
-          status: "downloading",
+          status: "active",
           activeDownloads: 1,
           progress: 42,
+          progressAccuracy: "exact",
+          controllable: false,
           code: "available",
           checkedAt: 1_780_743_600_000,
         },
@@ -568,9 +699,11 @@ describe("systemMonitorRuntime.test", () => {
 
       assert.deepEqual(calls, ["get_download_state"]);
       assert.deepEqual(result, {
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: 42,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1_780_743_600_000,
       });

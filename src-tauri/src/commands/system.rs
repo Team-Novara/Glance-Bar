@@ -164,17 +164,17 @@ pub fn set_autostart_enabled(
 // ---------------------------------------------------------------------------
 #[tauri::command]
 pub fn pause_download() -> Result<DownloadControlResult, String> {
-    Ok(DownloadControlResult { success: true })
+    Ok(DownloadControlResult { success: false })
 }
 
 #[tauri::command]
 pub fn resume_download() -> Result<DownloadControlResult, String> {
-    Ok(DownloadControlResult { success: true })
+    Ok(DownloadControlResult { success: false })
 }
 
 #[tauri::command]
 pub fn cancel_download() -> Result<DownloadControlResult, String> {
-    Ok(DownloadControlResult { success: true })
+    Ok(DownloadControlResult { success: false })
 }
 
 #[tauri::command]
@@ -204,21 +204,37 @@ pub fn get_download_state() -> DownloadFolderStatus {
             return DownloadFolderStatus {
                 status: "idle",
                 active_downloads: 0,
-                progress: 0,
+                progress: None,
+                progress_accuracy: "none",
+                controllable: false,
                 code: "unsupported",
                 checked_at: now,
             };
         };
 
-        let (_, largest_temp, count) = crate::monitoring::scan_downloads(&dir);
-        let mut expected_total = 0;
-        let progress = crate::monitoring::compute_progress(largest_temp, &mut expected_total);
-        let status = if count > 0 { "downloading" } else { "idle" };
+        let (count, code) = match crate::monitoring::scan_downloads(&dir) {
+            Ok((_, _, count)) => (count, "available"),
+            Err(code) => (0, code),
+        };
+        if code != "available" {
+            return DownloadFolderStatus {
+                status: "error",
+                active_downloads: 0,
+                progress: None,
+                progress_accuracy: "none",
+                controllable: false,
+                code,
+                checked_at: now,
+            };
+        }
+        let status = if count > 0 { "active" } else { "idle" };
 
         DownloadFolderStatus {
             status,
             active_downloads: count,
-            progress,
+            progress: None,
+            progress_accuracy: "none",
+            controllable: false,
             code: "available",
             checked_at: now,
         }
@@ -229,7 +245,9 @@ pub fn get_download_state() -> DownloadFolderStatus {
         DownloadFolderStatus {
             status: "idle",
             active_downloads: 0,
-            progress: 0,
+            progress: None,
+            progress_accuracy: "none",
+            controllable: false,
             code: "unsupported",
             checked_at: crate::unix_time_ms(),
         }

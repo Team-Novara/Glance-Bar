@@ -12,7 +12,11 @@ export function connectProviderToEventBus(
   const unsubscribe = provider.subscribe((events) => {
     for (const event of events) {
       try {
-        eventBus.publishHubEvent(event);
+        eventBus.publishHubEvent(
+          event.origin
+            ? event
+            : { ...event, origin: provider.metadata.mock ? "mock" : "system" },
+        );
       } catch {
         // Publish failures should not block unrelated events in the same provider batch.
       }

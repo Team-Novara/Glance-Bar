@@ -89,6 +89,10 @@ export function parseHubEvent(value: unknown): HubEvent | undefined {
     return undefined;
   }
 
+  if (value.origin !== undefined && value.origin !== "mock" && value.origin !== "system") {
+    return undefined;
+  }
+
   if (!isFiniteNumber(value.createdAt)) {
     return undefined;
   }
@@ -113,6 +117,7 @@ export function parseHubEvent(value: unknown): HubEvent | undefined {
     id: value.id,
     type: value.type,
     source: value.source,
+    ...(value.origin !== undefined && { origin: value.origin }),
     createdAt: value.createdAt,
     ...(value.expiresAt !== undefined && { expiresAt: value.expiresAt as number }),
     ...(value.progress !== undefined && { progress: value.progress as number }),

@@ -95,6 +95,8 @@ function eventToTask(event: HubEvent): HubTask {
           : undefined
         : clampProgress(event.progress),
     accent: taskAccentMap[event.type] ?? "blue",
+    source: event.origin ?? (event.source === "mock" ? "mock" : "system"),
+    metadata: event.metadata ? { ...event.metadata } : undefined,
   };
 }
 

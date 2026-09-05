@@ -1,5 +1,11 @@
 import type { SystemPerformanceMetric, SystemPerformanceSourceStatus } from "./performance";
-import type { HubEvent, HubStoreState } from "./types";
+import type {
+  DownloadObservationCode,
+  DownloadObservationStatus,
+  DownloadProgressAccuracy,
+  HubEvent,
+  HubStoreState,
+} from "./types";
 
 export type DesktopStatusKind =
   | "resident"
@@ -80,6 +86,10 @@ export type DesktopMediaState = DesktopStatusBaseState & {
 export type DesktopDownloadState = DesktopStatusBaseState & {
   kind: "download";
   progress: number;
+  progressAccuracy?: DownloadProgressAccuracy;
+  status?: DownloadObservationStatus;
+  controllable?: boolean;
+  observationCode?: DownloadObservationCode;
   detail: string;
   accent: DesktopStatusAccentTone;
 };

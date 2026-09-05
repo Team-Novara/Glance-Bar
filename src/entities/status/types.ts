@@ -7,6 +7,32 @@ export type HubTask = {
   subtitle: string;
   progress?: number;
   accent: "pink" | "blue" | "green" | "cyan";
+  source?: "mock" | "system";
+  metadata?: Record<string, unknown>;
+};
+
+export type DownloadObservationStatus =
+  | "active"
+  | "completed"
+  | "ended_unknown"
+  | "error";
+
+export type DownloadProgressAccuracy = "none" | "estimated" | "exact";
+
+export type DownloadObservationCode =
+  | "available"
+  | "unsupported"
+  | "permission-denied"
+  | "error";
+
+export type DownloadObservation = {
+  status: "idle" | DownloadObservationStatus;
+  activeDownloads: number;
+  progress?: number;
+  progressAccuracy: DownloadProgressAccuracy;
+  controllable: boolean;
+  code: DownloadObservationCode;
+  checkedAt: number;
 };
 
 export type MediaSessionPayload = {
@@ -43,6 +69,8 @@ export type HubEvent = {
   id: string;
   type: "music" | "ai" | "download" | "notification" | "media" | "clipboard" | "focus" | "system";
   source: "mock" | "system" | "music" | "download" | "ai" | "notification" | "media" | "clipboard" | "focus" | "git" | "docker" | "npm";
+  /** Origin of the observation, independent from the provider kind in `source`. */
+  origin?: "mock" | "system";
   createdAt: number;
   expiresAt?: number;
   progress?: number;
