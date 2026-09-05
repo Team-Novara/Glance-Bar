@@ -177,10 +177,10 @@ fn find_restore_work_area(
         .copied()
         .find(|area| area.x == saved.work_area_x && area.y == saved.work_area_y)
         .or_else(|| {
-            let saved_center_x = i64::from(saved.work_area_x)
-                + i64::from(saved.work_area_width.max(1)) / 2;
-            let saved_center_y = i64::from(saved.work_area_y)
-                + i64::from(saved.work_area_height.max(1)) / 2;
+            let saved_center_x =
+                i64::from(saved.work_area_x) + i64::from(saved.work_area_width.max(1)) / 2;
+            let saved_center_y =
+                i64::from(saved.work_area_y) + i64::from(saved.work_area_height.max(1)) / 2;
             areas.into_iter().min_by_key(|area| {
                 let center_x = i64::from(area.x) + i64::from(area.width.max(1)) / 2;
                 let center_y = i64::from(area.y) + i64::from(area.height.max(1)) / 2;
@@ -191,10 +191,7 @@ fn find_restore_work_area(
         })
 }
 
-fn logical_window_position(
-    saved: &StatusWindowPosition,
-    target: WorkAreaGeometry,
-) -> (i32, i32) {
+fn logical_window_position(saved: &StatusWindowPosition, target: WorkAreaGeometry) -> (i32, i32) {
     let saved_scale = i64::from(saved.scale_factor_milli.max(1));
     let target_scale = i64::from(target.scale_factor_milli.max(1));
     let offset_x = i64::from(saved.x) - i64::from(saved.work_area_x);
