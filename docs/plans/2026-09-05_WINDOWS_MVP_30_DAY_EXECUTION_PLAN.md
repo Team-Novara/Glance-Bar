@@ -124,6 +124,7 @@ Record browser version, application commit, expected result, actual result, and 
 - The Download observation contract, Windows folder scan, truthful provider mapping,
   indeterminate UI, explicit source provenance, and bounded terminal expiry are
   implemented on `feat/download-provider-truthfulness`.
+- Implementation PR: [#32](https://github.com/Team-Novara/Glance-Bar/pull/32).
 - Automated evidence: `npm run typecheck`, `npm run lint -- --max-warnings=0`,
   `npm run test:vitest` (51 files / 846 tests), and `npm run build` pass.
 - `npm run qa` reaches the existing Showcase interaction check but remains blocked
