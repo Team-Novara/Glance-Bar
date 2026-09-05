@@ -161,7 +161,7 @@ pub struct ConfiguredShellWindow {
     pub centered: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemPerformanceSnapshot {
     pub cpu: u8,

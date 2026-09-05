@@ -8,8 +8,6 @@ use crate::types::{
     SystemPerformanceDiagnosticPayload, SystemPerformanceSnapshot,
     SystemPerformanceStatusPayload,
 };
-use std::collections::HashMap;
-use std::path::PathBuf;
 use sysinfo::{Networks, System};
 use tauri::State;
 
