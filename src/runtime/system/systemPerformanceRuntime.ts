@@ -31,6 +31,7 @@ function getSystemPerformanceLabels() {
 
 const SYSTEM_STATUS_DIAGNOSTIC_QUALITIES = ["live", "fallback", "stale", "unavailable"] as const;
 export const SYSTEM_STATUS_DIAGNOSTIC_CODES = [
+  "available",
   "unsupported",
   "unavailable",
   "permission-denied",
@@ -187,11 +188,24 @@ function parseSystemPerformancePreflightPayload(
   const snapshot = parseSystemPerformanceSnapshot(value.snapshot);
   const diagnostic = normalizeSystemStatusDiagnostic(value.diagnostic);
 
-  if (!snapshot || !diagnostic) {
+  if (!snapshot || !diagnostic || !isValidObservationTimestamp(value.checkedAt)) {
     return undefined;
   }
 
   return { snapshot, diagnostic };
+}
+
+function isValidObservationTimestamp(value: unknown): boolean {
+  if (value === undefined) {
+    return true;
+  }
+
+  return (
+    typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= 0 &&
+    value <= Date.now() + 24 * 60 * 60 * 1_000
+  );
 }
 
 function parseSystemPerformanceSnapshot(value: unknown): SystemPerformanceSnapshot | undefined {

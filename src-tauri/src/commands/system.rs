@@ -5,17 +5,15 @@
 use crate::clamp_percent;
 use crate::types::{
     DownloadControlResult, DownloadFolderStatus, OverlayPolicy, SharedDesktopProductState,
-    SystemPerformanceSnapshot,
+    SystemPerformanceDiagnosticPayload, SystemPerformanceSnapshot, SystemPerformanceStatusPayload,
 };
-use std::collections::HashMap;
-use std::path::PathBuf;
 use sysinfo::{Networks, System};
 use tauri::State;
 
 #[tauri::command]
 pub async fn get_system_performance(
     state: State<'_, SharedDesktopProductState<tauri::Wry>>,
-) -> Result<SystemPerformanceSnapshot, String> {
+) -> Result<SystemPerformanceStatusPayload, String> {
     let (cpu, memory) = tauri::async_runtime::spawn_blocking(|| {
         let mut system = System::new_all();
 
@@ -38,11 +36,21 @@ pub async fn get_system_performance(
 
     let (download_speed, upload_speed) = sample_network_speeds(&state);
 
-    Ok(SystemPerformanceSnapshot {
-        cpu,
-        memory,
-        download_speed,
-        upload_speed,
+    let checked_at = crate::unix_time_ms();
+
+    Ok(SystemPerformanceStatusPayload {
+        snapshot: SystemPerformanceSnapshot {
+            cpu,
+            memory,
+            download_speed,
+            upload_speed,
+        },
+        diagnostic: SystemPerformanceDiagnosticPayload {
+            quality: "live",
+            code: "available",
+            source: "tauri-event",
+        },
+        checked_at,
     })
 }
 
@@ -95,8 +103,6 @@ pub(crate) fn compute_overlay_policy(
 // ---------------------------------------------------------------------------
 pub(crate) fn sample_network_speeds(state: &SharedDesktopProductState<tauri::Wry>) -> (u64, u64) {
     let now = std::time::Instant::now();
-    let mut download_bps: u64 = 0;
-    let mut upload_bps: u64 = 0;
 
     if let Ok(mut guard) = state.lock() {
         let cache = &mut guard.perf_cache;
@@ -109,25 +115,77 @@ pub(crate) fn sample_network_speeds(state: &SharedDesktopProductState<tauri::Wry
         let received_bytes: u64 = networks.values().map(|data| data.received()).sum();
         let transmitted_bytes: u64 = networks.values().map(|data| data.transmitted()).sum();
 
-        if let Some(prev) = &cache.network_sample {
-            let elapsed = now.duration_since(prev.sampled_at).as_secs_f64();
-
-            if elapsed > 0.05 {
-                let delta_rx = received_bytes.saturating_sub(prev.received_bytes);
-                let delta_tx = transmitted_bytes.saturating_sub(prev.transmitted_bytes);
-                download_bps = (delta_rx as f64 / elapsed) as u64;
-                upload_bps = (delta_tx as f64 / elapsed) as u64;
-            }
-        }
+        let elapsed = cache
+            .network_sample
+            .as_ref()
+            .map_or(std::time::Duration::ZERO, |sample| {
+                now.duration_since(sample.sampled_at)
+            });
+        let rate = calculate_network_rate(
+            cache.network_sample.as_ref(),
+            received_bytes,
+            transmitted_bytes,
+            elapsed,
+        );
 
         cache.network_sample = Some(crate::types::NetworkSample {
             received_bytes,
             transmitted_bytes,
             sampled_at: now,
         });
+
+        return (rate.download_bps, rate.upload_bps);
     }
 
-    (download_bps, upload_bps)
+    (0, 0)
+}
+
+const MIN_NETWORK_SAMPLE_INTERVAL_SECS: f64 = 0.05;
+const MAX_NETWORK_SPEED_BPS: u64 = 10_000_000_000;
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct NetworkRate {
+    pub download_bps: u64,
+    pub upload_bps: u64,
+}
+
+/// Calculates bounded rates from monotonically sampled interface counters.
+/// A counter reset is treated as a zero rate for that direction rather than
+/// exposing a wrapped/negative value to the frontend.
+pub(crate) fn calculate_network_rate(
+    previous: Option<&crate::types::NetworkSample>,
+    received_bytes: u64,
+    transmitted_bytes: u64,
+    elapsed: std::time::Duration,
+) -> NetworkRate {
+    let Some(previous) = previous else {
+        return NetworkRate {
+            download_bps: 0,
+            upload_bps: 0,
+        };
+    };
+
+    if elapsed.as_secs_f64() <= MIN_NETWORK_SAMPLE_INTERVAL_SECS {
+        return NetworkRate {
+            download_bps: 0,
+            upload_bps: 0,
+        };
+    }
+
+    NetworkRate {
+        download_bps: bounded_rate(
+            received_bytes.saturating_sub(previous.received_bytes),
+            elapsed,
+        ),
+        upload_bps: bounded_rate(
+            transmitted_bytes.saturating_sub(previous.transmitted_bytes),
+            elapsed,
+        ),
+    }
+}
+
+fn bounded_rate(delta_bytes: u64, elapsed: std::time::Duration) -> u64 {
+    ((delta_bytes as f64 / elapsed.as_secs_f64()) as u64).min(MAX_NETWORK_SPEED_BPS)
 }
 
 // ---------------------------------------------------------------------------
@@ -264,6 +322,7 @@ pub fn get_download_state() -> DownloadFolderStatus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::{Duration, Instant};
 
     #[test]
     fn floats_when_always_float_set_and_no_fullscreen() {
@@ -286,5 +345,70 @@ mod tests {
         assert!(!compute_overlay_policy(false, true, true));
         assert!(!compute_overlay_policy(false, false, false));
         assert!(!compute_overlay_policy(false, false, true));
+    }
+
+    #[test]
+    fn network_rate_returns_zero_for_first_sample_and_short_interval() {
+        let now = Instant::now();
+        let previous = crate::types::NetworkSample {
+            received_bytes: 100,
+            transmitted_bytes: 50,
+            sampled_at: now,
+        };
+
+        assert_eq!(
+            calculate_network_rate(None, 200, 100, Duration::from_secs(1)),
+            NetworkRate {
+                download_bps: 0,
+                upload_bps: 0,
+            }
+        );
+        assert_eq!(
+            calculate_network_rate(Some(&previous), 200, 100, Duration::from_millis(100),),
+            NetworkRate {
+                download_bps: 1_000,
+                upload_bps: 500,
+            }
+        );
+    }
+
+    #[test]
+    fn network_rate_treats_each_counter_reset_as_zero() {
+        let previous = crate::types::NetworkSample {
+            received_bytes: 1_000,
+            transmitted_bytes: 2_000,
+            sampled_at: Instant::now(),
+        };
+
+        assert_eq!(
+            calculate_network_rate(Some(&previous), 500, 2_500, Duration::from_secs(1),),
+            NetworkRate {
+                download_bps: 0,
+                upload_bps: 500,
+            }
+        );
+    }
+
+    #[test]
+    fn network_rate_caps_extreme_deltas() {
+        let previous = crate::types::NetworkSample {
+            received_bytes: 0,
+            transmitted_bytes: 0,
+            sampled_at: Instant::now(),
+        };
+
+        let rate = calculate_network_rate(
+            Some(&previous),
+            u64::MAX,
+            u64::MAX,
+            Duration::from_millis(100),
+        );
+        assert_eq!(
+            rate,
+            NetworkRate {
+                download_bps: MAX_NETWORK_SPEED_BPS,
+                upload_bps: MAX_NETWORK_SPEED_BPS,
+            }
+        );
     }
 }

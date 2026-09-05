@@ -169,10 +169,30 @@ Record browser version, application commit, expected result, actual result, and 
   the implementation PR; Windows OS-version evidence and the Gate B walkthrough
   remain pending until a Windows-capable runner is available.
 - Local evidence on this branch: `npm run typecheck`, `npm run lint --
-  --max-warnings=0`, `npm run test:vitest` (52 files / 876 tests), coverage
-  thresholds (93.25% lines / 94.64% functions), and `npm run build` pass.
+  --max-warnings=0`, `npm run test:vitest` (52 files / 884 tests), coverage
+  thresholds (93.48% lines / 94.70% functions), and `npm run build` pass.
 - Local `cargo check`/`clippy` cannot run because Cargo is not installed in
   this environment; the real CI matrix is required for Rust compilation.
+
+### Resident implementation checkpoint — 2026-09-05
+
+- The real system-performance provider is now the only background poller;
+  `useSystemPerformance` supplies first-render fallback data and explicit
+  manual refresh only.
+- Native system performance returns a bounded `{ snapshot, diagnostic,
+  checkedAt }` envelope. Legacy bare snapshots remain fixture fallback data.
+- Every poll publishes one stable system event ID, including `stale` and
+  `unavailable` diagnostics. Last-known metrics are retained only inside the
+  provider and expire from the event bus after the poll interval plus a short
+  grace window; a failure older than 9 seconds becomes `unavailable`.
+- Provider health recovers from `Degraded` to `Healthy` after a successful
+  sample. Stop/restart generations and an in-flight guard prevent late or
+  concurrent polls from publishing after teardown.
+- Network-rate calculation now treats first samples and counter resets as
+  zero and caps implausible rates before IPC serialization.
+- Focused Vitest coverage covers stale/unavailable transitions, recovery,
+  stable replacement, teardown races, Resident aggregation, and timestamp
+  validation. Rust CI covers the native envelope and network-rate tests.
 
 ### CI execution correction — 2026-09-05
 

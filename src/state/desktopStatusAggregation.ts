@@ -6,6 +6,7 @@ import type {
   DesktopFocusState,
   DesktopMediaState,
   DesktopNotificationState,
+  DesktopResidentState,
   DesktopStatusAggregationInput,
   DesktopStatusAggregationResult,
   DesktopStatusKind,
@@ -18,8 +19,10 @@ import type {
   HubTask,
   MediaSessionPayload,
   MusicState,
+  SystemPerformancePayload,
 } from "@/entities";
 
+import { createSystemPerformanceMetricSnapshot } from "../entities/status/config";
 import i18n from "../i18n";
 import { createHubStoreState, getActiveHubEvents } from "./hubState";
 import { formatMediaTime } from "../shared/lib/mediaTime";
@@ -124,6 +127,27 @@ function snapshotRealClipboardState(payload: ClipboardPayload): DesktopClipboard
       safeToDisplay: true,
       lastCheckedAt: payload.copiedAt,
     },
+  };
+}
+
+function snapshotRealSystemPerformanceState(
+  payload: SystemPerformancePayload,
+): DesktopResidentState {
+  const quality =
+    payload.quality === "live" ||
+    payload.quality === "fallback" ||
+    payload.quality === "stale" ||
+    payload.quality === "unavailable"
+      ? payload.quality
+      : "unavailable";
+
+  return {
+    kind: "resident",
+    title: i18n.t("states.resident.title"),
+    subtitle: i18n.t("states.resident.subtitle"),
+    source: "system",
+    metrics: createSystemPerformanceMetricSnapshot(payload),
+    sourceStatus: { quality },
   };
 }
 
@@ -355,6 +379,13 @@ function deriveStateOverrides(hubState: HubStoreState): Partial<DesktopStatusSta
   // --- Clipboard (real provider) ---
   if (hubState.clipboard) {
     overrides.clipboard = snapshotRealClipboardState(hubState.clipboard);
+  }
+
+  // --- Resident system performance (real provider) ---
+  // Keep quality attached to the same observation as its metrics so an
+  // IPC/polling failure cannot leave a previous live badge on fallback data.
+  if (hubState.systemPerformance) {
+    overrides.resident = snapshotRealSystemPerformanceState(hubState.systemPerformance);
   }
 
   // --- Focus (real provider) ---

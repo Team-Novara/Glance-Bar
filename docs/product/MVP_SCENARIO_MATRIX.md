@@ -68,6 +68,13 @@ System performance is not one of the three MVP states, but it is the bar's defau
 | **Source** | System performance metrics (CPU, memory, download speed, upload speed). |
 | **Display** | CPU and memory as percentage bars; download/upload as speeds. A health badge shows whether the metrics are **Live**, **Stale**, **Fallback**, or **Unavailable**. |
 | **Expiry** | Resident is the fallback state — it is shown whenever no higher-priority state is active, and it alternates with media when media is active (see §4). |
+
+Resident freshness is tied to the system observation event, not to a second UI
+poller. A native envelope is `Live`; the last bounded sample is labeled
+`Stale` during a transient IPC/polling failure and becomes `Unavailable` after
+9 seconds without a successful sample. Legacy bare snapshots are explicitly
+`Fallback`. When an observation expires, the event bus clears the associated
+system metrics instead of retaining an old live sample.
 | **Actions** | None on the card itself (window-level actions live in settings/tray). |
 | **Fallback** | When the performance source is unavailable, the health badge shows **Unavailable** / **Fallback** so the user is never misled into thinking stale numbers are live. |
 

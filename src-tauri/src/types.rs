@@ -161,13 +161,29 @@ pub struct ConfiguredShellWindow {
     pub centered: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemPerformanceSnapshot {
     pub cpu: u8,
     pub memory: u8,
     pub download_speed: u64,
     pub upload_speed: u64,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemPerformanceDiagnosticPayload {
+    pub quality: &'static str,
+    pub code: &'static str,
+    pub source: &'static str,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemPerformanceStatusPayload {
+    pub snapshot: SystemPerformanceSnapshot,
+    pub diagnostic: SystemPerformanceDiagnosticPayload,
+    pub checked_at: u64,
 }
 
 #[derive(Clone, Serialize)]

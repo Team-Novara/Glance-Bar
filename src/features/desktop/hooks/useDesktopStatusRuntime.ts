@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-
 import type {
   DesktopStatusKind,
   DesktopStatusState,
-  HubEvent,
   HubStoreState,
   SystemPerformanceMetric,
   SystemPerformancePayload,
@@ -34,45 +32,6 @@ function systemPayloadToMetrics(payload: SystemPerformancePayload): SystemPerfor
     },
     { id: "upload", label: i18n.t("metrics.upload"), value: payload.uploadSpeed, tone: "emerald" },
   ];
-}
-
-function mergeMediaEvents(
-  previous: HubEvent[],
-  published: HubEvent[],
-): HubEvent[] {
-  if (published.length === 0) {
-    return previous;
-  }
-
-  const now = Date.now();
-  const publishedById = new Map<string, HubEvent>();
-  for (const event of published) {
-    publishedById.set(event.id, event);
-  }
-
-  const next: HubEvent[] = [];
-  const seen = new Set<string>();
-  for (const event of previous) {
-    if (event.type === "media" && publishedById.has(event.id)) {
-      continue;
-    }
-    if (
-      event.expiresAt !== undefined &&
-      typeof event.expiresAt === "number" &&
-      event.expiresAt <= now
-    ) {
-      continue;
-    }
-    seen.add(event.id);
-    next.push(event);
-  }
-  for (const event of published) {
-    if (seen.has(event.id)) {
-      continue;
-    }
-    next.push(event);
-  }
-  return next;
 }
 
 export type UseDesktopStatusRuntimeResult = {
@@ -137,8 +96,15 @@ export function useDesktopStatusRuntime(
         ...prev,
         clipboard: busState.clipboard ?? prev.clipboard,
         focus: busState.focus ?? prev.focus,
-        systemPerformance: busState.systemPerformance ?? prev.systemPerformance,
-        events: mergeMediaEvents(prev.events, busState.events),
+        // System samples are freshness-bound. Preserve clipboard/focus
+        // snapshots for their event semantics, but clear resident metrics
+        // when the bus no longer has an active system observation so a
+        // failed/stopped poll cannot remain live indefinitely.
+        systemPerformance: busState.systemPerformance,
+        // The bus emits a complete active snapshot. Replacing it (rather
+        // than merging into the previous React state) is essential for
+        // expiry: a system sample that is no longer active must disappear.
+        events: busState.events,
       }));
     });
 
@@ -178,10 +144,7 @@ export function useDesktopStatusRuntime(
 
   const now = Date.now();
 
-  scheduler.updateKinds(
-    aggregatedStatus.activeKinds,
-    aggregatedStatus.availableKinds ?? [],
-  );
+  scheduler.updateKinds(aggregatedStatus.activeKinds, aggregatedStatus.availableKinds ?? []);
 
   if (activeStatusKind && preferredUntil && preferredUntil > now) {
     scheduler.setPreferred(activeStatusKind, preferredUntil);

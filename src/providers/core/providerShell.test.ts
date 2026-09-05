@@ -59,12 +59,14 @@ describe("createProviderShell", () => {
       provider.start();
 
       expect(configStart).toHaveBeenCalledTimes(1);
-      // The handle is the first argument -- verify it has emit and markDegraded.
+      // The handle is the first argument -- verify it exposes event and health controls.
       const handle = configStart.mock.calls[0][0];
       expect(handle).toHaveProperty("emit");
       expect(typeof handle.emit).toBe("function");
       expect(handle).toHaveProperty("markDegraded");
       expect(typeof handle.markDegraded).toBe("function");
+      expect(handle).toHaveProperty("markHealthy");
+      expect(typeof handle.markHealthy).toBe("function");
     });
 
     it("is idempotent -- multiple calls do not start again", () => {
@@ -155,7 +157,7 @@ describe("createProviderShell", () => {
 
     it("does nothing when lifecycle is not Publishing", () => {
       let capturedHandle: Parameters<typeof provider.start> extends []
-        ? { emit(events: HubEvent[]): void; markDegraded(): void }
+        ? { emit(events: HubEvent[]): void; markDegraded(): void; markHealthy(): void }
         : never = undefined as never;
       const provider = createProviderShell({
         metadata: MINIMAL_METADATA,
@@ -196,6 +198,25 @@ describe("createProviderShell", () => {
       capturedHandle.markDegraded();
 
       expect(provider.status().health).toBe("Degraded");
+    });
+
+    it("allows a recovered provider to return to Healthy", () => {
+      let capturedHandle: any;
+      const provider = createProviderShell({
+        metadata: MINIMAL_METADATA,
+        capabilities: [],
+        start: (handle) => {
+          capturedHandle = handle;
+        },
+        stop: () => {},
+      });
+
+      provider.start();
+      capturedHandle.markDegraded();
+      expect(provider.status().health).toBe("Degraded");
+
+      capturedHandle.markHealthy();
+      expect(provider.status().health).toBe("Healthy");
     });
   });
 

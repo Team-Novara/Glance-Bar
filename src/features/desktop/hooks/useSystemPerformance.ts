@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import type { SystemPerformanceMetric } from "@/entities";
 import { systemPerformanceMetrics } from "@/providers/impl/mock/mockHubData";
@@ -8,8 +8,6 @@ import {
 } from "@/runtime/system/systemPerformanceRuntime";
 import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 
-const STATUS_REFRESH_MS = 1800;
-
 export type UseSystemPerformanceResult = {
   metrics: SystemPerformanceMetric[];
   diagnostic: SystemStatusDiagnostic;
@@ -18,6 +16,11 @@ export type UseSystemPerformanceResult = {
   refreshMetrics: () => Promise<void>;
 };
 
+/**
+ * Supplies the first-render fallback and an explicit manual refresh. The real
+ * system provider owns background polling so one native source remains
+ * authoritative for Resident freshness and health.
+ */
 export function useSystemPerformance(): UseSystemPerformanceResult {
   const [metrics, setMetrics] = useState<SystemPerformanceMetric[]>(systemPerformanceMetrics);
   const [diagnostic, setDiagnostic] = useState<SystemStatusDiagnostic>({
@@ -45,37 +48,6 @@ export function useSystemPerformance(): UseSystemPerformanceResult {
 
     setMetrics(nextPerformance.metrics);
     setDiagnostic(nextPerformance.diagnostic);
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function poll() {
-      const invoke = getTauriInvoke();
-      const nextPerformance = await loadSystemPerformanceStatus({
-        invoke,
-        fallbackMetrics: metricsRef.current,
-        lastSuccessfulSource:
-          diagnosticRef.current.quality === "live"
-            ? diagnosticRef.current.source
-            : diagnosticRef.current.lastSuccessfulSource,
-      });
-
-      if (mounted) {
-        setMetrics(nextPerformance.metrics);
-        setDiagnostic(nextPerformance.diagnostic);
-      }
-    }
-
-    void poll();
-    const timer = window.setInterval(() => {
-      void poll();
-    }, STATUS_REFRESH_MS);
-
-    return () => {
-      mounted = false;
-      window.clearInterval(timer);
-    };
   }, []);
 
   return { metrics, diagnostic, metricsRef, diagnosticRef, refreshMetrics };

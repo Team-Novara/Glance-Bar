@@ -8,10 +8,10 @@ import type {
   HubProviderStatus,
 } from "./types";
 
-
 export type ProviderShellHandle = {
   emit(events: HubEvent[]): void;
   markDegraded(): void;
+  markHealthy(): void;
 };
 
 export type ProviderShellConfig = {
@@ -49,6 +49,9 @@ export function createProviderShell(config: ProviderShellConfig): HubProvider {
     emit,
     markDegraded() {
       health = "Degraded";
+    },
+    markHealthy() {
+      health = "Healthy";
     },
   };
 

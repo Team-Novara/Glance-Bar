@@ -79,6 +79,17 @@ export type SystemPerformancePayload = {
   downloadSpeed: number;
   uploadSpeed: number;
   quality: "live" | "fallback" | "stale" | "unavailable";
+  /** Monotonic observation time supplied by the runtime boundary. */
+  checkedAt?: number;
+  /** Bounded diagnostic code; raw native errors never cross the boundary. */
+  code?:
+    | "available"
+    | "unsupported"
+    | "permission-denied"
+    | "malformed"
+    | "timeout"
+    | "invoke-failed"
+    | "unavailable";
 };
 
 export type HubEvent = {
