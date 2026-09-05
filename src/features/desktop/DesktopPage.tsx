@@ -27,7 +27,6 @@ import { NotificationStatusTemplate } from "./templates/NotificationStatusTempla
 import { ResidentStatusTemplate } from "./templates/ResidentStatusTemplate";
 import { UpdateStatusTemplate } from "./templates/UpdateStatusTemplate";
 
-
 function renderDesktopStatusTemplate(state: DesktopStatusState) {
   switch (state.kind) {
     case "resident":
@@ -81,6 +80,7 @@ export function DesktopPage() {
     refreshRuntime,
     preferredWindowMs,
     providerRecords,
+    diagnosticEvents,
   } = useDesktopStatusRuntime(metrics, diagnostic.quality);
 
   // Overlay policy (fullscreen avoidance + floating)
@@ -90,13 +90,12 @@ export function DesktopPage() {
   });
 
   // Settings actions (preference toggles + menu forwarding)
-  const { toggleAlwaysFloat, toggleAvoidFullscreen, toggleLockPosition } =
-    useSettingsActions({
-      preferences,
-      updatePreferences,
-      overlayStateRef,
-      isDraggingRef,
-    });
+  const { toggleAlwaysFloat, toggleAvoidFullscreen, toggleLockPosition } = useSettingsActions({
+    preferences,
+    updatePreferences,
+    overlayStateRef,
+    isDraggingRef,
+  });
 
   // Window lifecycle (reset, quit, recall)
   const { resetPosition, recallStatusCenter } = useWindowLifecycle({
@@ -144,6 +143,7 @@ export function DesktopPage() {
           activeStatusKind={activeStatusKind}
           autostartEnabled={autostartEnabled}
           providerRecords={providerRecords}
+          diagnosticEvents={diagnosticEvents}
           onToggleAlwaysFloat={toggleAlwaysFloat}
           onToggleAvoidFullscreen={toggleAvoidFullscreen}
           onToggleLockPosition={toggleLockPosition}

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   DesktopStatusKind,
   DesktopStatusState,
+  HubEvent,
   HubStoreState,
   SystemPerformanceMetric,
   SystemPerformancePayload,
@@ -11,6 +12,7 @@ import { DESKTOP_STATUS_TEMPLATE_ORDER } from "@/entities/status/config";
 import i18n from "@/i18n";
 import type { ProviderManager } from "@/providers";
 import type { ProviderRegistryRecord } from "@/providers";
+import { projectPrivacySafeDiagnosticEvents } from "@/providers";
 import { DESKTOP_STATUS_PREFERRED_WINDOW_MS } from "@/runtime/scheduler/schedulerService";
 import { aggregateDesktopStatusInput } from "@/state/desktopStatusAggregation";
 import { resolveDesktopStatusState } from "@/state/desktopStatusState";
@@ -45,6 +47,8 @@ export type UseDesktopStatusRuntimeResult = {
   preferredWindowMs: number;
   providerManager: ProviderManager | undefined;
   providerRecords: ProviderRegistryRecord[];
+  /** Active event snapshots used only for privacy-safe diagnostics projection. */
+  diagnosticEvents: HubEvent[];
 };
 
 /**
@@ -82,6 +86,7 @@ export function useDesktopStatusRuntime(
   const [activeStatusKind, setActiveStatusKind] = useState<DesktopStatusKind | null>(null);
   const [preferredUntil, setPreferredUntil] = useState<number | undefined>(undefined);
   const [, setScheduledKind] = useState<DesktopStatusKind>("resident");
+  const [diagnosticEvents, setDiagnosticEvents] = useState<HubEvent[]>([]);
 
   const [providerRecords, setProviderRecords] = useState<ProviderRegistryRecord[]>(() =>
     manager.registry.list(),
@@ -90,8 +95,27 @@ export function useDesktopStatusRuntime(
     setProviderRecords(manager.registry.list());
   }, [manager]);
 
+  const recordDiagnosticEvents = useCallback((events: HubEvent[]) => {
+    const safeEvents = projectPrivacySafeDiagnosticEvents(events);
+    if (safeEvents.length === 0) {
+      return;
+    }
+
+    setDiagnosticEvents((previous) => {
+      const byId = new Map(previous.map((event) => [event.id, event]));
+      safeEvents.forEach((event) => byId.set(event.id, event));
+      return [...byId.values()].sort((a, b) => b.createdAt - a.createdAt).slice(0, 64);
+    });
+  }, []);
+
   useEffect(() => {
     const unsubscribeBus = bus.subscribe((busState) => {
+      // Provider health can change asynchronously (for example when a native
+      // listener registration fails), so refresh the registry snapshot on the
+      // same event boundary that drives the UI. This keeps diagnostics and the
+      // provider status panel aligned with the latest observation.
+      refreshProviderRecords();
+      recordDiagnosticEvents(busState.events);
       setHubState((prev) => ({
         ...prev,
         clipboard: busState.clipboard ?? prev.clipboard,
@@ -123,7 +147,15 @@ export function useDesktopStatusRuntime(
       unsubscribeBus();
       unsubscribeScheduler();
     };
-  }, [bus, manager, scheduler, refreshProviderRecords]);
+  }, [bus, manager, recordDiagnosticEvents, refreshProviderRecords, scheduler]);
+
+  useEffect(() => {
+    // markDegraded() is intentionally local to a provider shell and may not
+    // produce an event. A low-frequency registry refresh keeps diagnostics
+    // honest for async listener failures without adding another poller.
+    const timer = window.setInterval(refreshProviderRecords, 1_000);
+    return () => window.clearInterval(timer);
+  }, [refreshProviderRecords]);
 
   const aggregatedStatus = useMemo(
     () =>
@@ -203,5 +235,6 @@ export function useDesktopStatusRuntime(
     preferredWindowMs: DESKTOP_STATUS_PREFERRED_WINDOW_MS,
     providerManager: manager,
     providerRecords,
+    diagnosticEvents,
   };
 }

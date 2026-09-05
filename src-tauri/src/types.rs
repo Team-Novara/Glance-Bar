@@ -139,6 +139,19 @@ pub struct RuntimeCapabilities {
     pub configured_shell_window: ConfiguredShellWindow,
 }
 
+/// Bounded application metadata exposed to the diagnostics surface.
+///
+/// This deliberately contains only build/runtime facts. Hostnames, paths,
+/// account names, and other machine-identifying values must not cross the
+/// Tauri boundary.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppRuntimeMetadata {
+    pub app_version: String,
+    pub platform: &'static str,
+    pub runtime: &'static str,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GuestProviderCapability {

@@ -26,16 +26,16 @@ This month does **not** include macOS/Linux parity, new provider kinds, account 
 
 Baseline commit when this plan was written: `a969b04`.
 
-| Area | Current state | Gap to close |
-|---|---|---|
-| Provider pipeline | Provider -> HubEventBus -> aggregation -> resolver/scheduler -> UI is established. | Preserve boundaries while tightening capability and lifecycle behavior. |
-| Downloads | Windows Downloads-folder polling now emits bounded lifecycle observations with explicit accuracy and control facts. | Windows browser matrix, Rust verification, and clean-checkout packaging evidence remain to be recorded. |
-| Media | Windows GSMTC path and UI controls exist. | Prove session detection, timeline handling, controls, cleanup, malformed payloads, and restart behavior on Windows. |
-| Focus | Windows Focus Assist path and fallback exist. | Prove activation/completion behavior and verify whether the stop action is genuinely supported. |
-| Scheduler | Pure policy, 250 ms service, and display-policy tests exist. | Confirm real provider transitions match the scenario matrix and do not leave stale cards. |
-| Windows shell | Tray, preferences, autostart, fullscreen avoidance, lock position, and always-float exist. | Persist and restore a dragged position; run repeatable shell verification on an actual Windows build. |
-| Release evidence | Automated coverage is broad and a shell review exists. | Produce real-device results, workday soak evidence, tester findings, installer verification, and known limitations. |
-| Documentation | MVP plan and scenario matrix exist. | Remove stale statements, especially the fixture-only Download description, as implementation evidence changes. |
+| Area              | Current state                                                                                                       | Gap to close                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Provider pipeline | Provider -> HubEventBus -> aggregation -> resolver/scheduler -> UI is established.                                  | Preserve boundaries while tightening capability and lifecycle behavior.                                             |
+| Downloads         | Windows Downloads-folder polling now emits bounded lifecycle observations with explicit accuracy and control facts. | Windows browser matrix, Rust verification, and clean-checkout packaging evidence remain to be recorded.             |
+| Media             | Windows GSMTC path and UI controls exist.                                                                           | Prove session detection, timeline handling, controls, cleanup, malformed payloads, and restart behavior on Windows. |
+| Focus             | Windows Focus Assist path and fallback exist.                                                                       | Prove activation/completion behavior and verify whether the stop action is genuinely supported.                     |
+| Scheduler         | Pure policy, 250 ms service, and display-policy tests exist.                                                        | Confirm real provider transitions match the scenario matrix and do not leave stale cards.                           |
+| Windows shell     | Tray, preferences, autostart, fullscreen avoidance, lock position, and always-float exist.                          | Persist and restore a dragged position; run repeatable shell verification on an actual Windows build.               |
+| Release evidence  | Automated coverage is broad and a shell review exists.                                                              | Produce real-device results, workday soak evidence, tester findings, installer verification, and known limitations. |
+| Documentation     | MVP plan and scenario matrix exist.                                                                                 | Remove stale statements, especially the fixture-only Download description, as implementation evidence changes.      |
 
 ## 3. Delivery order and gates
 
@@ -101,14 +101,14 @@ Do not start a dependent phase while its preceding gate has an unresolved P0 iss
 
 Run a local Tauri build and record results for:
 
-| Browser/situation | Start detected | Active count | Completion result | Cancel result | No private payload |
-|---|---:|---:|---:|---:|---:|
-| Chrome, one download | required | required | required | required | required |
-| Edge, one download | required | required | required | required | required |
-| Firefox, one download | required | required | required | required | required |
-| Two concurrent downloads | required | required | required | required | required |
-| App starts mid-download | required | required | n/a | n/a | required |
-| Downloads directory unavailable | explicit error | n/a | n/a | n/a | required |
+| Browser/situation               | Start detected | Active count | Completion result | Cancel result | No private payload |
+| ------------------------------- | -------------: | -----------: | ----------------: | ------------: | -----------------: |
+| Chrome, one download            |       required |     required |          required |      required |           required |
+| Edge, one download              |       required |     required |          required |      required |           required |
+| Firefox, one download           |       required |     required |          required |      required |           required |
+| Two concurrent downloads        |       required |     required |          required |      required |           required |
+| App starts mid-download         |       required |     required |               n/a |           n/a |           required |
+| Downloads directory unavailable | explicit error |          n/a |               n/a |           n/a |           required |
 
 Record browser version, application commit, expected result, actual result, and issue link. Do not record downloaded filenames or user paths.
 
@@ -258,7 +258,8 @@ Record browser version, application commit, expected result, actual result, and 
 
 ### Position persistence implementation checkpoint — 2026-09-05
 
-- The implementation is staged on `feat/window-position-persistence` and is
+- The implementation was delivered on `feat/window-position-persistence` and
+  merged as [PR #36](https://github.com/Team-Novara/Glance-Bar/pull/36); it is
   limited to the Week 3 shell boundary.
 - `DesktopStatusPreferences.windowPosition` is optional and backward-compatible;
   it stores bounded x/y, work-area geometry, and a scale-factor multiplier only.
@@ -271,6 +272,24 @@ Record browser version, application commit, expected result, actual result, and 
   DPI scaling, safe bounds, reset/persist command routing, and lock behavior.
 - Physical Windows restart, DPI-change, monitor-removal, and two-monitor evidence
   remain required before Gate C can be marked complete.
+
+### Diagnostics implementation checkpoint — 2026-09-05
+
+- The settings panel now exposes a privacy-safe diagnostics view backed by a
+  strict projection of provider capabilities, lifecycle/health, allowlisted
+  error codes, and bounded observation timestamps.
+- Native build metadata is supplied by `get_app_runtime_metadata` and contains
+  only the Cargo version, coarse target platform, and `tauri` runtime marker;
+  browser previews are explicitly labeled `browser-preview` / `unknown`.
+- No provider ids/names, event payloads, paths, filenames, clipboard or media
+  content, usernames, credentials, or raw native errors leave the projection.
+- The runtime retains at most 64 payload-free observation records so an expired
+  display event does not erase the last checked time; provider registry health
+  is refreshed on hub events and a one-second shell-health cadence.
+- Bug-report instructions and the redaction checklist live in
+  [PRIVACY_SAFE_DIAGNOSTICS.md](../qa/PRIVACY_SAFE_DIAGNOSTICS.md).
+- Automated parser/projection/UI privacy tests are included; Windows packaged
+  evidence and a real bug-report walkthrough remain required for Gate C.
 
 ### Day 17 — tray and preference regression pass
 
@@ -356,31 +375,31 @@ P0 blocks the candidate. P1 must be fixed or explicitly accepted with a limited 
 
 ## 8. Planned PR sequence
 
-| Order | Suggested branch | Scope | Required evidence |
-|---:|---|---|---|
-| 1 | `fix/download-capability-honesty` | Download contract, UI, false controls, tests, D1-D6 docs | Automated tests + Windows browser matrix |
-| 2 | `feat/windows-download-observation` | Native snapshot transitions and errors if too large for PR 1 | Rust tests + privacy payload inspection |
-| 3 | `fix/media-provider-hardening` | Media runtime/provider/actions/template | M1-M6 evidence with two players |
-| 4 | `fix/focus-provider-hardening` | Focus runtime/provider/action/template | F1-F6 evidence and OS limitations |
-| 5 | `fix/resident-health-freshness` | System metrics freshness and recovery | Runtime/provider tests + Windows sampling |
-| 6 | `feat/window-position-persistence` | Position schema, save, restore, clamp, reset | Restart + monitor-change matrix |
-| 7 | `feat/privacy-safe-diagnostics` | Diagnostics and bug-report path | Privacy review + tests |
-| 8 | `qa/windows-mvp-release-candidate` | Findings, release fixes, docs, packaging evidence | Full gates + tester report + soak |
+| Order | Suggested branch                    | Scope                                                        | Required evidence                         |
+| ----: | ----------------------------------- | ------------------------------------------------------------ | ----------------------------------------- |
+|     1 | `fix/download-capability-honesty`   | Download contract, UI, false controls, tests, D1-D6 docs     | Automated tests + Windows browser matrix  |
+|     2 | `feat/windows-download-observation` | Native snapshot transitions and errors if too large for PR 1 | Rust tests + privacy payload inspection   |
+|     3 | `fix/media-provider-hardening`      | Media runtime/provider/actions/template                      | M1-M6 evidence with two players           |
+|     4 | `fix/focus-provider-hardening`      | Focus runtime/provider/action/template                       | F1-F6 evidence and OS limitations         |
+|     5 | `fix/resident-health-freshness`     | System metrics freshness and recovery                        | Runtime/provider tests + Windows sampling |
+|     6 | `feat/window-position-persistence`  | Position schema, save, restore, clamp, reset                 | Restart + monitor-change matrix           |
+|     7 | `feat/privacy-safe-diagnostics`     | Diagnostics and bug-report path                              | Privacy review + tests                    |
+|     8 | `qa/windows-mvp-release-candidate`  | Findings, release fixes, docs, packaging evidence            | Full gates + tester report + soak         |
 
 If a PR crosses two ownership areas, split it unless the shared contract would otherwise leave the repository uncompilable. Every PR description must list its user-visible claim, unsupported behavior, tests run, manual evidence, privacy impact, and rollback path.
 
 ## 9. File ownership map
 
-| Workstream | Primary files |
-|---|---|
-| Download native observation | `src-tauri/src/monitoring/mod.rs`, `src-tauri/src/commands/system.rs`, `src-tauri/src/types.rs` |
-| Download runtime/provider/UI | `src/runtime/system/systemMonitorRuntime.ts`, `src/providers/impl/real/realDownloadProvider.ts`, `src/features/desktop/templates/DownloadStatusTemplate.tsx` |
-| Media hardening | `src-tauri/src/media/`, `src-tauri/src/commands/media.rs`, `src/runtime/system/mediaControlRuntime.ts`, `src/providers/impl/real/realMediaSessionProvider.ts` |
-| Focus hardening | `src-tauri/src/commands/focus.rs`, `src/runtime/`, `src/providers/impl/real/realFocusProvider.ts`, `src/features/desktop/templates/FocusStatusTemplate.tsx` |
-| Scheduling | `src/state/desktopStatusScheduler.ts`, `src/runtime/scheduler/schedulerService.ts`, focused tests |
-| Window persistence | `src-tauri/src/preferences.rs`, `src-tauri/src/commands/window.rs`, `src-tauri/src/types.rs`, desktop drag/runtime hooks |
-| Diagnostics | provider health/state projections, settings UI, native bounded metadata command if required |
-| Product evidence | `docs/product/MVP_SCENARIO_MATRIX.md`, `docs/qa/WINDOWS_SHELL_VERIFICATION.md`, new release/test reports outside `docs/archive/` |
+| Workstream                   | Primary files                                                                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Download native observation  | `src-tauri/src/monitoring/mod.rs`, `src-tauri/src/commands/system.rs`, `src-tauri/src/types.rs`                                                               |
+| Download runtime/provider/UI | `src/runtime/system/systemMonitorRuntime.ts`, `src/providers/impl/real/realDownloadProvider.ts`, `src/features/desktop/templates/DownloadStatusTemplate.tsx`  |
+| Media hardening              | `src-tauri/src/media/`, `src-tauri/src/commands/media.rs`, `src/runtime/system/mediaControlRuntime.ts`, `src/providers/impl/real/realMediaSessionProvider.ts` |
+| Focus hardening              | `src-tauri/src/commands/focus.rs`, `src/runtime/`, `src/providers/impl/real/realFocusProvider.ts`, `src/features/desktop/templates/FocusStatusTemplate.tsx`   |
+| Scheduling                   | `src/state/desktopStatusScheduler.ts`, `src/runtime/scheduler/schedulerService.ts`, focused tests                                                             |
+| Window persistence           | `src-tauri/src/preferences.rs`, `src-tauri/src/commands/window.rs`, `src-tauri/src/types.rs`, desktop drag/runtime hooks                                      |
+| Diagnostics                  | provider health/state projections, settings UI, native bounded metadata command if required                                                                   |
+| Product evidence             | `docs/product/MVP_SCENARIO_MATRIX.md`, `docs/qa/WINDOWS_SHELL_VERIFICATION.md`, new release/test reports outside `docs/archive/`                              |
 
 ## 10. Quality gates
 
