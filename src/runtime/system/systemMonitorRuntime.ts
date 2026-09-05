@@ -1,15 +1,19 @@
 import { listen } from "@tauri-apps/api/event";
 
+import type { DownloadObservation } from "@/entities";
+
 import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const FOCUS_ASSIST_COMMAND = "get_focus_assist_state";
 const NOTIFICATION_SUMMARY_COMMAND = "get_notification_summary";
+const MAX_DOWNLOAD_TIMESTAMP_FUTURE_SKEW_MS = 24 * 60 * 60 * 1_000;
 
 export const FOCUS_ASSIST_CHANGED_EVENT = "status-center://focus-assist-changed";
 export const NOTIFICATIONS_CHANGED_EVENT = "status-center://notifications-changed";
 export const CLIPBOARD_CHANGED_EVENT = "status-center://clipboard-changed";
 export const MEDIA_SESSION_CHANGED_EVENT = "status-center://media-session-changed";
 export const DOWNLOAD_CHANGED_EVENT = "status-center://download-changed";
+const MAX_ACTIVE_DOWNLOADS = 1_000;
 
 export type FocusAssistState = {
   active: boolean;
@@ -40,13 +44,7 @@ export type MediaSessionChangedPayload = {
   checkedAt: number;
 };
 
-export type DownloadChangedPayload = {
-  status: "downloading" | "completed" | "idle";
-  activeDownloads: number;
-  progress: number;
-  code: "available" | "unsupported" | "error";
-  checkedAt: number;
-};
+export type DownloadChangedPayload = DownloadObservation;
 
 export const DOWNLOAD_STATE_COMMAND = "get_download_state";
 
@@ -148,8 +146,11 @@ export function getDownloadMonitorSupport(): "available" | "unsupported" {
 export function onDownloadChanged(
   handler: (status: DownloadChangedPayload) => void,
 ): Promise<() => void> {
-  return listen<DownloadChangedPayload>(DOWNLOAD_CHANGED_EVENT, (event) => {
-    handler(event.payload);
+  return listen<unknown>(DOWNLOAD_CHANGED_EVENT, (event) => {
+    const payload = parseDownloadChangedPayload(event.payload);
+    if (payload) {
+      handler(payload);
+    }
   });
 }
 
@@ -164,20 +165,89 @@ export function parseDownloadChangedPayload(
     return undefined;
   }
   const record = value as Record<string, unknown>;
+  const status = record.status;
+  const progressAccuracy = record.progressAccuracy;
+  const code = record.code;
+  const activeDownloads = record.activeDownloads;
+
   if (
-    (record.status !== "downloading" && record.status !== "completed" && record.status !== "idle") ||
-    typeof record.activeDownloads !== "number" ||
-    typeof record.progress !== "number" ||
-    typeof record.code !== "string" ||
-    typeof record.checkedAt !== "number"
+    status !== "active" &&
+    status !== "completed" &&
+    status !== "ended_unknown" &&
+    status !== "error" &&
+    status !== "idle"
   ) {
     return undefined;
   }
+  if (
+    progressAccuracy !== "none" &&
+    progressAccuracy !== "estimated" &&
+    progressAccuracy !== "exact"
+  ) {
+    return undefined;
+  }
+  if (
+    code !== "available" &&
+    code !== "unsupported" &&
+    code !== "permission-denied" &&
+    code !== "error"
+  ) {
+    return undefined;
+  }
+  if (
+    typeof activeDownloads !== "number" ||
+    !Number.isSafeInteger(activeDownloads) ||
+    activeDownloads < 0 ||
+    activeDownloads > MAX_ACTIVE_DOWNLOADS ||
+    typeof record.controllable !== "boolean" ||
+    typeof record.checkedAt !== "number" ||
+    !Number.isSafeInteger(record.checkedAt) ||
+    record.checkedAt < 0 ||
+    (record.checkedAt > 0 &&
+      record.checkedAt > Date.now() + MAX_DOWNLOAD_TIMESTAMP_FUTURE_SKEW_MS)
+  ) {
+    return undefined;
+  }
+
+  const rawProgress = record.progress;
+  if (rawProgress !== undefined && (typeof rawProgress !== "number" || !Number.isFinite(rawProgress))) {
+    return undefined;
+  }
+  if (rawProgress !== undefined && (rawProgress < 0 || rawProgress > 100)) {
+    return undefined;
+  }
+  if (progressAccuracy !== "none" && rawProgress === undefined) {
+    return undefined;
+  }
+  if (progressAccuracy === "none" && rawProgress !== undefined) {
+    return undefined;
+  }
+  if (status === "active" && (activeDownloads === 0 || code !== "available")) {
+    return undefined;
+  }
+  if (status !== "active" && activeDownloads !== 0) {
+    return undefined;
+  }
+  if (status === "error" && code === "available") {
+    return undefined;
+  }
+  if (
+    (status === "idle" || status === "ended_unknown" || status === "error") &&
+    progressAccuracy !== "none"
+  ) {
+    return undefined;
+  }
+
   return {
-    status: record.status,
-    activeDownloads: record.activeDownloads,
-    progress: Math.max(0, Math.min(100, Math.round(record.progress))),
-    code: record.code as DownloadChangedPayload["code"],
+    status,
+    activeDownloads,
+    progress:
+      progressAccuracy === "none" || rawProgress === undefined
+        ? undefined
+        : Math.max(0, Math.min(100, Math.round(rawProgress))),
+    progressAccuracy,
+    controllable: record.controllable,
+    code,
     checkedAt: record.checkedAt,
   };
 }

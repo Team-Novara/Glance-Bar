@@ -47,6 +47,40 @@ describe("desktopStatusAggregation.test", () => {
     assert.equal(result.states?.download?.detail, "42.8 MB of 96 MB");
   });
 
+  test("desktop status aggregation preserves real download observation facts", () => {
+    const result = aggregateDesktopStatusInput({
+      events: [
+        {
+          id: "real-download",
+          type: "download",
+          source: "download",
+          createdAt: now,
+          payload: {
+            id: "real-download-task",
+            type: "download",
+            title: "Downloading",
+            subtitle: "In progress",
+            accent: "green",
+          },
+          metadata: {
+            status: "active",
+            progressAccuracy: "none",
+            controllable: false,
+            code: "available",
+            activeDownloads: 1,
+          },
+        },
+      ],
+      now,
+    });
+
+    assert.equal(result.states?.download?.source, "system");
+    assert.equal(result.states?.download?.progressAccuracy, "none");
+    assert.equal(result.states?.download?.controllable, false);
+    assert.equal(result.states?.download?.sourceHealth?.quality, "native");
+    assert.equal(result.states?.download?.sourceHealth?.safeToDisplay, true);
+  });
+
   test("desktop status aggregation maps mock ai task input into update state", () => {
     const result = aggregateDesktopStatusInput({
       events: [createMockAiTaskEvent({ now })],

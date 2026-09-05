@@ -18,9 +18,6 @@ type DownloadStatusTemplateProps = {
   state: DesktopDownloadState;
 };
 
-// Download state has no live pause/resume flag from the capability provider
-// (it reports "unavailable" / "not-implemented"). We expose a single
-// Pause/Resume toggle so the button is always actionable.
 function useDownloadPaused(): [boolean, () => void] {
   const [paused, setPaused] = useState(false);
   const toggle = useCallback(() => setPaused((p) => !p), []);
@@ -30,6 +27,11 @@ function useDownloadPaused(): [boolean, () => void] {
 export function DownloadStatusTemplate({ state }: DownloadStatusTemplateProps) {
   const { t } = useTranslation();
   const copy = getDesktopStatusTemplateChromeCopy();
+  const canControl = state.controllable ?? state.source === "mock";
+  const hasExactProgress =
+    state.progressAccuracy === "exact" ||
+    (state.progressAccuracy === undefined && state.source === "mock");
+  const indeterminate = !hasExactProgress;
   const [paused, togglePaused] = useDownloadPaused();
   const { toast, showToast } = useStatusToast();
 
@@ -57,42 +59,51 @@ export function DownloadStatusTemplate({ state }: DownloadStatusTemplateProps) {
           <span className="product-status-template-meta-actions">
             <span>
               <span>{state.detail}</span>
-              <span>{state.progress}%</span>
+              {indeterminate ? null : <span>{state.progress}%</span>}
             </span>
-            <button
-              type="button"
-              className="product-status-guest-btn"
-              aria-label={paused ? t("download.resume") : t("download.pause")}
-              title={paused ? t("download.resume") : t("download.pause")}
-              aria-pressed={paused}
-              onClick={() => {
-                togglePaused();
-                void handleControl(paused ? "resume" : "pause");
-              }}
-            >
-              {paused ? (
-                <Play size={14} strokeWidth={2.4} fill="currentColor" />
-              ) : (
-                <Pause size={14} strokeWidth={2.4} />
-              )}
-            </button>
-            <button
-              type="button"
-              className="product-status-guest-btn"
-              aria-label={t("download.cancel")}
-              title={t("download.cancel")}
-              onClick={() => void handleControl("cancel")}
-            >
-              <X size={14} strokeWidth={2.4} />
-            </button>
+            {canControl ? (
+              <>
+                <button
+                  type="button"
+                  className="product-status-guest-btn"
+                  aria-label={paused ? t("download.resume") : t("download.pause")}
+                  title={paused ? t("download.resume") : t("download.pause")}
+                  aria-pressed={paused}
+                  onClick={() => {
+                    togglePaused();
+                    void handleControl(paused ? "resume" : "pause");
+                  }}
+                >
+                  {paused ? (
+                    <Play size={14} strokeWidth={2.4} fill="currentColor" />
+                  ) : (
+                    <Pause size={14} strokeWidth={2.4} />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="product-status-guest-btn"
+                  aria-label={t("download.cancel")}
+                  title={t("download.cancel")}
+                  onClick={() => void handleControl("cancel")}
+                >
+                  <X size={14} strokeWidth={2.4} />
+                </button>
+              </>
+            ) : null}
           </span>
         }
       >
         <StatusRail
           value={paused ? 0 : state.progress}
-          label={`${copy.downloadProgress} ${paused ? 0 : state.progress}%`}
+          label={
+            indeterminate
+              ? t("download.progressUnknown")
+              : `${copy.downloadProgress} ${paused ? 0 : state.progress}%`
+          }
           accent="green"
           active={!paused}
+          indeterminate={indeterminate}
         />
       </DesktopStatusTemplateFrame>
       {toast ? <StatusToastView>{toast}</StatusToastView> : null}

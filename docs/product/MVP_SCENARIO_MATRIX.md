@@ -37,13 +37,13 @@ The bar shows meaningful transfer progress and the completion/failure outcome.
 
 | Aspect | Definition |
 |---|---|
-| **Source** | Download tasks reported through the provider pipeline. In the current build these are fixture/mock tasks; the real download provider path is not yet production-ready. |
-| **Display** | The item being transferred, a progress percentage, a detail line (for example the transferred/total size), and a progress bar. A pause/resume toggle and a cancel button are shown alongside the detail. A health badge indicates source quality. |
+| **Source** | A Windows Downloads-folder observation reported through the provider pipeline. The observer exposes only the active count and bounded lifecycle facts; it does not expose file names or paths. The fixture provider remains available for deterministic showcase/test states. |
+| **Display** | The number of active downloads, a detail line, and a progress rail. Because the folder observer cannot know the final size, the real path uses an indeterminate rail instead of an exact percentage. A health badge indicates source quality. |
 | **Expiry** | A download is shown while it is in progress. On completion or failure the bar surfaces the outcome for a bounded period, then returns to the next useful state. |
-| **Actions** | Pause/resume, cancel. |
-| **Fallback** | When the download provider cannot be controlled (the capability reports *unavailable* / *not-implemented*), the bar still exposes a pause/resume toggle so the button is always actionable, and surfaces a **"Download control failed"** message if a control action does not succeed. |
+| **Actions** | None for the real folder observer. Pause/resume and cancel are not shown because the provider cannot control a browser task. |
+| **Fallback** | When progress is unavailable, the bar shows an indeterminate rail and does not render a guessed percentage. When a temporary file disappears, the bar reports **"Download ended"** because the filesystem cannot prove completion versus cancellation or failure. Provider errors show a degraded health badge and no live progress claim. |
 
-> Traceability: aggregation `src/state/desktopStatusAggregation.ts:264-268`; template `src/features/desktop/templates/DownloadStatusTemplate.tsx:24-99` (always-actionable pause/resume via local `useDownloadPaused` state; control-failed toast).
+> Traceability: aggregation `src/state/desktopStatusAggregation.ts:149-210`; template `src/features/desktop/templates/DownloadStatusTemplate.tsx:27-112` (indeterminate real observation rail; controls only when the state explicitly reports control support).
 
 ### 1.3 Focus
 
@@ -94,14 +94,14 @@ Each MVP state must handle six scenarios. **Every scenario below is testable**: 
 
 | # | Scenario | Given | Expected bar behavior |
 |---|---|---|---|
-| D1 | **Normal** | A download is in progress and the provider reports progress. | Shows the item name, progress percentage, detail line, and an active progress bar. Pause/resume and cancel buttons are available. |
+| D1 | **Normal** | A download is in progress and the Windows observer reports an active temporary file. | Shows the active download count, a detail line, an indeterminate progress rail, and a Native health badge. No browser-control buttons are shown. |
 | D2 | **Empty** | No download task exists. | Download is not an active state. The bar does **not** show a download card; it falls back to the next active state, or to resident. |
-| D3 | **Unavailable** | The download provider reports it cannot be controlled (unavailable / not-implemented). | The bar still shows the download card with an actionable pause/resume toggle (so the button is never dead), and the health badge reflects the degraded source. |
-| D4 | **Completion** | A download finishes successfully. | The completion is surfaced promptly for a bounded period, then the bar returns to the next useful state. The download card does not linger indefinitely. |
-| D5 | **Failure** | A download fails, or a pause/resume/cancel action does not succeed. | On action failure the bar shows a **"Download control failed"** message. The card remains readable; the bar does not claim success. |
-| D6 | **Malformed** | The provider reports a download with an out-of-range or non-numeric progress value. | Progress is clamped to a valid range and the bar stays readable. No broken percentage or raw error is shown. |
+| D3 | **Unavailable** | The Downloads directory cannot be read, or the provider reports unsupported monitoring. | The provider reports an unavailable/degraded health fact. The bar does not show invented download activity or controls. |
+| D4 | **Completion** | A temporary download file is replaced by a final file and the observer can confirm the transition. | A bounded **"Download complete"** outcome may be surfaced. If the transition cannot be confirmed, use D5's neutral ended state instead. |
+| D5 | **Failure/unknown ending** | A temporary file disappears without evidence that it became a final file. | The bar shows **"Download ended"** and **"Outcome could not be confirmed"** for a bounded period, then returns to the next useful state. It never claims success or failure. |
+| D6 | **Malformed** | The native event has an unknown status/code, invalid count, invalid timestamp, or non-finite progress. | The runtime drops the event and retains the last safe state; no broken percentage, raw error, or fake live state is shown. |
 
-> Note on D4/D5: the current download source is fixture/mock-driven. Surfacing completion and failure as distinct, bounded outcomes is an MVP requirement; the mock path should be replaced or extended so completion/failure can be exercised during Week 2 testing.
+> Note on D4/D5: the current Windows folder observer can prove activity and an unknown ending. It must not label a disappearing temporary file as successful completion. A future browser-integrated provider may add exact progress, confirmed completion, and controls behind a separate capability contract.
 
 ### 2.3 Focus
 

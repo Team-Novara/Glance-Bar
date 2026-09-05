@@ -17,6 +17,8 @@ import {
 } from "./realDownloadProvider";
 import type { HubEvent } from "@/entities";
 import type { HubProvider } from "../../core/types";
+import { connectProviderToEventBus } from "../../core/providerAdapter";
+import { createHubEventBus } from "../../../state/hubState";
 import type { DownloadChangedPayload } from "../../../runtime/system/systemMonitorRuntime";
 import type { TauriInvoke } from "../../../runtime/tauri/tauriRuntime";
 
@@ -90,9 +92,10 @@ function makeDownloadingState(
   overrides: Partial<Record<string, unknown>> = {},
 ): Record<string, unknown> {
   return {
-    status: "downloading",
+    status: "active",
     activeDownloads: 1,
-    progress: 42,
+    progressAccuracy: "none",
+    controllable: false,
     code: "available",
     checkedAt: 1_780_743_600_000,
     ...overrides,
@@ -236,16 +239,16 @@ describe("createRealDownloadProvider", () => {
 
       expect(events).toHaveLength(1);
       const event = events[0];
-      expect(event?.id).toBe(`${PROVIDER_ID}-download-1780743600000`);
+      expect(event?.id).toBe(`${PROVIDER_ID}-download-observation`);
       expect(event?.type).toBe("download");
       expect(event?.source).toBe("download");
       expect(event?.createdAt).toBe(1_780_743_600_000);
-      expect(event?.progress).toBe(42);
+      expect(event?.progress).toBeUndefined();
       expect(event?.payload).toMatchObject({
         title: "Downloading",
         subtitle: "In progress",
       });
-      expect(event?.metadata?.status).toBe("downloading");
+      expect(event?.metadata?.status).toBe("active");
       expect(event?.metadata?.activeDownloads).toBe(1);
     });
 
@@ -303,6 +306,36 @@ describe("createRealDownloadProvider", () => {
 
       expect(events).toHaveLength(0);
     });
+
+    it("does not let a delayed initial snapshot overwrite a newer terminal event", async () => {
+      const { fire } = captureListen();
+      let resolveInitial!: (value: unknown) => void;
+      stubTauriDownloadState(
+        makeDownloadInvoke(
+          new Promise((resolve) => {
+            resolveInitial = resolve;
+          }),
+        ),
+      );
+      const provider = createRealDownloadProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      await flushMicrotasks();
+
+      fire({
+        status: "ended_unknown",
+        activeDownloads: 0,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: 1_780_743_600_100,
+      });
+      resolveInitial(makeDownloadingState({ checkedAt: 1_780_743_600_000 }));
+      await flushMicrotasks();
+
+      expect(events).toHaveLength(1);
+      expect(events[0]?.metadata?.status).toBe("ended_unknown");
+    });
   });
 
   describe("listener emissions", () => {
@@ -321,9 +354,11 @@ describe("createRealDownloadProvider", () => {
       await flushMicrotasks();
 
       const payload: DownloadChangedPayload = {
-        status: "downloading",
+        status: "active",
         activeDownloads: 2,
         progress: 33,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1_780_743_600_000,
       };
@@ -350,18 +385,38 @@ describe("createRealDownloadProvider", () => {
       fire({
         status: "completed",
         activeDownloads: 0,
-        progress: 100,
+        progressAccuracy: "none",
+        controllable: false,
         code: "available",
         checkedAt: 1_780_743_600_000,
       });
 
       expect(events).toHaveLength(1);
-      expect(events[0]?.progress).toBe(100);
+      expect(events[0]?.progress).toBeUndefined();
       expect(events[0]?.payload).toMatchObject({
         title: "Download complete",
         subtitle: "Saved to Downloads",
       });
       expect(events[0]?.metadata?.status).toBe("completed");
+    });
+
+    it("does not turn an idle observation into an active HubEvent", async () => {
+      const { fire } = captureListen();
+      const provider = createRealDownloadProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      await flushMicrotasks();
+
+      fire({
+        status: "idle",
+        activeDownloads: 0,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: 1_780_743_600_000,
+      });
+
+      expect(events).toHaveLength(0);
     });
 
     it("emits every change (no content dedup) including duplicates", async () => {
@@ -372,9 +427,11 @@ describe("createRealDownloadProvider", () => {
       await flushMicrotasks();
 
       const payload: DownloadChangedPayload = {
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: 33,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1_780_743_600_000,
       };
@@ -383,6 +440,7 @@ describe("createRealDownloadProvider", () => {
 
       expect(events).toHaveLength(2);
       // Both events share the checkedAt-derived id — dedup is intentionally absent
+      // A single stable logical id lets the event bus replace each snapshot.
       expect(events[0]?.id).toBe(events[1]?.id);
     });
 
@@ -395,9 +453,11 @@ describe("createRealDownloadProvider", () => {
 
       const before = Date.now();
       fire({
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: 10,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 0,
       });
@@ -418,13 +478,66 @@ describe("createRealDownloadProvider", () => {
 
       provider.stop();
       fire({
-        status: "downloading",
+        status: "active",
         activeDownloads: 1,
         progress: 55,
+        progressAccuracy: "exact",
+        controllable: false,
         code: "available",
         checkedAt: 1_780_743_600_000,
       });
       expect(events).toHaveLength(0);
+    });
+
+    it("unlistens when native registration resolves after stop()", async () => {
+      let resolveListen!: (unlisten: () => void) => void;
+      const lateUnlisten = vi.fn();
+      listenMock.mockImplementation(
+        () =>
+          new Promise<() => void>((resolve) => {
+            resolveListen = resolve;
+          }),
+      );
+      const provider = createRealDownloadProvider();
+
+      provider.start();
+      provider.stop();
+      resolveListen(lateUnlisten);
+      await flushMicrotasks();
+
+      expect(lateUnlisten).toHaveBeenCalledTimes(1);
+    });
+
+    it("replaces active state with terminal state and expires it without resurrection", async () => {
+      const { fire } = captureListen();
+      const provider = createRealDownloadProvider();
+      const bus = createHubEventBus();
+      const connection = connectProviderToEventBus(provider, bus);
+      provider.start();
+      await flushMicrotasks();
+
+      const startedAt = 1_780_743_600_000;
+      fire({
+        status: "active",
+        activeDownloads: 1,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: startedAt,
+      });
+      fire({
+        status: "ended_unknown",
+        activeDownloads: 0,
+        progressAccuracy: "none",
+        controllable: false,
+        code: "available",
+        checkedAt: startedAt + 100,
+      });
+
+      expect(bus.getState(startedAt + 100).events).toHaveLength(1);
+      expect(bus.getState(startedAt + 100).events[0]?.metadata?.status).toBe("ended_unknown");
+      expect(bus.getState(startedAt + 8_101).events).toHaveLength(0);
+      connection.disconnect();
     });
   });
 
@@ -460,64 +573,20 @@ describe("createRealDownloadProvider", () => {
   });
 });
 
-describe("applyDownloadControl", () => {
-  it("transitions downloading -> paused on pause", () => {
-    const state: { status: DownloadProviderStatus } = { status: "downloading" };
-    expect(applyDownloadControl(state, "pause")).toBe(true);
-    expect(state.status).toBe("paused");
-  });
-
-  it("is a no-op when pausing an already paused download", () => {
-    const state: { status: DownloadProviderStatus } = { status: "paused" };
+describe("download controls", () => {
+  it("does not mutate observation state for any control action", () => {
+    const state: { status: DownloadProviderStatus } = { status: "active" };
     expect(applyDownloadControl(state, "pause")).toBe(false);
-    expect(state.status).toBe("paused");
-  });
-
-  it("transitions paused -> downloading on resume", () => {
-    const state: { status: DownloadProviderStatus } = { status: "paused" };
-    expect(applyDownloadControl(state, "resume")).toBe(true);
-    expect(state.status).toBe("downloading");
-  });
-
-  it("is a no-op when resuming an already downloading download", () => {
-    const state: { status: DownloadProviderStatus } = { status: "downloading" };
     expect(applyDownloadControl(state, "resume")).toBe(false);
-    expect(state.status).toBe("downloading");
+    expect(applyDownloadControl(state, "cancel")).toBe(false);
+    expect(state.status).toBe("active");
   });
 
-  it("transitions to cancelled on cancel from downloading or paused", () => {
-    const downloading: { status: DownloadProviderStatus } = { status: "downloading" };
-    expect(applyDownloadControl(downloading, "cancel")).toBe(true);
-    expect(downloading.status).toBe("cancelled");
-
-    const paused: { status: DownloadProviderStatus } = { status: "paused" };
-    expect(applyDownloadControl(paused, "cancel")).toBe(true);
-    expect(paused.status).toBe("cancelled");
-  });
-
-  it("is a no-op when cancelling an already cancelled or completed download", () => {
-    const cancelled: { status: DownloadProviderStatus } = { status: "cancelled" };
-    expect(applyDownloadControl(cancelled, "cancel")).toBe(false);
-
-    const completed: { status: DownloadProviderStatus } = { status: "completed" };
-    expect(applyDownloadControl(completed, "cancel")).toBe(false);
-  });
-});
-
-describe("dispatchDownloadControl", () => {
-  it("transitions state and emits when the action changes state", async () => {
+  it("does not emit or claim success for unsupported controls", async () => {
     const emit = vi.fn();
-    const state = { progress: 30, status: "downloading" as DownloadProviderStatus };
+    const state = { progress: 0, status: "active" as DownloadProviderStatus };
     const result = await dispatchDownloadControl(state, "pause", emit);
-    expect(result).toBe("paused");
-    expect(emit).toHaveBeenCalledTimes(1);
-  });
-
-  it("emits a new event when the action changes state", async () => {
-    const emit = vi.fn();
-    const state = { progress: 30, status: "downloading" as DownloadProviderStatus };
-    await dispatchDownloadControl(state, "cancel", emit);
-    expect(state.status).toBe("cancelled");
-    expect(emit).toHaveBeenCalledTimes(1);
+    expect(result).toBe("active");
+    expect(emit).not.toHaveBeenCalled();
   });
 });

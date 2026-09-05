@@ -24,6 +24,31 @@ describe("DownloadStatusTemplate", () => {
     expect(progressBar).toHaveAttribute("aria-valuemax", "100");
   });
 
+  it("renders a real observation as indeterminate and without fake controls", () => {
+    const state = mockDownloadState({
+      source: "system",
+      status: "active",
+      progress: 0,
+      progressAccuracy: "none",
+      controllable: false,
+      sourceHealth: {
+        kind: "download",
+        quality: "native",
+        code: "available",
+        safeToDisplay: true,
+        lastCheckedAt: 1,
+      },
+    });
+    render(<DownloadStatusTemplate state={state} />);
+
+    const progressBar = screen.getByRole("progressbar");
+    expect(progressBar).not.toHaveAttribute("aria-valuenow");
+    expect(progressBar).toHaveAttribute("aria-label", "Download progress unavailable");
+    expect(screen.queryByText("0%")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getByText("Native")).toBeInTheDocument();
+  });
+
   it("shows the source health indicator", () => {
     const state = mockDownloadState();
     render(<DownloadStatusTemplate state={state} />);

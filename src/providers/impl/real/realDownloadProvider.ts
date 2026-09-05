@@ -1,6 +1,6 @@
-import type { HubEvent } from "@/entities";
+import type { DownloadObservationStatus, HubEvent } from "@/entities";
 
-import { sendDownloadControl, type DownloadAction } from "../../../runtime/actions/downloadControlRuntime";
+import type { DownloadAction } from "../../../runtime/actions/downloadControlRuntime";
 import {
   getDownloadMonitorSupport,
   loadDownloadState,
@@ -12,20 +12,28 @@ import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "..
 
 
 const PROVIDER_ID = "real-download-provider";
+const DOWNLOAD_EVENT_ID = `${PROVIDER_ID}-download-observation`;
 
-export type DownloadProviderStatus = "downloading" | "paused" | "cancelled" | "completed";
+export type DownloadProviderStatus = DownloadObservationStatus;
 
 /**
  * Map a native {@link DownloadChangedPayload} to a download {@link HubEvent}.
- * Privacy-safe: the payload carries no file paths or names, only coarse status,
- * a rough progress percentage, and the active download count.
+ * Privacy-safe: the payload carries no file paths or names, only bounded status,
+ * optional progress with an explicit accuracy fact, and the active count.
  */
-function downloadPayloadToEvent(payload: DownloadChangedPayload): HubEvent {
+function downloadPayloadToEvent(payload: DownloadChangedPayload): HubEvent | undefined {
+  if (payload.status === "idle") {
+    return undefined;
+  }
+  if (payload.status === "active" && payload.code !== "available") {
+    return undefined;
+  }
+
   const createdAt = payload.checkedAt || Date.now();
 
   let title = "Downloads";
-  let subtitle = "No active downloads";
-  if (payload.status === "downloading") {
+  let subtitle = "No active download activity";
+  if (payload.status === "active") {
     title =
       payload.activeDownloads > 1
         ? `${payload.activeDownloads} downloads`
@@ -34,13 +42,24 @@ function downloadPayloadToEvent(payload: DownloadChangedPayload): HubEvent {
   } else if (payload.status === "completed") {
     title = "Download complete";
     subtitle = "Saved to Downloads";
+  } else if (payload.status === "ended_unknown") {
+    title = "Download ended";
+    subtitle = "Outcome could not be confirmed";
+  } else if (payload.status === "error") {
+    title = "Download unavailable";
+    subtitle = "Download activity could not be read";
   }
 
   return {
-    id: `${PROVIDER_ID}-download-${createdAt}`,
+    id: DOWNLOAD_EVENT_ID,
     type: "download",
     source: "download",
+    origin: "system",
     createdAt,
+    expiresAt:
+      payload.status === "active"
+        ? undefined
+        : createdAt + 8_000,
     progress: payload.progress,
     payload: {
       id: "real-download-task",
@@ -54,12 +73,19 @@ function downloadPayloadToEvent(payload: DownloadChangedPayload): HubEvent {
       status: payload.status,
       code: payload.code,
       activeDownloads: payload.activeDownloads,
+      progressAccuracy: payload.progressAccuracy,
+      controllable: payload.controllable,
+      checkedAt: payload.checkedAt,
     },
   };
 }
 
 export function createRealDownloadProvider(): HubProvider {
   let unlisten: (() => void) | undefined;
+  let listenerGeneration = 0;
+  let lastPublishedObservation:
+    | { checkedAt: number; source: "initial" | "event" }
+    | undefined;
 
   const metadata: HubProviderMetadata = {
     id: PROVIDER_ID,
@@ -88,6 +114,33 @@ export function createRealDownloadProvider(): HubProvider {
         return;
       }
 
+      const generation = ++listenerGeneration;
+      lastPublishedObservation = undefined;
+
+      const publishObservation = (
+        payload: DownloadChangedPayload,
+        source: "initial" | "event",
+      ) => {
+        if (generation !== listenerGeneration) {
+          return;
+        }
+        const previous = lastPublishedObservation;
+        if (
+          previous &&
+          (source === "initial"
+            ? payload.checkedAt <= previous.checkedAt
+            : payload.checkedAt < previous.checkedAt)
+        ) {
+          return;
+        }
+        const event = downloadPayloadToEvent(payload);
+        if (!event) {
+          return;
+        }
+        lastPublishedObservation = { checkedAt: payload.checkedAt, source };
+        handle.emit([event]);
+      };
+
       // Seed the bar with the current state so we don't wait for the next change
       // event before reflecting an already-active download.
       loadDownloadState()
@@ -95,7 +148,7 @@ export function createRealDownloadProvider(): HubProvider {
           if (!result || result.status === "idle") {
             return;
           }
-          handle.emit([downloadPayloadToEvent(result)]);
+          publishObservation(result, "initial");
         })
         .catch(() => {
           // Initial fetch failed — non-critical, the listener below catches
@@ -103,17 +156,24 @@ export function createRealDownloadProvider(): HubProvider {
         });
 
       onDownloadChanged((payload) => {
-        handle.emit([downloadPayloadToEvent(payload)]);
+        publishObservation(payload, "event");
       })
         .then((unlistenFn) => {
+          if (generation !== listenerGeneration) {
+            unlistenFn();
+            return;
+          }
           unlisten = unlistenFn;
         })
         .catch(() => {
-          handle.markDegraded();
+          if (generation === listenerGeneration) {
+            handle.markDegraded();
+          }
         });
     },
 
     stop() {
+      listenerGeneration += 1;
       unlisten?.();
       unlisten = undefined;
     },
@@ -121,9 +181,8 @@ export function createRealDownloadProvider(): HubProvider {
 }
 
 /**
- * Apply a user-initiated control action (pause / resume / cancel) to the
- * provider's local state. The Rust stub for these commands always succeeds;
- * we mirror that locally so the UI feedback stays consistent.
+ * Compatibility hook for callers that still issue a control action. The
+ * folder observer has no control capability, so every action is rejected.
  *
  * Returns true when the action resulted in a state change.
  */
@@ -131,74 +190,21 @@ export function applyDownloadControl(
   state: { status: DownloadProviderStatus },
   action: DownloadAction,
 ): boolean {
-  if (action === "pause") {
-    if (state.status === "downloading") {
-      state.status = "paused";
-      return true;
-    }
-    return false;
-  }
-  if (action === "resume") {
-    if (state.status === "paused") {
-      state.status = "downloading";
-      return true;
-    }
-    return false;
-  }
-  if (action === "cancel") {
-    if (state.status === "cancelled" || state.status === "completed") {
-      return false;
-    }
-    state.status = "cancelled";
-    return true;
-  }
+  void state;
+  void action;
   return false;
 }
 
 /**
- * Drives a user-initiated control action through the Tauri IPC bridge
- * and, on success, updates the provider's local state.
+ * Compatibility hook for the former control path. No IPC call is made until a
+ * provider explicitly advertises browser-task control support.
  */
 export async function dispatchDownloadControl(
   state: { progress: number; status: DownloadProviderStatus },
   action: DownloadAction,
   emit: (events: HubEvent[]) => void,
 ): Promise<DownloadProviderStatus> {
-  const result = await sendDownloadControl(action);
-  if (result && !result.success) {
-    return state.status;
-  }
-  const changed = applyDownloadControl(state, action);
-  if (changed) {
-    emit([downloadEvent(state.progress, state.status)]);
-  }
+  void action;
+  void emit;
   return state.status;
-}
-
-/**
- * Build a download {@link HubEvent} from local progress + status. Kept on its
- * own (rather than reusing {@link downloadPayloadToEvent}) so control-driven
- * emissions retain the provider's locally tracked progress value.
- */
-function downloadEvent(progress: number, status: DownloadProviderStatus): HubEvent {
-  const createdAt = Date.now();
-  return {
-    id: `${PROVIDER_ID}-download-${createdAt}`,
-    type: "download",
-    source: "download",
-    createdAt,
-    progress,
-    payload: {
-      id: "real-download-task",
-      type: "download",
-      title: "Active download",
-      subtitle: "from real provider",
-      progress,
-      accent: "green",
-    },
-    metadata: {
-      status,
-      code: "available",
-    },
-  };
 }

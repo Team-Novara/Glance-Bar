@@ -21,6 +21,7 @@ export const createMockDownloadEvent = (options: MockProviderOptions = {}): HubE
     id: `mock-download-download-${createdAt}`,
     type: "download",
     source: "download",
+    origin: "mock",
     createdAt,
     progress: 45,
     payload: {
@@ -54,6 +55,7 @@ const buildDownloadEvent = (tick: number, createdAt: number): HubEvent => {
     id: `mock-download-download-${createdAt}`,
     type: "download",
     source: "download",
+    origin: "mock",
     createdAt,
     progress: capped,
     payload,

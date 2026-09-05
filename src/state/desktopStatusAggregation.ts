@@ -147,14 +147,61 @@ function snapshotRealFocusState(payload: FocusAssistPayload): DesktopFocusState 
 }
 
 function snapshotDownloadTask(task: HubTask): DesktopDownloadState {
+  const metadata = task.metadata;
+  const status =
+    metadata?.["status"] === "active" ||
+    metadata?.["status"] === "completed" ||
+    metadata?.["status"] === "ended_unknown" ||
+    metadata?.["status"] === "error"
+      ? metadata["status"]
+      : undefined;
+  const progressAccuracy =
+    metadata?.["progressAccuracy"] === "none" ||
+    metadata?.["progressAccuracy"] === "estimated" ||
+    metadata?.["progressAccuracy"] === "exact"
+      ? metadata["progressAccuracy"]
+      : undefined;
+  const observationCode =
+    metadata?.["code"] === "available" ||
+    metadata?.["code"] === "unsupported" ||
+    metadata?.["code"] === "permission-denied" ||
+    metadata?.["code"] === "error"
+      ? metadata["code"]
+      : undefined;
+  const controllable =
+    typeof metadata?.["controllable"] === "boolean" ? metadata["controllable"] : undefined;
+  const checkedAt =
+    typeof metadata?.["checkedAt"] === "number" ? metadata["checkedAt"] : Date.now();
+
   return {
     kind: "download",
     title: task.title,
     subtitle: i18n.t("aggregation.downloadTask"),
-    source: "mock",
+    source: task.source ?? "mock",
     detail: task.subtitle || i18n.t("aggregation.transferring"),
     progress: clampProgress(task.progress),
+    progressAccuracy,
+    status,
+    controllable,
+    observationCode,
     accent: "green",
+    sourceHealth:
+      task.source === "system"
+        ? {
+            kind: "download",
+            quality: observationCode === "available" ? "native" : "unavailable",
+            code:
+              observationCode === "available"
+                ? "available"
+                : observationCode === "permission-denied"
+                  ? "permission-denied"
+                  : observationCode === "unsupported"
+                    ? "unsupported"
+                    : "provider-failed",
+            safeToDisplay: observationCode === "available",
+            lastCheckedAt: checkedAt,
+          }
+        : undefined,
   };
 }
 
