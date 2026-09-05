@@ -177,7 +177,10 @@ async function run() {
     // during QA. Without this, i18next falls back to zh-CN (fallbackLng)
     // and assertions against English strings like "Cober page not found"
     // time out because the rendered text is Chinese.
-    localStorage.setItem("i18nLng", "en");
+    // i18next-browser-languagedetector uses its default `i18nextLng` cache
+    // key. Using a different key leaves the browser locale in control and
+    // makes the English role assertions below fail on a Chinese machine.
+    localStorage.setItem("i18nextLng", "en");
 
     window.__qaTauriInvokeDelayMs = 0;
     window.__TAURI__ = {
@@ -418,8 +421,11 @@ async function run() {
     await page
       .getByTestId("desktop-preview")
       .waitFor({ state: "visible", timeout: 5_000 });
-    await expectText(page, "QA Tauri Fixture");
-    await expectText(page, "进行中");
+    // The fixture was published into the showcase-local event bus. Navigating
+    // to the product route creates a fresh production runtime, which must not
+    // inherit developer replay data or expose its private payload.
+    await expectNoText(page, "QA Tauri Fixture");
+    await expectNoText(page, "Injected runtime fixture");
     await expectNoText(page, "permission-denied");
     await expectNoText(page, "invoke-failed");
     await expectNoText(page, "tauri-fixture");

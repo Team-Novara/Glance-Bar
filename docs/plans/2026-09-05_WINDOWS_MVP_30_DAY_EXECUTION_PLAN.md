@@ -127,9 +127,9 @@ Record browser version, application commit, expected result, actual result, and 
 - Implementation PR: [#32](https://github.com/Team-Novara/Glance-Bar/pull/32).
 - Automated evidence: `npm run typecheck`, `npm run lint -- --max-warnings=0`,
   `npm run test:vitest` (51 files / 847 tests), and `npm run build` pass.
-- `npm run qa` reaches the existing Showcase interaction check but remains blocked
-  by its timeout waiting for `Open /desktop` at
-  `scripts/qa-showcase-interactions.mjs:406`.
+- At the initial Gate A checkpoint, `npm run qa` was blocked by the Showcase
+  journey's locale-cache mismatch. The journey now uses the detector's
+  `i18nextLng` key and completes its `/missing` to `/desktop` transition.
 - Rust verification remains pending on a machine with Cargo/Rust installed;
   this environment reports `cargo` as unavailable. The Windows browser matrix
   and clean-checkout packaging evidence remain Week 1 follow-up work.
@@ -326,6 +326,20 @@ Record browser version, application commit, expected result, actual result, and 
 **PR boundary:** diagnostics data contract, UI/export, tests, and bug-report documentation.
 
 ### Days 19-20 — clean build and packaging rehearsal
+
+### Days 19-20 implementation checkpoint — 2026-09-05
+
+- The production runtime composition is now asserted to pass
+  `{ realProviders: true, mockProviders: false }` to the provider manager, so
+  Showcase-only mock providers cannot be started by the `/desktop` path.
+- The Showcase QA journey now sets the correct `i18nextLng` detector cache key,
+  making English accessibility-role assertions deterministic on a Chinese host.
+- After navigating from `/showcase` to `/desktop`, the journey verifies that the
+  Tauri fixture title and subtitle do not cross the route boundary. This keeps
+  developer replay payloads out of the production shell.
+- `npm run qa` is green locally: 58 files / 919 tests, Showcase interaction QA,
+  and the Vite production build all pass. Physical Windows packaging, install,
+  tray recovery, and uninstall evidence remain pending.
 
 - Build from a clean checkout using documented Node, Rust, and Tauri prerequisites.
 - Verify the packaged app launches, creates its configuration safely, closes to tray, reopens, and uninstalls without leaving a running process.

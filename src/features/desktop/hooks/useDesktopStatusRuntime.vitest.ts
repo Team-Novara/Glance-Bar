@@ -135,6 +135,10 @@ describe("useDesktopStatusRuntime", () => {
     expect(createEventBus).toHaveBeenCalledTimes(1);
     expect(createManager).toHaveBeenCalledTimes(1);
     expect(createScheduler).toHaveBeenCalledTimes(1);
+    expect(createManager).toHaveBeenCalledWith(createEventBus.mock.results[0]?.value, {
+      realProviders: true,
+      mockProviders: false,
+    });
     expect(result.current.providerManager).toBe(createManager.mock.results[0]?.value);
     expect(result.current.providerRecords).toEqual([]);
     // With the fake manager publishing nothing, the resolver still produces a
@@ -148,7 +152,9 @@ describe("useDesktopStatusRuntime", () => {
     // The real manager registers Tauri-backed providers; the fake-path factories
     // above must not leak into the default path.
     expect(result.current.providerManager).toBeDefined();
-    expect(result.current.providerManager?.registry.list().length).toBeGreaterThan(0);
+    const productionRecords = result.current.providerManager?.registry.list() ?? [];
+    expect(productionRecords.length).toBeGreaterThan(0);
+    expect(productionRecords.every((record) => record.metadata.mock === false)).toBe(true);
     expect(defaultDesktopRuntimeDependencies.createEventBus).toBeTypeOf("function");
   });
 
