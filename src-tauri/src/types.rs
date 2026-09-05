@@ -172,6 +172,22 @@ pub struct SystemPerformanceSnapshot {
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SystemPerformanceDiagnosticPayload {
+    pub quality: &'static str,
+    pub code: &'static str,
+    pub source: &'static str,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemPerformanceStatusPayload {
+    pub snapshot: SystemPerformanceSnapshot,
+    pub diagnostic: SystemPerformanceDiagnosticPayload,
+    pub checked_at: u64,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ClipboardContent {
     pub text: String,
     pub source_app: String,

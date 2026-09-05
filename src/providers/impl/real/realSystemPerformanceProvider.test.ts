@@ -98,7 +98,12 @@ describe("createRealSystemPerformanceProvider", () => {
 
     it("is idempotent: start() called twice does not start a second timer", async () => {
       stubTauriInvoke(
-        makeInvoke(makeEnvelope({ cpu: 1, memory: 2, downloadSpeed: 3, uploadSpeed: 4 }, { quality: "live", source: "preflight" })),
+        makeInvoke(
+          makeEnvelope(
+            { cpu: 1, memory: 2, downloadSpeed: 3, uploadSpeed: 4 },
+            { quality: "live", source: "preflight" },
+          ),
+        ),
       );
       const provider = createRealSystemPerformanceProvider();
       const events = collectEvents(provider);
@@ -114,7 +119,12 @@ describe("createRealSystemPerformanceProvider", () => {
 
     it("transitions to Stopped on stop()", async () => {
       stubTauriInvoke(
-        makeInvoke(makeEnvelope({ cpu: 1, memory: 2, downloadSpeed: 3, uploadSpeed: 4 }, { quality: "live", source: "preflight" })),
+        makeInvoke(
+          makeEnvelope(
+            { cpu: 1, memory: 2, downloadSpeed: 3, uploadSpeed: 4 },
+            { quality: "live", source: "preflight" },
+          ),
+        ),
       );
       const provider = createRealSystemPerformanceProvider();
       provider.start();
@@ -147,13 +157,15 @@ describe("createRealSystemPerformanceProvider", () => {
       expect(event?.createdAt).toBe(Date.now());
       // expiresAt = createdAt + poll interval + 500ms grace
       expect(event?.expiresAt).toBe(Date.now() + POLL_INTERVAL_MS + 500);
-      expect(event?.payload).toEqual({
+      expect(event?.payload).toMatchObject({
         cpu: 17,
         memory: 61,
         downloadSpeed: 2_457_600,
         uploadSpeed: 512_000,
         quality: "live",
+        code: "unavailable",
       });
+      expect(event?.payload && "checkedAt" in event.payload).toBe(true);
     });
 
     it("keeps emitting on every poll tick", async () => {
@@ -178,9 +190,7 @@ describe("createRealSystemPerformanceProvider", () => {
     });
 
     it("emits fallback-quality snapshots from the legacy direct-snapshot payload", async () => {
-      stubTauriInvoke(
-        makeInvoke({ cpu: 5, memory: 6, downloadSpeed: 7, uploadSpeed: 8 }),
-      );
+      stubTauriInvoke(makeInvoke({ cpu: 5, memory: 6, downloadSpeed: 7, uploadSpeed: 8 }));
       const provider = createRealSystemPerformanceProvider();
       const events = collectEvents(provider);
       provider.start();
@@ -219,8 +229,9 @@ describe("createRealSystemPerformanceProvider", () => {
       provider.start();
       await flushMicrotasks();
 
-      expect(events).toHaveLength(0);
+      expect(events).toHaveLength(1);
       expect(provider.status().health).toBe("Degraded");
+      expect(events[0]?.payload).toMatchObject({ quality: "unavailable", code: "unavailable" });
       expect(provider.status().lifecycle).toBe("Publishing");
     });
 
@@ -234,8 +245,9 @@ describe("createRealSystemPerformanceProvider", () => {
       provider.start();
       await flushMicrotasks();
 
-      expect(events).toHaveLength(0);
+      expect(events).toHaveLength(1);
       expect(provider.status().health).toBe("Degraded");
+      expect(events[0]?.payload).toMatchObject({ quality: "unavailable", code: "invoke-failed" });
     });
 
     it("marks Degraded when the native payload is malformed", async () => {
@@ -245,8 +257,9 @@ describe("createRealSystemPerformanceProvider", () => {
       provider.start();
       await flushMicrotasks();
 
-      expect(events).toHaveLength(0);
+      expect(events).toHaveLength(1);
       expect(provider.status().health).toBe("Degraded");
+      expect(events[0]?.payload).toMatchObject({ quality: "unavailable", code: "malformed" });
     });
 
     it("marks Degraded when the diagnostic quality is unavailable", async () => {
@@ -263,11 +276,12 @@ describe("createRealSystemPerformanceProvider", () => {
       provider.start();
       await flushMicrotasks();
 
-      expect(events).toHaveLength(0);
+      expect(events).toHaveLength(1);
       expect(provider.status().health).toBe("Degraded");
+      expect(events[0]?.payload).toMatchObject({ quality: "unavailable", code: "unavailable" });
     });
 
-    it("recovers emissions but keeps the earlier Degraded flag semantics explicit", async () => {
+    it("recovers emissions and returns the provider to Healthy", async () => {
       stubTauriInvoke(undefined);
       const provider = createRealSystemPerformanceProvider();
       const events = collectEvents(provider);
@@ -286,8 +300,87 @@ describe("createRealSystemPerformanceProvider", () => {
       );
       await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
 
+      expect(events).toHaveLength(2);
+      expect(events[1]?.payload).toMatchObject({ cpu: 9, quality: "live" });
+      expect(provider.status().health).toBe("Healthy");
+    });
+
+    it("publishes a stale sample with the last known values after a failed poll", async () => {
+      let invoke: TauriInvoke = makeInvoke(
+        makeEnvelope(
+          { cpu: 9, memory: 8, downloadSpeed: 7, uploadSpeed: 6 },
+          { quality: "live", source: "preflight" },
+        ),
+      );
+      stubTauriInvoke((command) => invoke(command));
+      const provider = createRealSystemPerformanceProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      await flushMicrotasks();
       expect(events).toHaveLength(1);
-      expect(events[0]?.payload).toMatchObject({ cpu: 9, quality: "live" });
+
+      invoke = async () => {
+        throw { code: "timeout" };
+      };
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      expect(events).toHaveLength(2);
+      expect(events[1]?.id).toBe(events[0]?.id);
+      expect(events[1]?.payload).toMatchObject({
+        cpu: 9,
+        memory: 8,
+        quality: "stale",
+        code: "timeout",
+      });
+    });
+
+    it("downgrades a long-running failure from stale to unavailable", async () => {
+      let failing = false;
+      stubTauriInvoke(async () => {
+        if (failing) {
+          throw { code: "timeout" };
+        }
+        return makeEnvelope(
+          { cpu: 9, memory: 8, downloadSpeed: 7, uploadSpeed: 6 },
+          { quality: "live", source: "preflight" },
+        );
+      });
+
+      const provider = createRealSystemPerformanceProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      await flushMicrotasks();
+      failing = true;
+
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 5);
+      expect(events.at(-1)?.payload).toMatchObject({ quality: "stale", code: "timeout" });
+
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      expect(events.at(-1)?.payload).toMatchObject({ quality: "unavailable", code: "timeout" });
+    });
+
+    it("ignores a poll result that resolves after stop", async () => {
+      let resolveInvoke!: (value: unknown) => void;
+      stubTauriInvoke(
+        async () =>
+          new Promise((resolve) => {
+            resolveInvoke = resolve;
+          }),
+      );
+
+      const provider = createRealSystemPerformanceProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      provider.stop();
+      resolveInvoke(
+        makeEnvelope(
+          { cpu: 1, memory: 2, downloadSpeed: 3, uploadSpeed: 4 },
+          { quality: "live", source: "preflight" },
+        ),
+      );
+      await flushMicrotasks();
+
+      expect(events).toHaveLength(0);
     });
   });
 });

@@ -40,6 +40,21 @@ describe("systemStatusDiagnostics.test", () => {
   const systemStatusDiagnostics: SystemStatusDiagnosticFixture[] = [
     {
       surface: "systemStatusPreflight",
+      code: "available",
+      factShape: "coarse-enum",
+      redacted: true,
+      retryable: false,
+      windowsProviders: false,
+      capability: systemStatusCapabilityPreflight,
+      facts: {
+        cpuLoadRange: "unknown",
+        memoryPressure: "unknown",
+        batteryState: "unknown",
+        networkAvailability: "unknown",
+      },
+    },
+    {
+      surface: "systemStatusPreflight",
       code: "unsupported",
       factShape: "coarse-enum",
       redacted: true,

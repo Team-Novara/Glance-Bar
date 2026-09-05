@@ -17,6 +17,12 @@ Every source, whether mock or native-backed, follows this path. A provider does 
 
 `createHubEventBus` stores immutable event snapshots, replaces events by id, expires stale entries, and notifies subscribers. The provider adapter isolates one failed publish from unrelated events in the same batch.
 
+System-performance observations use a stable logical event id. Each poll
+replaces the previous Resident sample and carries bounded quality/code facts;
+this is what lets a transient IPC failure render `Stale`/`Unavailable` rather
+than silently keeping an old Live value. The desktop hook clears its cached
+system payload when the bus snapshot no longer contains an active event.
+
 ## Aggregation, resolution, and scheduling
 
 Aggregation turns active hub events and runtime facts into desktop-status inputs. The resolver combines those inputs with configured templates and delegates visible-kind selection to the scheduler policy. The stateful scheduler service emits changes at its own cadence; it does not own event collection or UI state.

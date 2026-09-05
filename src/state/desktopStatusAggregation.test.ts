@@ -111,6 +111,60 @@ describe("desktopStatusAggregation.test", () => {
     assert.equal(result.states?.focus?.sourceHealth?.safeToDisplay, true);
   });
 
+  test("desktop status aggregation keeps Resident metrics paired with stale quality", () => {
+    const result = aggregateDesktopStatusInput({
+      events: [
+        {
+          id: "real-system-stale",
+          type: "system",
+          source: "system",
+          origin: "system",
+          createdAt: now,
+          expiresAt: now + 2_300,
+          payload: {
+            cpu: 31,
+            memory: 74,
+            downloadSpeed: 2_048,
+            uploadSpeed: 512,
+            quality: "stale",
+            code: "timeout",
+            checkedAt: now,
+          },
+        },
+      ],
+      now,
+    });
+
+    assert.deepEqual(result.activeKinds, []);
+    assert.equal(result.states?.resident?.source, "system");
+    assert.equal(result.states?.resident?.sourceStatus?.quality, "stale");
+    assert.equal(result.states?.resident?.metrics.find((metric) => metric.id === "cpu")?.value, 31);
+
+    const expired = aggregateDesktopStatusInput({
+      events: [
+        {
+          id: "real-system-stale",
+          type: "system",
+          source: "system",
+          origin: "system",
+          createdAt: now,
+          expiresAt: now + 2_300,
+          payload: {
+            cpu: 31,
+            memory: 74,
+            downloadSpeed: 2_048,
+            uploadSpeed: 512,
+            quality: "stale",
+            code: "timeout",
+            checkedAt: now,
+          },
+        },
+      ],
+      now: now + 2_300,
+    });
+    assert.equal(expired.states, undefined);
+  });
+
   test("desktop status aggregation surfaces focus completion only during its bounded window", () => {
     const completionEvent = {
       id: "real-focus-completion",

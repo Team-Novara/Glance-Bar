@@ -9,7 +9,7 @@ import type { DesktopRuntimeDependencies } from "./desktopRuntimeDependencies";
 import type { ProviderManager } from "@/providers";
 import { DESKTOP_STATUS_TEMPLATE_ORDER } from "@/entities/status/config";
 import { mockMetrics } from "@/shared/test-util/fixtures";
-import type { SystemPerformanceMetric } from "@/entities";
+import type { HubEvent, SystemPerformanceMetric } from "@/entities";
 
 // We don't want the real ProviderManager wiring up Tauri listeners in
 // jsdom — the Tauri `listen()` function isn't available, the
@@ -149,5 +149,62 @@ describe("useDesktopStatusRuntime", () => {
     expect(result.current.providerManager).toBeDefined();
     expect(result.current.providerManager?.registry.list().length).toBeGreaterThan(0);
     expect(defaultDesktopRuntimeDependencies.createEventBus).toBeTypeOf("function");
+  });
+
+  it("clears expired system observations instead of retaining sticky metrics", async () => {
+    let bus!: HubEventBus;
+    const systemEvent: HubEvent = {
+      id: "system-observation",
+      type: "system",
+      source: "system",
+      origin: "system",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 100,
+      payload: {
+        cpu: 91,
+        memory: 82,
+        downloadSpeed: 3_000,
+        uploadSpeed: 1_000,
+        quality: "live",
+        code: "available",
+        checkedAt: Date.now(),
+      },
+    };
+    const dependencies: DesktopRuntimeDependencies = {
+      createEventBus: () => {
+        bus = createHubEventBus();
+        return bus;
+      },
+      createProviderManager: (eventBus) =>
+        ({
+          registry: { list: vi.fn(() => []) },
+          start: vi.fn(() => eventBus.publishHubEvent(systemEvent)),
+          stop: vi.fn(),
+          listProviderIds: vi.fn(() => []),
+        }) as unknown as ProviderManager,
+      createSchedulerService: () => createSchedulerService(),
+    };
+
+    const { result } = renderHook(() =>
+      useDesktopStatusRuntime(baseMetrics, "fallback", dependencies),
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.resolvedState.kind).toBe("resident");
+    expect(result.current.resolvedState.sourceStatus?.quality).toBe("live");
+    expect(result.current.resolvedState.metrics.find((metric) => metric.id === "cpu")?.value).toBe(
+      91,
+    );
+
+    act(() => {
+      bus.clearExpiredEvents(Date.now() + 101);
+    });
+
+    expect(result.current.resolvedState.sourceStatus?.quality).toBe("fallback");
+    expect(result.current.resolvedState.metrics.find((metric) => metric.id === "cpu")?.value).toBe(
+      baseMetrics.find((metric) => metric.id === "cpu")?.value,
+    );
   });
 });

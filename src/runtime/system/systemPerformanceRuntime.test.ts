@@ -212,6 +212,60 @@ describe("systemPerformanceRuntime.test", () => {
     assert.equal("rawSourcePayload" in result.diagnostic, false);
   });
 
+  it("accepts a bounded native observation timestamp", async () => {
+    const checkedAt = Date.now();
+    const result = await loadSystemPerformanceStatus({
+      invoke: async () => ({
+        snapshot: {
+          cpu: 17,
+          memory: 61,
+          downloadSpeed: 2048,
+          uploadSpeed: 1024,
+        },
+        diagnostic: {
+          quality: "live",
+          code: "available",
+          source: "tauri-event",
+        },
+        checkedAt,
+      }),
+    });
+
+    assert.equal(result.diagnostic.quality, "live");
+    assert.equal(result.diagnostic.code, "available");
+  });
+
+  it("rejects unsafe, negative, or far-future native observation timestamps", async () => {
+    for (const checkedAt of [
+      -1,
+      Number.MAX_SAFE_INTEGER + 1,
+      Date.now() + 2 * 24 * 60 * 60 * 1_000,
+    ]) {
+      const result = await loadSystemPerformanceStatus({
+        invoke: async () => ({
+          snapshot: {
+            cpu: 17,
+            memory: 61,
+            downloadSpeed: 2048,
+            uploadSpeed: 1024,
+          },
+          diagnostic: {
+            quality: "live",
+            code: "available",
+            source: "tauri-event",
+          },
+          checkedAt,
+        }),
+      });
+
+      assert.deepEqual(result.diagnostic, {
+        quality: "unavailable",
+        code: "malformed",
+        source: "preflight",
+      });
+    }
+  });
+
   it("normalizes only approved diagnostic fields and values", () => {
     assert.equal(
       normalizeSystemStatusDiagnostic({
