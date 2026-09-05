@@ -56,6 +56,8 @@ pub fn start_focus_monitor(app_handle: tauri::AppHandle, shutdown: Arc<AtomicBoo
     std::thread::spawn(move || {
         let mut last_focus_active = false;
         let mut last_profile = String::new();
+        let mut last_focus_code = "";
+        let mut last_focus_controllable = false;
         let mut last_notif_active = false;
         loop {
             std::thread::sleep(FOCUS_ASSIST_MONITOR_INTERVAL);
@@ -64,9 +66,15 @@ pub fn start_focus_monitor(app_handle: tauri::AppHandle, shutdown: Arc<AtomicBoo
             }
             let focus_state: FocusAssistStatePayload =
                 crate::commands::focus::read_focus_assist_state();
-            if focus_state.active != last_focus_active || focus_state.profile != last_profile {
+            if focus_state.active != last_focus_active
+                || focus_state.profile != last_profile
+                || focus_state.code != last_focus_code
+                || focus_state.controllable != last_focus_controllable
+            {
                 last_focus_active = focus_state.active;
                 last_profile = focus_state.profile.clone();
+                last_focus_code = focus_state.code;
+                last_focus_controllable = focus_state.controllable;
                 let _ = app_handle.emit(STATUS_CENTER_FOCUS_ASSIST_EVENT, &focus_state);
             }
             if focus_state.active != last_notif_active {
@@ -316,7 +324,8 @@ mod tests {
         File::create(path.join("video.crdownload")).expect("create temporary download");
         File::create(path.join("finished.zip")).expect("create completed file");
 
-        let (temps, _largest, count) = scan_downloads(&path).expect("scan temporary download folder");
+        let (temps, _largest, count) =
+            scan_downloads(&path).expect("scan temporary download folder");
         assert_eq!(count, 1);
         assert!(temps.contains_key("video.crdownload"));
         assert!(!temps.contains_key("finished.zip"));

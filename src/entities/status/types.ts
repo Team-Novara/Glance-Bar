@@ -66,8 +66,12 @@ export type ClipboardPayload = {
 export type FocusAssistPayload = {
   active: boolean;
   profile: string;
+  code?: FocusAssistCode;
+  controllable?: boolean;
   checkedAt: number;
 };
+
+export type FocusAssistCode = "available" | "unsupported" | "permission-denied" | "error";
 
 export type SystemPerformancePayload = {
   cpu: number;

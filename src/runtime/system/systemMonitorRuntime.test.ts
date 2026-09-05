@@ -1,4 +1,4 @@
-import { describe, it, vi, beforeEach } from "vitest";
+import { describe, it, vi, beforeEach, afterEach } from "vitest";
 
 // Hoist: shared by both the mock factory and the test body so
 // `vi.mock` can reference the same spy as the test assertions.
@@ -18,6 +18,7 @@ import {
   MEDIA_SESSION_CHANGED_EVENT,
   NOTIFICATIONS_CHANGED_EVENT,
   getFocusAssistState,
+  getFocusAssistMonitorSupport,
   getNotificationSummary,
   getDownloadMonitorSupport,
   loadDownloadState,
@@ -27,6 +28,7 @@ import {
   onMediaSessionChanged,
   onNotificationsChanged,
   parseDownloadChangedPayload,
+  parseFocusAssistState,
   parseMediaSessionChangedPayload,
   type ClipboardChangedPayload,
   type DownloadChangedPayload,
@@ -182,6 +184,8 @@ describe("systemMonitorRuntime.test", () => {
       const payload: FocusAssistState = {
         active: true,
         profile: "alarms-only",
+        code: "available",
+        controllable: true,
         checkedAt: 1_780_743_600_000,
       };
       fire(payload);
@@ -195,7 +199,13 @@ describe("systemMonitorRuntime.test", () => {
       const received: FocusAssistState[] = [];
       await onFocusAssistChanged((state) => received.push(state));
 
-      fire({ active: false, profile: "off", checkedAt: 0 });
+      fire({
+        active: false,
+        profile: "off",
+        code: "available",
+        controllable: true,
+        checkedAt: 0,
+      });
 
       const first = received[0];
       if (!first) {
@@ -204,6 +214,31 @@ describe("systemMonitorRuntime.test", () => {
       assert.equal(first.active, false);
       assert.equal(first.profile, "off");
       assert.equal(first.checkedAt, 0);
+    });
+
+    it("drops malformed or contradictory focus-assist events", async () => {
+      const { fire } = captureListen();
+      const received: FocusAssistState[] = [];
+      await onFocusAssistChanged((state) => received.push(state));
+
+      fire({
+        active: true,
+        profile: "off",
+        code: "unsupported",
+        controllable: false,
+        checkedAt: 1,
+      });
+      fire({ active: false, profile: "off", code: "unknown", controllable: false, checkedAt: 2 });
+      fire({
+        active: false,
+        profile: "off",
+        code: "unsupported",
+        controllable: false,
+        checkedAt: 3,
+      });
+
+      assert.equal(received.length, 1);
+      assert.equal(received[0]?.code, "unsupported");
     });
 
     it("returns the unlisten function for cleanup", async () => {
@@ -729,10 +764,7 @@ describe("systemMonitorRuntime.test", () => {
   // ── loadDownloadState (polling fetcher) ───────────────────────
 
   describe("loadDownloadState", () => {
-    function makeInvoke(
-      result: unknown,
-      calls: string[],
-    ): TauriInvoke {
+    function makeInvoke(result: unknown, calls: string[]): TauriInvoke {
       return async (command) => {
         calls.push(command);
         return result;
@@ -848,10 +880,7 @@ describe("systemMonitorRuntime.test", () => {
   // ── getFocusAssistState (polling fetcher) ────────────────────
 
   describe("getFocusAssistState", () => {
-    function makeInvoke(
-      result: unknown,
-      calls: string[],
-    ): TauriInvoke {
+    function makeInvoke(result: unknown, calls: string[]): TauriInvoke {
       return async (command) => {
         calls.push(command);
         return result;
@@ -867,7 +896,13 @@ describe("systemMonitorRuntime.test", () => {
     it("invokes get_focus_assist_state and maps a well-formed payload", async () => {
       const calls: string[] = [];
       const invoke = makeInvoke(
-        { active: true, profile: "priority-only", checkedAt: 1_780_743_600_000 },
+        {
+          active: true,
+          profile: "priority-only",
+          code: "available",
+          controllable: true,
+          checkedAt: 1_780_743_600_000,
+        },
         calls,
       );
 
@@ -877,39 +912,73 @@ describe("systemMonitorRuntime.test", () => {
       assert.deepEqual(result, {
         active: true,
         profile: "priority-only",
+        code: "available",
+        controllable: true,
         checkedAt: 1_780_743_600_000,
       });
     });
 
-    it("normalizes non-boolean active to false", async () => {
-      const invoke = makeInvoke({ active: "yes", profile: "off", checkedAt: 1 }, []);
+    it("rejects non-boolean active instead of treating it as inactive", async () => {
+      const invoke = makeInvoke(
+        { active: "yes", profile: "off", code: "available", controllable: true, checkedAt: 1 },
+        [],
+      );
       const result = await getFocusAssistState(invoke);
 
-      assert.equal(result?.active, false);
+      assert.equal(result, undefined);
     });
 
-    it("normalizes a non-string profile to an empty string", async () => {
-      const invoke = makeInvoke({ active: true, profile: 42, checkedAt: 1 }, []);
+    it("rejects a non-string profile instead of inventing an empty label", async () => {
+      const invoke = makeInvoke(
+        { active: true, profile: 42, code: "available", controllable: true, checkedAt: 1 },
+        [],
+      );
       const result = await getFocusAssistState(invoke);
 
-      assert.equal(result?.profile, "");
+      assert.equal(result, undefined);
     });
 
-    it("stamps checkedAt with the current time when the payload omits it", async () => {
-      const before = Date.now();
-      const invoke = makeInvoke({ active: false, profile: "off" }, []);
+    it("rejects a payload that omits capability facts", async () => {
+      const invoke = makeInvoke({ active: false, profile: "off", checkedAt: 1 }, []);
       const result = await getFocusAssistState(invoke);
-      const after = Date.now();
 
-      assert.ok(result?.checkedAt !== undefined);
-      assert.ok(result?.checkedAt >= before && result.checkedAt <= after);
+      assert.equal(result, undefined);
     });
 
-    it("stamps checkedAt when the payload carries a non-number value", async () => {
-      const invoke = makeInvoke({ active: false, profile: "off", checkedAt: "soon" }, []);
+    it("rejects an unknown observation code", async () => {
+      const invoke = makeInvoke(
+        { active: false, profile: "off", code: "unknown", controllable: false, checkedAt: 1 },
+        [],
+      );
       const result = await getFocusAssistState(invoke);
 
-      assert.ok(typeof result?.checkedAt === "number");
+      assert.equal(result, undefined);
+    });
+
+    it("rejects an active observation that is not available", async () => {
+      const invoke = makeInvoke(
+        {
+          active: true,
+          profile: "off",
+          code: "permission-denied",
+          controllable: false,
+          checkedAt: 1,
+        },
+        [],
+      );
+      const result = await getFocusAssistState(invoke);
+
+      assert.equal(result, undefined);
+    });
+
+    it("rejects a non-number checkedAt", async () => {
+      const invoke = makeInvoke(
+        { active: false, profile: "off", code: "available", controllable: true, checkedAt: "soon" },
+        [],
+      );
+      const result = await getFocusAssistState(invoke);
+
+      assert.equal(result, undefined);
     });
 
     it("returns undefined for a primitive payload", async () => {
@@ -938,11 +1007,39 @@ describe("systemMonitorRuntime.test", () => {
 
   // ── getNotificationSummary (polling fetcher) ────────────────
 
+  describe("getFocusAssistMonitorSupport", () => {
+    beforeEach(() => {
+      delete (globalThis as Record<string, unknown>).__TAURI__;
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      delete (globalThis as Record<string, unknown>).__TAURI__;
+    });
+
+    it("returns unsupported outside the Tauri runtime", () => {
+      vi.stubGlobal("navigator", { platform: "Win32" });
+
+      assert.equal(getFocusAssistMonitorSupport(), "unsupported");
+    });
+
+    it("returns available on Windows in a Tauri runtime", () => {
+      vi.stubGlobal("navigator", { platform: "Win32" });
+      vi.stubGlobal("__TAURI__", { core: { invoke: async () => undefined } });
+
+      assert.equal(getFocusAssistMonitorSupport(), "available");
+    });
+
+    it("returns unsupported on non-Windows even in a Tauri runtime", () => {
+      vi.stubGlobal("navigator", { platform: "Linux" });
+      vi.stubGlobal("__TAURI__", { core: { invoke: async () => undefined } });
+
+      assert.equal(getFocusAssistMonitorSupport(), "unsupported");
+    });
+  });
+
   describe("getNotificationSummary", () => {
-    function makeInvoke(
-      result: unknown,
-      calls: string[],
-    ): TauriInvoke {
+    function makeInvoke(result: unknown, calls: string[]): TauriInvoke {
       return async (command) => {
         calls.push(command);
         return result;
@@ -957,10 +1054,7 @@ describe("systemMonitorRuntime.test", () => {
 
     it("invokes get_notification_summary and maps a well-formed payload", async () => {
       const calls: string[] = [];
-      const invoke = makeInvoke(
-        { focusAssistActive: true, checkedAt: 1_780_743_600_000 },
-        calls,
-      );
+      const invoke = makeInvoke({ focusAssistActive: true, checkedAt: 1_780_743_600_000 }, calls);
 
       const result = await getNotificationSummary(invoke);
 

@@ -148,8 +148,40 @@ Record browser version, application commit, expected result, actual result, and 
 - Runtime validation accepts the Windows no-session/no-timeline diagnostic codes,
   rejects malformed timeline facts, and exposes an indeterminate rail when a
   native session has no trustworthy duration.
-- Focus provider hardening, Windows evidence, and the remaining Gate B walkthrough
-  are still pending.
+- Windows evidence and the remaining Gate B walkthrough are still pending; the
+  Focus implementation checkpoint below records the completed code-side work.
+
+### Focus implementation checkpoint — 2026-09-05
+
+- Focus Assist observations now carry explicit `code`, `controllable`, and
+  `checkedAt` facts from the native boundary; malformed or contradictory
+  payloads are dropped before entering the provider pipeline.
+- The Windows registry reader reports read failures as `error` instead of
+  silently converting them to inactive, and non-Windows builds report
+  `unsupported`. Focus monitor events also react to capability/health changes,
+  not only active/profile changes.
+- The real provider emits a stable system-origin event, orders initial and
+  listener observations by timestamp, tears down late listeners safely, and
+  renders Stop only while the native observation is active and controllable.
+  An active-to-inactive transition gets a bounded neutral completion card;
+  an initially inactive snapshot does not fabricate a completion event.
+- Focus lifecycle, parser, aggregation, and template coverage is included in
+  the implementation PR; Windows OS-version evidence and the Gate B walkthrough
+  remain pending until a Windows-capable runner is available.
+- Local evidence on this branch: `npm run typecheck`, `npm run lint --
+  --max-warnings=0`, `npm run test:vitest` (52 files / 876 tests), coverage
+  thresholds (93.25% lines / 94.64% functions), and `npm run build` pass.
+- Local `cargo check`/`clippy` cannot run because Cargo is not installed in
+  this environment; the real CI matrix is required for Rust compilation.
+
+### CI execution correction — 2026-09-05
+
+- The repository CI workflow previously gated every pull-request job on a
+  manually-added `CI` label. PRs #32 and #33 therefore showed `SKIPPED`, which is
+  not execution evidence.
+- The workflow now runs lint, tests, typecheck, Rust checks, and build for every
+  pull request, push to `main`, and manual dispatch. The next implementation PR
+  must remain open until these checks report actual results.
 
 ### Days 8-9 — Media provider
 

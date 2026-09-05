@@ -20,7 +20,6 @@ concurrency:
 
 jobs:
   lint:
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: lint
     runs-on: ubuntu-latest
     steps:
@@ -35,7 +34,6 @@ jobs:
         run: npm run lint
 
   test:
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: test (node ${{ matrix.node }})
     runs-on: ubuntu-latest
     strategy:
@@ -72,7 +70,6 @@ jobs:
         run: npx vitest run --coverage --coverage.provider=v8 --coverage.reportsDirectory=coverage --coverage.thresholds.lines=80 --coverage.thresholds.functions=80 --coverage.include="src/providers/**" --coverage.include="src/runtime/**" --coverage.include="src/state/**"
 
   typecheck:
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: typecheck
     runs-on: ubuntu-latest
     steps:
@@ -87,7 +84,6 @@ jobs:
         run: npx tsc -b --noEmit
 
   rust:
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: rust (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -119,7 +115,6 @@ jobs:
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 
   build:
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'CI')
     name: build
     runs-on: ubuntu-latest
     steps:

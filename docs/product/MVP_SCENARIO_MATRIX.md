@@ -52,12 +52,12 @@ The bar shows an active focus/work session and offers a way to end it.
 | Aspect | Definition |
 |---|---|
 | **Source** | The system Focus Assist / focus session state (real provider) or a mock fallback. |
-| **Display** | A focus label, a session label (for example the profile name and duration), a detail line (for example time remaining), and a stop button. A health badge indicates source quality. |
-| **Expiry** | The focus state is shown while a session is active. On completion the bar surfaces the completion clearly and offers the next action (for example ending or starting another session). |
-| **Actions** | Stop session. |
-| **Fallback** | When the focus provider is unavailable, the health badge reflects the degraded source. If a stop action fails, the bar shows a **"Couldn't stop focus session"** message. |
+| **Display** | A focus label, a session label (for example the profile name and duration), a detail line (for example time remaining), and a health badge. The Stop action appears only when the native observation explicitly reports that control is supported. |
+| **Expiry** | The active focus state remains visible while a session is active. An active-to-inactive transition may show a neutral **"Focus session ended"** card for a bounded window, then the bar returns to the next useful state. |
+| **Actions** | Stop session only while the observation is active and controllable. No action is shown after completion or when the provider is observation-only. |
+| **Fallback** | When the focus provider is unavailable or unsupported, it reports that capability fact and does not invent an active session. If a supported Stop action fails, the bar shows a **"Couldn't stop focus session"** message while retaining the last good active state. |
 
-> Traceability: aggregation `src/state/desktopStatusAggregation.ts:291-321` (real focus + mock/system focus fallback); template `src/features/desktop/templates/FocusStatusTemplate.tsx:24-62`.
+> Traceability: runtime parser/support `src/runtime/system/systemMonitorRuntime.ts`; provider lifecycle and bounded completion `src/providers/impl/real/realFocusProvider.ts`; aggregation `src/state/desktopStatusAggregation.ts`; template `src/features/desktop/templates/FocusStatusTemplate.tsx`.
 
 ### 1.4 Resident (supporting state)
 
@@ -107,10 +107,10 @@ Each MVP state must handle six scenarios. **Every scenario below is testable**: 
 
 | # | Scenario | Given | Expected bar behavior |
 |---|---|---|---|
-| F1 | **Normal** | A focus session is active and the provider reports healthy data. | Shows the focus label, session label (profile + duration), detail (for example time remaining), and a stop button. Health badge reflects source quality. |
+| F1 | **Normal** | A focus session is active and the provider reports healthy, controllable data. | Shows the focus label, session label (profile + duration), detail (for example time remaining), and a stop button. Health badge reflects source quality. |
 | F2 | **Empty** | No focus session is active. | Focus is not an active state. The bar does **not** show a focus card; it falls back to the next active state, or to resident. |
-| F3 | **Unavailable** | The focus provider cannot be reached or reports unsupported. | The health badge shows the degraded/unavailable source. The bar does **not** invent a session. |
-| F4 | **Completion** | The focus session ends. | Completion is surfaced clearly and the bar offers the next relevant action (stop/end). The bar then returns to the next useful state. |
+| F3 | **Unavailable** | The focus provider cannot be reached or reports unsupported. | The capability is marked unavailable/unsupported and the bar does **not** invent a session or Stop action. |
+| F4 | **Completion** | The focus session changes from active to inactive. | A neutral **"Focus session ended"** card is shown for a bounded window without a Stop action, then the bar returns to the next useful state. |
 | F5 | **Failure** | The user presses stop and the session cannot be stopped. | The bar shows a **"Couldn't stop focus session"** message. The last good state remains visible. |
 | F6 | **Malformed** | The provider reports a session with a missing profile name or detail. | Missing profile falls back to a generic "Focus Assist enabled" label; the card stays readable. No raw error or blank label is shown. |
 
@@ -135,10 +135,10 @@ These are the six display-policy rules from the MVP plan ([MVP_LAUNCH_PLAN.md §
 - **Observable behavior:** A finished/failed download is shown long enough to be noticed, but does not stay forever. After the bounded window the bar moves on to the next useful state.
 - **Traceability:** priority loop in `src/state/desktopStatusScheduler.ts:151-159` (download outranks media/resident, so it surfaces promptly); fallback/expiry logic at `:161-182` (returns to resident or next available when download is no longer active).
 
-### Situation 3 — Focus session complete: surface clearly, offer next action
+### Situation 3 — Focus session complete: surface clearly, then return
 
-- **Rule:** When a focus session completes, surface completion clearly and offer the next relevant action.
-- **Observable behavior:** The focus card is shown with a clear completion indication and the **Stop session** action is available. When focus is no longer active, the bar returns to the next useful state.
+- **Rule:** When a focus session ends, surface completion clearly without implying that it can still be stopped.
+- **Observable behavior:** The focus card is shown with a clear completion indication and no Stop action is offered after the session ends. The bounded completion card then expires and the bar returns to the next useful state.
 - **Traceability:** `src/features/desktop/templates/FocusStatusTemplate.tsx:24-62` (stop action + failure toast); focus priority in `src/state/desktopStatusScheduler.ts:36-45` (focus is highest priority, so it surfaces immediately when active).
 
 ### Situation 4 — Media active, no higher priority: show media, alternate with resident
@@ -205,7 +205,7 @@ The scheduler applies these rules, in order, every time the bar re-evaluates (on
 The MVP plan asks which provider paths are production-ready. Current status:
 
 - **Media** — has both a real system-session path and a mock path, with an explicit unavailable state and disabled controls. Closest to production-ready; needs live validation of the real provider and timeline formatting.
-- **Downloads** — currently fixture/mock-driven. The *display* and *control* behavior (pause/resume/cancel, failure toasts) exists, but a real, bounded completion/failure source is **not** yet validated. This is the weakest MVP path.
-- **Focus** — has a real Focus Assist path plus a mock/system fallback and a stop action. Needs live validation of start/stop and completion surfacing.
+- **Downloads** — has a real Windows Downloads-folder observation path with bounded lifecycle states and explicit indeterminate progress. Browser-matrix validation, clean-checkout packaging evidence, and any future browser-integrated controls remain open.
+- **Focus** — has a real Focus Assist path with explicit capability/error facts, observation-only fallback behavior, and a bounded completion card. Needs live validation of OS-version behavior, start/stop, and completion surfacing.
 
 These notes are input for Week 2, where each rule above gets focused tests and a manual walkthrough against this matrix.

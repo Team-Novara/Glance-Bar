@@ -35,6 +35,7 @@ vi.mock("@/runtime/system/systemMonitorRuntime", () => ({
   onNotificationsChanged: vi.fn(() => Promise.resolve(() => undefined)),
   onDownloadChanged: vi.fn(() => Promise.resolve(() => undefined)),
   getFocusAssistState: vi.fn(() => Promise.resolve(undefined)),
+  getFocusAssistMonitorSupport: vi.fn(() => "unsupported"),
   getNotificationsSummary: vi.fn(() => Promise.resolve(undefined)),
   getDownloadMonitorSupport: vi.fn(() => "unsupported"),
   loadDownloadState: vi.fn(() => Promise.resolve(undefined)),

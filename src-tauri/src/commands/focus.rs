@@ -9,26 +9,42 @@ pub(crate) fn read_focus_assist_state() -> FocusAssistStatePayload {
     use winreg::enums::{HKEY_CURRENT_USER, KEY_READ};
     use winreg::RegKey;
 
-    let active = RegKey::predef(HKEY_CURRENT_USER)
-        .open_subkey_with_flags(
-            r"Software\Microsoft\Windows\CurrentVersion\QuietHours",
-            KEY_READ,
-        )
-        .and_then(|key| key.get_value::<u32, _>("NFPEnabled"))
-        .map(|v| v == 1)
-        .unwrap_or(false);
+    let key = match RegKey::predef(HKEY_CURRENT_USER).open_subkey_with_flags(
+        r"Software\Microsoft\Windows\CurrentVersion\QuietHours",
+        KEY_READ,
+    ) {
+        Ok(key) => key,
+        Err(_) => {
+            return FocusAssistStatePayload {
+                active: false,
+                profile: String::new(),
+                code: "error",
+                controllable: false,
+                checked_at: crate::unix_time_ms(),
+            }
+        }
+    };
 
-    let profile = RegKey::predef(HKEY_CURRENT_USER)
-        .open_subkey_with_flags(
-            r"Software\Microsoft\Windows\CurrentVersion\QuietHours",
-            KEY_READ,
-        )
-        .and_then(|key| key.get_value::<String, _>("Profile"))
-        .unwrap_or_default();
+    let active = match key.get_value::<u32, _>("NFPEnabled") {
+        Ok(value) => value == 1,
+        Err(_) => {
+            return FocusAssistStatePayload {
+                active: false,
+                profile: String::new(),
+                code: "error",
+                controllable: false,
+                checked_at: crate::unix_time_ms(),
+            }
+        }
+    };
+
+    let profile = key.get_value::<String, _>("Profile").unwrap_or_default();
 
     FocusAssistStatePayload {
         active,
         profile,
+        code: "available",
+        controllable: true,
         checked_at: crate::unix_time_ms(),
     }
 }
@@ -38,6 +54,8 @@ pub(crate) fn read_focus_assist_state() -> FocusAssistStatePayload {
     FocusAssistStatePayload {
         active: false,
         profile: String::new(),
+        code: "unsupported",
+        controllable: false,
         checked_at: crate::unix_time_ms(),
     }
 }

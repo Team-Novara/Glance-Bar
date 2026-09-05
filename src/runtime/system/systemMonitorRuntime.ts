@@ -1,6 +1,6 @@
 import { listen } from "@tauri-apps/api/event";
 
-import type { DownloadObservation, MediaSessionCode } from "@/entities";
+import type { DownloadObservation, FocusAssistCode, MediaSessionCode } from "@/entities";
 
 import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
@@ -18,6 +18,8 @@ const MAX_ACTIVE_DOWNLOADS = 1_000;
 export type FocusAssistState = {
   active: boolean;
   profile: string;
+  code: FocusAssistCode;
+  controllable: boolean;
   checkedAt: number;
 };
 
@@ -57,15 +59,7 @@ export async function getFocusAssistState(
 
   try {
     const result = await invoke(FOCUS_ASSIST_COMMAND);
-    if (typeof result === "object" && result !== null) {
-      const record = result as Record<string, unknown>;
-      return {
-        active: record.active === true,
-        profile: typeof record.profile === "string" ? record.profile : "",
-        checkedAt: typeof record.checkedAt === "number" ? record.checkedAt : Date.now(),
-      };
-    }
-    return undefined;
+    return parseFocusAssistState(result);
   } catch {
     return undefined;
   }
@@ -96,9 +90,68 @@ export async function getNotificationSummary(
 export function onFocusAssistChanged(
   handler: (state: FocusAssistState) => void,
 ): Promise<() => void> {
-  return listen<FocusAssistState>(FOCUS_ASSIST_CHANGED_EVENT, (event) => {
-    handler(event.payload);
+  return listen<unknown>(FOCUS_ASSIST_CHANGED_EVENT, (event) => {
+    const state = parseFocusAssistState(event.payload);
+    if (state) {
+      handler(state);
+    }
   });
+}
+
+/**
+ * Whether the real Focus Assist monitor can run in the current environment.
+ * The native implementation is Windows-only and requires the Tauri bridge;
+ * browser previews and non-Windows builds must advertise an unsupported
+ * capability instead of implying that a live OS observation exists.
+ */
+export function getFocusAssistMonitorSupport(): "available" | "unsupported" {
+  if (!getTauriInvoke()) {
+    return "unsupported";
+  }
+  if (typeof navigator !== "undefined" && /Win/.test(navigator.platform)) {
+    return "available";
+  }
+  return "unsupported";
+}
+
+export function parseFocusAssistState(value: unknown): FocusAssistState | undefined {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const code = record.code;
+  const checkedAt = record.checkedAt;
+
+  if (
+    typeof record.active !== "boolean" ||
+    typeof record.profile !== "string" ||
+    !isFocusAssistCode(code) ||
+    typeof record.controllable !== "boolean" ||
+    typeof checkedAt !== "number" ||
+    !Number.isSafeInteger(checkedAt) ||
+    checkedAt < 0 ||
+    (checkedAt > 0 && checkedAt > Date.now() + MAX_OBSERVATION_TIMESTAMP_FUTURE_SKEW_MS) ||
+    (code !== "available" && record.active)
+  ) {
+    return undefined;
+  }
+
+  return {
+    active: record.active,
+    profile: record.profile,
+    code,
+    controllable: record.controllable,
+    checkedAt,
+  };
+}
+
+function isFocusAssistCode(value: unknown): value is FocusAssistCode {
+  return (
+    value === "available" ||
+    value === "unsupported" ||
+    value === "permission-denied" ||
+    value === "error"
+  );
 }
 
 export function onNotificationsChanged(
@@ -232,9 +285,7 @@ export function onDownloadChanged(
  * Maps a raw `get_download_state` invoke result into a
  * {@link DownloadChangedPayload}, or undefined when the payload is malformed.
  */
-export function parseDownloadChangedPayload(
-  value: unknown,
-): DownloadChangedPayload | undefined {
+export function parseDownloadChangedPayload(value: unknown): DownloadChangedPayload | undefined {
   if (typeof value !== "object" || value === null) {
     return undefined;
   }
@@ -284,7 +335,10 @@ export function parseDownloadChangedPayload(
   }
 
   const rawProgress = record.progress;
-  if (rawProgress !== undefined && (typeof rawProgress !== "number" || !Number.isFinite(rawProgress))) {
+  if (
+    rawProgress !== undefined &&
+    (typeof rawProgress !== "number" || !Number.isFinite(rawProgress))
+  ) {
     return undefined;
   }
   if (rawProgress !== undefined && (rawProgress < 0 || rawProgress > 100)) {

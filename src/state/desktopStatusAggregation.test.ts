@@ -81,6 +81,68 @@ describe("desktopStatusAggregation.test", () => {
     assert.equal(result.states?.download?.sourceHealth?.safeToDisplay, true);
   });
 
+  test("desktop status aggregation preserves real Focus Assist capability facts", () => {
+    const result = aggregateDesktopStatusInput({
+      events: [
+        {
+          id: "real-focus",
+          type: "focus",
+          source: "focus",
+          origin: "system",
+          createdAt: now,
+          payload: {
+            active: true,
+            profile: "Microsoft.Windows.Focus_priority-only",
+            code: "available",
+            controllable: true,
+            checkedAt: now,
+          },
+        },
+      ],
+      now,
+    });
+
+    assert.deepEqual(result.activeKinds, ["focus"]);
+    assert.equal(result.states?.focus?.source, "system");
+    assert.equal(result.states?.focus?.sessionLabel, "priority-only mode enabled");
+    assert.equal(result.states?.focus?.controllable, true);
+    assert.equal(result.states?.focus?.observationCode, "available");
+    assert.equal(result.states?.focus?.sourceHealth?.quality, "native");
+    assert.equal(result.states?.focus?.sourceHealth?.safeToDisplay, true);
+  });
+
+  test("desktop status aggregation surfaces focus completion only during its bounded window", () => {
+    const completionEvent = {
+      id: "real-focus-completion",
+      type: "focus" as const,
+      source: "focus" as const,
+      origin: "system" as const,
+      createdAt: now,
+      expiresAt: now + 8_000,
+      payload: {
+        active: false,
+        profile: "priority-only",
+        code: "available" as const,
+        controllable: true,
+        checkedAt: now,
+      },
+    };
+
+    const visible = aggregateDesktopStatusInput({ events: [completionEvent], now });
+    assert.deepEqual(visible.activeKinds, ["focus"]);
+    assert.equal(visible.states?.focus?.active, false);
+    assert.equal(visible.states?.focus?.sessionLabel, "Focus session ended");
+    assert.equal(visible.states?.focus?.detail, "The session is no longer active");
+    assert.equal(visible.states?.focus?.controllable, true);
+
+    const expired = aggregateDesktopStatusInput({
+      events: [completionEvent],
+      now: now + 8_000,
+    });
+    assert.deepEqual(expired.activeKinds, []);
+    assert.equal(expired.states, undefined);
+  });
+
   test("desktop status aggregation marks a native media timeline as indeterminate", () => {
     const result = aggregateDesktopStatusInput({
       events: [

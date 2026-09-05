@@ -182,6 +182,8 @@
     "focusMode": "专注模式",
     "systemStatus": "系统状态",
     "focusModeEnabled": "已启用专注模式",
+    "focusSessionEnded": "专注会话已结束",
+    "focusSessionEndedDetail": "该会话已不再活动",
     "doNotDisturb": "请不打扰",
     "profileModeEnabled": "{{profile}} 模式已启用",
     "focusAssistEnabled": "专注助手已启用"
