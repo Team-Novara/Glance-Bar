@@ -202,7 +202,22 @@ export type DesktopStatusAggregationResult = {
   attentionByKind?: Partial<Record<DesktopStatusKind, "new" | "near-complete" | "completion" | "urgent">>;
 };
 
-export type DesktopStatusPreferences = Record<"alwaysFloat" | "avoidFullscreen" | "lockPosition", boolean>;
+export type DesktopStatusWindowPosition = {
+  x: number;
+  y: number;
+  workAreaX: number;
+  workAreaY: number;
+  workAreaWidth: number;
+  workAreaHeight: number;
+  scaleFactorMilli: number;
+};
+
+export type DesktopStatusPreferences = {
+  alwaysFloat: boolean;
+  avoidFullscreen: boolean;
+  lockPosition: boolean;
+  windowPosition?: DesktopStatusWindowPosition;
+};
 
 export type DesktopStatusMenuActionId =
   | "refresh-data"

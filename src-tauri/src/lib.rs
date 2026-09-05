@@ -11,7 +11,7 @@ pub use crate::types::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::menu::{CheckMenuItemBuilder, MenuBuilder};
-use tauri::{Emitter, Manager, PhysicalPosition, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 use tauri_plugin_autostart::MacosLauncher;
@@ -142,6 +142,16 @@ fn handle_status_center_menu_event<R: tauri::Runtime>(
     state: &SharedDesktopProductState<R>,
     id: &str,
 ) {
+    if id == MENU_RESET_POSITION {
+        if let Some(window) = app.get_webview_window(STATUS_WINDOW_LABEL) {
+            let _ = crate::commands::window::reset_status_window_position_for_window(
+                app, state, &window,
+            );
+        }
+        emit_status_center_action(app, "reset-position", None);
+        return;
+    }
+
     let Ok(mut state) = state.lock() else {
         return;
     };
@@ -190,7 +200,6 @@ fn handle_status_center_menu_event<R: tauri::Runtime>(
                 Some(state.preferences.lock_position),
             );
         }
-        MENU_RESET_POSITION => emit_status_center_action(app, "reset-position", None),
         MENU_OPEN_SETTINGS => request_open_settings(app, "menu"),
         MENU_QUIT => {
             emit_status_center_action(app, "quit", None);
@@ -299,23 +308,10 @@ pub fn run() {
 
             if let Some(window) = app.get_webview_window(STATUS_WINDOW_LABEL) {
                 crate::commands::window::disable_dwm_window_shadow(&window, shadow_shutdown);
-
-                if let Ok(monitors) = window.available_monitors() {
-                    if let Some(monitor) = monitors.first() {
-                        let work_area = monitor.work_area();
-                        let scale = monitor.scale_factor();
-                        let window_width = (303.0 * scale) as i32;
-                        let window_height = (64.0 * scale) as i32;
-                        let margin = (8.0 * scale) as i32;
-                        let x = work_area.position.x + work_area.size.width as i32
-                            - window_width
-                            - margin;
-                        let y = work_area.position.y + work_area.size.height as i32
-                            - window_height
-                            - margin;
-                        let _ = window.set_position(PhysicalPosition::new(x, y));
-                    }
-                }
+                let _ = crate::commands::window::restore_status_window_position_for_window(
+                    &window,
+                    preferences.window_position.as_ref(),
+                );
 
                 let app_handle = app.handle().clone();
                 window.on_window_event(move |event| {
@@ -350,6 +346,8 @@ pub fn run() {
             commands::window::set_status_window_floating,
             commands::window::correct_status_window_position,
             commands::window::start_window_drag,
+            commands::window::persist_status_window_position,
+            commands::window::reset_status_window_position,
             commands::window::show_status_center_context_menu,
             commands::window::get_status_center_settings,
             commands::window::set_status_center_preferences,

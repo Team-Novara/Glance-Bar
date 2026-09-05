@@ -4,6 +4,7 @@ import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 import {
   correctStatusWindowPosition,
   STATUS_WINDOW_CORRECT_POSITION_COMMAND,
+  resetStatusWindowPosition,
 } from "@/runtime/window/statusWindowRuntime";
 import { getSafeCurrentWindow, type TauriAppWindow } from "@/shared/lib/tauriWindow";
 
@@ -39,7 +40,7 @@ export function useWindowLifecycle({
       return;
     }
 
-    await invoke(STATUS_WINDOW_CORRECT_POSITION_COMMAND);
+    await resetStatusWindowPosition(invoke);
   }, []);
 
   const quitStatusCenter = useCallback(async () => {
@@ -71,5 +72,9 @@ export function useWindowLifecycle({
   return { resetPosition, quitStatusCenter, recallStatusCenter };
 }
 
-// Re-export for callers that still need the raw command constant.
-export { STATUS_WINDOW_CORRECT_POSITION_COMMAND, correctStatusWindowPosition };
+// Re-export for callers that still need the raw shell helpers.
+export {
+  correctStatusWindowPosition,
+  resetStatusWindowPosition,
+  STATUS_WINDOW_CORRECT_POSITION_COMMAND,
+};

@@ -72,3 +72,43 @@ pub(crate) fn apply_preference_menu_state<R: tauri::Runtime>(
         .lock_position
         .set_checked(preferences.lock_position);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::StatusWindowPosition;
+
+    #[test]
+    fn legacy_preferences_default_window_position_to_none() {
+        let preferences: DesktopStatusPreferences = serde_json::from_str(
+            r#"{"alwaysFloat":true,"avoidFullscreen":false,"lockPosition":true}"#,
+        )
+        .expect("legacy preferences should remain readable");
+
+        assert!(preferences.window_position.is_none());
+    }
+
+    #[test]
+    fn persisted_window_position_round_trips() {
+        let preferences = DesktopStatusPreferences {
+            always_float: true,
+            avoid_fullscreen: true,
+            lock_position: false,
+            window_position: Some(StatusWindowPosition {
+                x: 120,
+                y: 640,
+                work_area_x: 0,
+                work_area_y: 0,
+                work_area_width: 1_920,
+                work_area_height: 1_040,
+                scale_factor_milli: 1_250,
+            }),
+        };
+
+        let encoded = serde_json::to_string(&preferences).expect("preferences should serialize");
+        let decoded: DesktopStatusPreferences =
+            serde_json::from_str(&encoded).expect("preferences should deserialize");
+
+        assert_eq!(decoded.window_position, preferences.window_position);
+    }
+}

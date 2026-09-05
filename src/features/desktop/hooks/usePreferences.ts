@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { DesktopStatusPreferences, DesktopStatusPreferencesPayload } from "@/entities";
-import { listenStatusCenterSettings } from "@/runtime/tauri/desktopProductRuntime";
+import type { DesktopStatusPreferences } from "@/entities";
+import {
+  listenStatusCenterSettings,
+  parseStatusCenterSettingsPayload,
+} from "@/runtime/tauri/desktopProductRuntime";
 import { getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 
 const STATUS_CENTER_SETTINGS_COMMAND = "get_status_center_settings";
@@ -18,20 +21,6 @@ export type UsePreferencesResult = {
   preferences: DesktopStatusPreferences;
   updatePreferences: (patch: Partial<DesktopStatusPreferences>) => Promise<void>;
 };
-
-function isPreferencesPayload(value: unknown): value is DesktopStatusPreferencesPayload {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const preferences = (value as DesktopStatusPreferencesPayload).preferences;
-
-  return (
-    typeof preferences?.alwaysFloat === "boolean" &&
-    typeof preferences.avoidFullscreen === "boolean" &&
-    typeof preferences.lockPosition === "boolean"
-  );
-}
 
 export function usePreferences(): UsePreferencesResult {
   const [preferences, setPreferences] = useState<DesktopStatusPreferences>(DEFAULT_PREFERENCES);
@@ -76,9 +65,11 @@ export function usePreferences(): UsePreferencesResult {
 
     void (async () => {
       try {
-        const settingsResult = await invoke(STATUS_CENTER_SETTINGS_COMMAND);
-        if (!disposed && isPreferencesPayload(settingsResult)) {
-          setPreferences({ ...settingsResult.preferences });
+        const settingsResult = parseStatusCenterSettingsPayload(
+          await invoke(STATUS_CENTER_SETTINGS_COMMAND),
+        );
+        if (!disposed && settingsResult) {
+          setPreferences(settingsResult.preferences);
         }
 
         offSettings = await listenStatusCenterSettings((payload) => {
