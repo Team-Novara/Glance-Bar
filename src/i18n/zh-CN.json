@@ -43,9 +43,9 @@
       "eyebrow": "专注"
     },
     "notification": {
-     "label": "通知",
-     "description": "展示前台应用最近一条通知。",
-     "eyebrow": "通知"
+      "label": "通知",
+      "description": "展示前台应用最近一条通知。",
+      "eyebrow": "通知"
     },
     "developer": {
       "label": "开发者",
@@ -95,11 +95,11 @@
       "detail": "剩余 12 分钟"
     },
     "notification": {
-     "title": "新消息",
-     "subtitle": "通知",
-     "app": "Cober",
-     "sender": "Mock Provider",
-     "message": "npm run qa 已通过"
+      "title": "新消息",
+      "subtitle": "通知",
+      "app": "Cober",
+      "sender": "Mock Provider",
+      "message": "npm run qa 已通过"
     },
     "developer": {
       "title": "开发者环境",
@@ -117,7 +117,8 @@
     "sections": {
       "windowBehavior": "窗口行为",
       "statusTemplates": "状态模板",
-      "quickActions": "快捷控制"
+      "quickActions": "快捷控制",
+      "diagnostics": "问题诊断"
     },
     "toggles": {
       "alwaysFloat": {
@@ -166,6 +167,21 @@
       "stopped": "Stopped",
       "attentionTitle": "需要关注",
       "showAll": "显示全部 Provider"
+    },
+    "diagnostics": {
+      "title": "隐私安全诊断",
+      "description": "报告问题时可分享这些有限事实，不会包含隐私数据。",
+      "appVersion": "应用版本",
+      "platform": "平台",
+      "runtime": "运行时",
+      "generatedAt": "生成时间",
+      "providers": "Provider 观测",
+      "lastError": "最后异常代码",
+      "lastChecked": "最后检查",
+      "separator": " · ",
+      "none": "无",
+      "unknown": "未知",
+      "noProviders": "未注册 Provider"
     }
   },
   "aggregation": {

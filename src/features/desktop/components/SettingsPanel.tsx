@@ -24,14 +24,15 @@ import {
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-
 import type { DesktopStatusKind, DesktopStatusPreferences } from "@/entities";
+import type { HubEvent } from "@/entities";
 import {
   getDesktopStatusTemplateDescriptors,
   getDesktopStatusSettingsCopy,
 } from "@/entities/status/config";
 import type { ProviderRegistryRecord } from "@/providers";
 
+import { PrivacySafeDiagnosticsPanel } from "./PrivacySafeDiagnosticsPanel";
 import { ProviderStatusPanel } from "./ProviderStatusPanel";
 
 export type SettingsPanelProps = {
@@ -39,6 +40,7 @@ export type SettingsPanelProps = {
   activeStatusKind: DesktopStatusKind | null;
   autostartEnabled: boolean;
   providerRecords: ProviderRegistryRecord[];
+  diagnosticEvents?: HubEvent[];
   onToggleAlwaysFloat: () => void;
   onToggleAvoidFullscreen: () => void;
   onToggleLockPosition: () => void;
@@ -93,6 +95,7 @@ export function SettingsPanel({
   activeStatusKind,
   autostartEnabled,
   providerRecords,
+  diagnosticEvents,
   onToggleAlwaysFloat,
   onToggleAvoidFullscreen,
   onToggleLockPosition,
@@ -269,6 +272,12 @@ export function SettingsPanel({
 
         {/* ── Provider Status ── */}
         <ProviderStatusPanel records={providerRecords ?? []} />
+
+        {/* ── Privacy-safe diagnostics ── */}
+        <PrivacySafeDiagnosticsPanel
+          records={providerRecords ?? []}
+          events={diagnosticEvents ?? []}
+        />
 
         {/* ── Quick Controls ── */}
         <section className="win11-settings-section">

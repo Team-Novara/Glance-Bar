@@ -340,6 +340,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            commands::diagnostics::get_app_runtime_metadata,
             commands::media::get_media_session_status,
             commands::system::get_system_performance,
             commands::system::get_overlay_policy,

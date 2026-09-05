@@ -7,6 +7,7 @@ import { createSchedulerService } from "@/runtime/scheduler/schedulerService";
 import { defaultDesktopRuntimeDependencies } from "./desktopRuntimeDependencies";
 import type { DesktopRuntimeDependencies } from "./desktopRuntimeDependencies";
 import type { ProviderManager } from "@/providers";
+import type { ProviderRegistryRecord } from "@/providers";
 import { DESKTOP_STATUS_TEMPLATE_ORDER } from "@/entities/status/config";
 import { mockMetrics } from "@/shared/test-util/fixtures";
 import type { HubEvent, SystemPerformanceMetric } from "@/entities";
@@ -149,6 +150,162 @@ describe("useDesktopStatusRuntime", () => {
     expect(result.current.providerManager).toBeDefined();
     expect(result.current.providerManager?.registry.list().length).toBeGreaterThan(0);
     expect(defaultDesktopRuntimeDependencies.createEventBus).toBeTypeOf("function");
+  });
+
+  it("refreshes provider snapshots when a provider event changes health", async () => {
+    let records: ProviderRegistryRecord[] = [
+      {
+        id: "real-download-provider",
+        name: "Real Download Provider",
+        kind: "download",
+        metadata: {
+          id: "real-download-provider",
+          name: "Real Download Provider",
+          kind: "download",
+          version: "1.0.0",
+          mock: false,
+        },
+        capabilities: [{ id: "download", kind: "download", origin: "real", support: "available" }],
+        status: { lifecycle: "Publishing", health: "Healthy" },
+        registrationOrder: 0,
+      },
+    ];
+    const dependencies: DesktopRuntimeDependencies = {
+      createEventBus: () => {
+        return createHubEventBus();
+      },
+      createProviderManager: (eventBus) =>
+        ({
+          registry: { list: vi.fn(() => records) },
+          start: vi.fn(() => {
+            records = records.map((record) => ({
+              ...record,
+              status: { ...record.status, health: "Degraded" },
+            }));
+            eventBus.publishHubEvent({
+              id: "download-observation",
+              type: "download",
+              source: "download",
+              createdAt: Date.now(),
+            });
+          }),
+          stop: vi.fn(),
+          listProviderIds: vi.fn(() => records.map((record) => record.id)),
+        }) as unknown as ProviderManager,
+      createSchedulerService: () => createSchedulerService(),
+    };
+
+    const { result } = renderHook(() =>
+      useDesktopStatusRuntime(baseMetrics, "fallback", dependencies),
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.providerRecords[0]?.status.health).toBe("Degraded");
+  });
+
+  it("retains only sanitized diagnostic observations after display events expire", async () => {
+    let bus!: HubEventBus;
+    const event: HubEvent = {
+      id: "clipboard-observation",
+      type: "clipboard",
+      source: "clipboard",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 100,
+      payload: {
+        text: "private clipboard value",
+        sourceApp: "Private App",
+        copiedAt: Date.now(),
+      },
+      metadata: { code: "provider-failed", checkedAt: Date.now() },
+    };
+    const dependencies: DesktopRuntimeDependencies = {
+      createEventBus: () => {
+        bus = createHubEventBus();
+        return bus;
+      },
+      createProviderManager: (eventBus) =>
+        ({
+          registry: { list: vi.fn(() => []) },
+          start: vi.fn(() => eventBus.publishHubEvent(event)),
+          stop: vi.fn(),
+          listProviderIds: vi.fn(() => []),
+        }) as unknown as ProviderManager,
+      createSchedulerService: () => createSchedulerService(),
+    };
+
+    const { result } = renderHook(() =>
+      useDesktopStatusRuntime(baseMetrics, "fallback", dependencies),
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.diagnosticEvents).toHaveLength(1);
+    expect(result.current.diagnosticEvents[0]?.payload).toBeUndefined();
+    expect(JSON.stringify(result.current.diagnosticEvents)).not.toContain("private clipboard");
+
+    act(() => {
+      bus.clearExpiredEvents(Date.now() + 101);
+    });
+
+    expect(result.current.diagnosticEvents).toHaveLength(1);
+    expect(result.current.diagnosticEvents[0]?.metadata).toEqual({
+      code: "provider-failed",
+      checkedAt: Date.now(),
+    });
+  });
+
+  it("refreshes asynchronous provider health changes even without a hub event", () => {
+    let health: "Healthy" | "Degraded" = "Healthy";
+    const record: ProviderRegistryRecord = {
+      id: "real-media-provider",
+      name: "Real Media Provider",
+      kind: "media",
+      metadata: {
+        id: "real-media-provider",
+        name: "Real Media Provider",
+        kind: "media",
+        version: "1.0.0",
+        mock: false,
+      },
+      capabilities: [{ id: "media", kind: "media", origin: "real", support: "available" }],
+      status: { lifecycle: "Publishing", health: "Healthy" },
+      registrationOrder: 0,
+    };
+    const dependencies: DesktopRuntimeDependencies = {
+      createEventBus: () => createHubEventBus(),
+      createProviderManager: () =>
+        ({
+          registry: {
+            list: vi.fn(() => [{ ...record, status: { ...record.status, health } }]),
+          },
+          start: vi.fn(() => {
+            window.setTimeout(() => {
+              health = "Degraded";
+            }, 50);
+          }),
+          stop: vi.fn(),
+          listProviderIds: vi.fn(() => [record.id]),
+        }) as unknown as ProviderManager,
+      createSchedulerService: () => createSchedulerService(),
+    };
+
+    const { result } = renderHook(() =>
+      useDesktopStatusRuntime(baseMetrics, "fallback", dependencies),
+    );
+    expect(result.current.providerRecords[0]?.status.health).toBe("Healthy");
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    expect(result.current.providerRecords[0]?.status.health).toBe("Healthy");
+
+    act(() => {
+      vi.advanceTimersByTime(950);
+    });
+    expect(result.current.providerRecords[0]?.status.health).toBe("Degraded");
   });
 
   it("clears expired system observations instead of retaining sticky metrics", async () => {

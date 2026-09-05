@@ -5,6 +5,7 @@
 // invoke_handler! macro and keeps only run() + glue + constants.
 
 pub mod clipboard;
+pub mod diagnostics;
 pub mod focus;
 pub mod media;
 pub mod system;

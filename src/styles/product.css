@@ -1497,6 +1497,112 @@ button {
     padding: 0 8px 8px;
   }
 
+  /* ── Privacy-safe diagnostics ── */
+
+  .diagnostics-card {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .diagnostics-description,
+  .diagnostics-empty {
+    color: var(--win11-text-sec);
+    font-size: 10px;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .diagnostics-facts,
+  .diagnostics-provider-facts {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+  }
+
+  .diagnostics-fact {
+    align-items: baseline;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .diagnostics-fact dt,
+  .diagnostics-fact dd {
+    font-size: 10px;
+    line-height: 1.3;
+    margin: 0;
+  }
+
+  .diagnostics-fact dt {
+    color: var(--win11-text-sec);
+  }
+
+  .diagnostics-fact dd {
+    color: var(--win11-text);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .diagnostics-provider-title {
+    border-top: 1px solid var(--win11-divider);
+    color: var(--win11-text);
+    font-size: 11px;
+    font-weight: 600;
+    margin: 0;
+    padding-top: 10px;
+  }
+
+  .diagnostics-provider-list {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .diagnostics-provider {
+    background: rgba(0, 0, 0, 0.018);
+    border: 1px solid var(--win11-divider);
+    border-radius: 4px;
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .diagnostics-provider-heading {
+    align-items: baseline;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .diagnostics-provider-kind {
+    color: var(--win11-text);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .diagnostics-provider-health {
+    color: var(--win11-text-sec);
+    font-size: 10px;
+  }
+
+  .diagnostics-provider-capabilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .diagnostics-capability {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 3px;
+    color: var(--win11-text-sec);
+    font-size: 9px;
+    padding: 3px 5px;
+  }
+
   /* ── Focus visible for all interactive elements ── */
 
   .win11-template-card:focus-visible,
