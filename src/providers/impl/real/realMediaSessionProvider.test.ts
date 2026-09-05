@@ -203,7 +203,7 @@ describe("createRealMediaSessionProvider", () => {
 
       expect(events).toHaveLength(1);
       const event = events[0];
-      expect(event?.id).toBe(`${PROVIDER_ID}-media-1780743600000`);
+      expect(event?.id).toBe(`${PROVIDER_ID}-media-observation`);
       expect(event?.type).toBe("media");
       expect(event?.source).toBe("media");
       expect(event?.createdAt).toBe(1_780_743_600_000);
@@ -285,6 +285,41 @@ describe("createRealMediaSessionProvider", () => {
       await flushMicrotasks();
 
       expect(events).toHaveLength(0);
+    });
+
+    it("does not let a delayed initial snapshot overwrite a newer media event", async () => {
+      const { fire } = captureListen();
+      let resolveInitial!: (value: unknown) => void;
+      stubTauriMediaSession(
+        makeMediaInvoke(
+          new Promise((resolve) => {
+            resolveInitial = resolve;
+          }),
+        ),
+      );
+      const provider = createRealMediaSessionProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      await flushMicrotasks();
+
+      fire({
+        available: true,
+        playbackStatus: "paused",
+        progress: 55,
+        code: "available",
+        checkedAt: 1_780_743_600_100,
+      });
+      resolveInitial({
+        available: true,
+        playbackStatus: "playing",
+        progress: 42,
+        code: "available",
+        checkedAt: 1_780_743_600_000,
+      });
+      await flushMicrotasks();
+
+      expect(events).toHaveLength(1);
+      expect(events[0]?.payload).toMatchObject({ playbackStatus: "paused" });
     });
   });
 
@@ -402,6 +437,25 @@ describe("createRealMediaSessionProvider", () => {
         checkedAt: 1_780_743_600_000,
       });
       expect(events).toHaveLength(0);
+    });
+
+    it("unlistens when native registration resolves after stop()", async () => {
+      let resolveListen!: (unlisten: () => void) => void;
+      const lateUnlisten = vi.fn();
+      listenMock.mockImplementation(
+        () =>
+          new Promise<() => void>((resolve) => {
+            resolveListen = resolve;
+          }),
+      );
+      const provider = createRealMediaSessionProvider();
+
+      provider.start();
+      provider.stop();
+      resolveListen(lateUnlisten);
+      await flushMicrotasks();
+
+      expect(lateUnlisten).toHaveBeenCalledTimes(1);
     });
   });
 

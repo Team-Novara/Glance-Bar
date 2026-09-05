@@ -984,6 +984,24 @@ describe("tauriRuntime.test", () => {
     }
   });
 
+  it("accepts Windows diagnostic codes emitted when a session or timeline is missing", async () => {
+    const result = await loadTauriMediaSessionStatus({
+      invoke: async () => ({
+        available: true,
+        playbackStatus: "playing",
+        progress: 0,
+        code: "no-timeline",
+        checkedAt: 1_780_743_600_000,
+      }),
+    });
+
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.status.code, "no-timeline");
+      assert.equal(result.event?.type, "music");
+    }
+  });
+
   it("returns malformed diagnostic for invalid native media session payloads", async () => {
     const result = await loadTauriMediaSessionStatus({
       invoke: async () => ({

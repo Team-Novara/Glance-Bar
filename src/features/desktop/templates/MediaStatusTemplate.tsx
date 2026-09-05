@@ -40,6 +40,10 @@ export function MediaStatusTemplate({ state }: MediaStatusTemplateProps) {
   const isPlaying = state.playbackStatus === "playing";
   const isUnavailable =
     state.playbackStatus === "unavailable" || state.playbackStatus === "unsupported";
+  const hasExactProgress =
+    state.progressAccuracy === "exact" ||
+    (state.progressAccuracy === undefined && state.source === "mock");
+  const indeterminate = !hasExactProgress;
   const { toast, showToast } = useStatusToast();
 
   const handleMediaAction = useCallback(
@@ -130,10 +134,15 @@ export function MediaStatusTemplate({ state }: MediaStatusTemplateProps) {
         {/* Full-width progress bar pinned to the bottom of the template. */}
         <StatusRail
           value={state.progress}
-          label={`${copy.mediaProgress} ${state.progress}%`}
+          label={
+            indeterminate
+              ? t("media.progressUnknown")
+              : `${copy.mediaProgress} ${state.progress}%`
+          }
           accent="violet"
           active={isPlaying}
           shimmer
+          indeterminate={indeterminate}
         />
       </DesktopStatusTemplateFrame>
       {toast ? <StatusToastView>{toast}</StatusToastView> : null}

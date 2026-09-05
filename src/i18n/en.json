@@ -197,6 +197,7 @@
     "mock": "Mock"
   },
   "media": {
+    "progressUnknown": "Media timeline unavailable",
     "previous": "Previous",
     "play": "Play",
     "pause": "Pause",

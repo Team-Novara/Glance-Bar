@@ -56,6 +56,7 @@ function snapshotMusicState(music: MusicState): DesktopMediaState {
     artist: music.subtitle,
     timeLabel: music.time,
     progress: clampProgress(music.progress),
+    progressAccuracy: "exact",
     accent: "violet",
     playbackStatus: "playing",
   };
@@ -65,8 +66,17 @@ function snapshotRealMediaState(
   payload: MediaSessionPayload,
   metadata?: Record<string, unknown>,
 ): DesktopMediaState {
+  const mediaCode =
+    metadata?.["code"] === "unsupported"
+      ? "unsupported"
+      : metadata?.["code"] === "available" || metadata?.["code"] === "no-timeline"
+        ? "available"
+        : "provider-failed";
+  const mediaAvailable = mediaCode === "available";
+  const hasTimeline =
+    payload.positionMs !== undefined && payload.durationMs !== undefined && payload.durationMs > 0;
   const timeLabel =
-    payload.positionMs !== undefined && payload.durationMs !== undefined && payload.durationMs > 0
+    hasTimeline
       ? formatMediaTime(payload.positionMs, payload.durationMs)
       : typeof metadata?.["timeLabel"] === "string"
         ? metadata["timeLabel"]
@@ -83,18 +93,16 @@ function snapshotRealMediaState(
     artist: payload.artist ?? "",
     timeLabel,
     progress: clampProgress(payload.progress),
+    progressAccuracy: hasTimeline ? "exact" : "none",
     accent: "violet",
     playbackStatus: payload.playbackStatus,
     positionMs: payload.positionMs,
     durationMs: payload.durationMs,
     sourceHealth: {
       kind: "media",
-      quality: "native",
-      code:
-        typeof metadata?.["code"] === "string"
-          ? (metadata["code"] as "available" | "unsupported")
-          : "available",
-      safeToDisplay: true,
+      quality: mediaAvailable ? "native" : "unavailable",
+      code: mediaCode,
+      safeToDisplay: mediaAvailable,
       lastCheckedAt: Date.now(),
     },
   };

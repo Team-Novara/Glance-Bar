@@ -27,6 +27,7 @@ import {
   onMediaSessionChanged,
   onNotificationsChanged,
   parseDownloadChangedPayload,
+  parseMediaSessionChangedPayload,
   type ClipboardChangedPayload,
   type DownloadChangedPayload,
   type FocusAssistState,
@@ -313,6 +314,29 @@ describe("systemMonitorRuntime.test", () => {
       assert.equal(first.progress, 50);
     });
 
+    it("drops malformed media payloads instead of trusting the event type", async () => {
+      const { fire } = captureListen();
+      const received: MediaSessionChangedPayload[] = [];
+      await onMediaSessionChanged((status) => received.push(status));
+
+      fire({
+        available: true,
+        playbackStatus: "playing",
+        progress: 140,
+        code: "available",
+        checkedAt: 1_780_743_600_000,
+      });
+      fire({
+        available: true,
+        playbackStatus: "playing",
+        progress: 10,
+        code: "not-a-code",
+        checkedAt: 1_780_743_600_000,
+      });
+
+      assert.equal(received.length, 0);
+    });
+
     it("returns the unlisten function for cleanup", async () => {
       const { unlisten } = captureListen();
 
@@ -333,6 +357,46 @@ describe("systemMonitorRuntime.test", () => {
         rejected = true;
       }
       assert.equal(rejected, true);
+    });
+  });
+
+  describe("parseMediaSessionChangedPayload", () => {
+    it("accepts native no-timeline facts and keeps optional timeline fields absent", () => {
+      const result = parseMediaSessionChangedPayload({
+        available: true,
+        playbackStatus: "playing",
+        progress: 0,
+        code: "no-timeline",
+        checkedAt: 1_780_743_600_000,
+      });
+
+      assert.equal(result?.code, "no-timeline");
+      assert.equal(result?.positionMs, undefined);
+      assert.equal(result?.durationMs, undefined);
+    });
+
+    it("rejects negative timeline values and implausibly future timestamps", () => {
+      assert.equal(
+        parseMediaSessionChangedPayload({
+          available: true,
+          playbackStatus: "paused",
+          progress: 20,
+          positionMs: -1,
+          code: "available",
+          checkedAt: 1,
+        }),
+        undefined,
+      );
+      assert.equal(
+        parseMediaSessionChangedPayload({
+          available: true,
+          playbackStatus: "paused",
+          progress: 20,
+          code: "available",
+          checkedAt: Date.now() + 2 * 24 * 60 * 60 * 1_000,
+        }),
+        undefined,
+      );
     });
   });
 

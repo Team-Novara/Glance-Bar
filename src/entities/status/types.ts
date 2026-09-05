@@ -17,7 +17,8 @@ export type DownloadObservationStatus =
   | "ended_unknown"
   | "error";
 
-export type DownloadProgressAccuracy = "none" | "estimated" | "exact";
+export type ProgressAccuracy = "none" | "estimated" | "exact";
+export type DownloadProgressAccuracy = ProgressAccuracy;
 
 export type DownloadObservationCode =
   | "available"
@@ -44,6 +45,17 @@ export type MediaSessionPayload = {
   title?: string;
   artist?: string;
 };
+
+export type MediaSessionCode =
+  | "available"
+  | "not-playing"
+  | "unsupported"
+  | "provider-failed"
+  | "sta-timeout"
+  | "no-session"
+  | "no-playback-info"
+  | "no-status"
+  | "no-timeline";
 
 export type ClipboardPayload = {
   text: string;

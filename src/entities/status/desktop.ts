@@ -5,6 +5,7 @@ import type {
   DownloadProgressAccuracy,
   HubEvent,
   HubStoreState,
+  ProgressAccuracy,
 } from "./types";
 
 export type DesktopStatusKind =
@@ -75,6 +76,7 @@ export type DesktopResidentState = DesktopStatusBaseState & {
 export type DesktopMediaState = DesktopStatusBaseState & {
   kind: "media";
   progress: number;
+  progressAccuracy?: ProgressAccuracy;
   artist: string;
   timeLabel: string;
   accent: DesktopStatusAccentTone;

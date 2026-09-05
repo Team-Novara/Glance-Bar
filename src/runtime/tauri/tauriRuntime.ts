@@ -7,6 +7,7 @@ import type {
   GuestProviderSourceHealthMap,
   GuestProviderSourceQuality,
   HubEvent,
+  MediaSessionCode,
 } from "@/entities";
 
 import {
@@ -105,7 +106,7 @@ export type TauriMediaSessionStatus = {
   durationMs?: number;
   title?: string;
   artist?: string;
-  code: "available" | "not-playing" | "unsupported" | "provider-failed" | "sta-timeout";
+  code: MediaSessionCode;
   checkedAt: number;
 };
 
@@ -693,7 +694,11 @@ function isMediaSessionCode(value: unknown): value is TauriMediaSessionStatus["c
     value === "not-playing" ||
     value === "unsupported" ||
     value === "provider-failed" ||
-    value === "sta-timeout"
+    value === "sta-timeout" ||
+    value === "no-session" ||
+    value === "no-playback-info" ||
+    value === "no-status" ||
+    value === "no-timeline"
   );
 }
 
