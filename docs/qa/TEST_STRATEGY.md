@@ -2,7 +2,7 @@
 
 ## Current baseline
 
-`npm run test:vitest` currently verifies 50 test files and 783 tests. The count is a snapshot, not a release gate; the required gate is a clean command result.
+`npm run test:vitest` currently verifies 58 test files and 919 tests. The count is a snapshot, not a release gate; the required gate is a clean command result.
 
 ## Test layers
 
@@ -30,3 +30,9 @@ npm run qa
 cargo check --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all
 ```
+
+The complete `npm run qa` command runs the Vitest suite, the Showcase interaction
+journey, and the production build. The Showcase journey forces the
+`i18nextLng` browser cache key to English and verifies that Tauri fixture events
+are scoped to `/showcase`; navigating to `/desktop` must not inherit the fixture
+payload.
