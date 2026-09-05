@@ -12,10 +12,12 @@ export {
   type MediaSessionChangedPayload,
   type NotificationSummary,
   getFocusAssistState,
+  getFocusAssistMonitorSupport,
   getNotificationSummary,
   onClipboardChanged,
   onFocusAssistChanged,
   onMediaSessionChanged,
   onNotificationsChanged,
+  parseFocusAssistState,
   parseMediaSessionChangedPayload,
 } from './systemMonitorRuntime';

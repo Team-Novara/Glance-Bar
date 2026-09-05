@@ -25,7 +25,6 @@ import { createHubStoreState, getActiveHubEvents } from "./hubState";
 import { formatMediaTime } from "../shared/lib/mediaTime";
 import { clampProgress, dedupeKinds } from "../shared/lib/runtimeGuards";
 
-
 const DESKTOP_STATUS_AVAILABLE_KINDS: DesktopStatusKind[] = [
   "resident",
   "media",
@@ -75,12 +74,11 @@ function snapshotRealMediaState(
   const mediaAvailable = mediaCode === "available";
   const hasTimeline =
     payload.positionMs !== undefined && payload.durationMs !== undefined && payload.durationMs > 0;
-  const timeLabel =
-    hasTimeline
-      ? formatMediaTime(payload.positionMs, payload.durationMs)
-      : typeof metadata?.["timeLabel"] === "string"
-        ? metadata["timeLabel"]
-        : "";
+  const timeLabel = hasTimeline
+    ? formatMediaTime(payload.positionMs, payload.durationMs)
+    : typeof metadata?.["timeLabel"] === "string"
+      ? metadata["timeLabel"]
+      : "";
 
   return {
     kind: "media",
@@ -130,25 +128,43 @@ function snapshotRealClipboardState(payload: ClipboardPayload): DesktopClipboard
 }
 
 function snapshotRealFocusState(payload: FocusAssistPayload): DesktopFocusState {
+  const observationCode =
+    payload.code === "unsupported"
+      ? "unsupported"
+      : payload.code === "permission-denied"
+        ? "permission-denied"
+        : payload.code === "error"
+          ? "error"
+          : "available";
+  const available = observationCode === "available";
+  const active = payload.active;
+  const healthCode = observationCode === "error" ? "provider-failed" : observationCode;
   const profileLabel = payload.profile
     ? payload.profile.replace("Microsoft.Windows.Focus_", "")
     : "";
 
   return {
     kind: "focus",
-    title: i18n.t("aggregation.focusMode"),
-    subtitle: i18n.t("aggregation.systemStatus"),
+    active,
+    title: active ? i18n.t("aggregation.focusMode") : i18n.t("aggregation.focusSessionEnded"),
+    subtitle: active ? i18n.t("aggregation.systemStatus") : i18n.t("aggregation.focusSessionEnded"),
     source: "system",
-    sessionLabel: profileLabel
-      ? i18n.t("aggregation.profileModeEnabled", { profile: profileLabel })
-      : i18n.t("aggregation.focusAssistEnabled"),
-    detail: i18n.t("aggregation.doNotDisturb"),
+    sessionLabel: active
+      ? profileLabel
+        ? i18n.t("aggregation.profileModeEnabled", { profile: profileLabel })
+        : i18n.t("aggregation.focusAssistEnabled")
+      : i18n.t("aggregation.focusSessionEnded"),
+    detail: active
+      ? i18n.t("aggregation.doNotDisturb")
+      : i18n.t("aggregation.focusSessionEndedDetail"),
     accent: "pink",
+    controllable: payload.controllable,
+    observationCode,
     sourceHealth: {
       kind: "focus",
-      quality: "native",
-      code: "available",
-      safeToDisplay: true,
+      quality: available ? "native" : "unavailable",
+      code: healthCode,
+      safeToDisplay: available,
       lastCheckedAt: payload.checkedAt,
     },
   };
@@ -244,9 +260,7 @@ function snapshotDeveloperEvent(event: HubEvent): DesktopDeveloperState {
     detail,
     accent: "cyan",
     progress:
-      payload && typeof payload.progress === "number"
-        ? clampProgress(payload.progress)
-        : undefined,
+      payload && typeof payload.progress === "number" ? clampProgress(payload.progress) : undefined,
     sourceHealth: {
       kind: "developer",
       quality: "native",
@@ -344,7 +358,7 @@ function deriveStateOverrides(hubState: HubStoreState): Partial<DesktopStatusSta
   }
 
   // --- Focus (real provider) ---
-  if (hubState.focus && hubState.focus.active) {
+  if (hubState.focus && (hubState.focus.code ?? "available") === "available") {
     overrides.focus = snapshotRealFocusState(hubState.focus);
   }
 
@@ -431,7 +445,7 @@ function deriveActiveKinds(hubState: HubStoreState, events: HubEvent[]): Desktop
   }
 
   // Focus (real provider or mock)
-  if (hubState.focus && hubState.focus.active) {
+  if (hubState.focus && (hubState.focus.code ?? "available") === "available") {
     activeKinds.push("focus");
   } else if (
     events.some((event) => event.source === "system" && event.metadata?.["focus"] === true)

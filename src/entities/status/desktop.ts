@@ -112,9 +112,12 @@ export type DesktopClipboardState = DesktopStatusBaseState & {
 
 export type DesktopFocusState = DesktopStatusBaseState & {
   kind: "focus";
+  active?: boolean;
   sessionLabel: string;
   detail: string;
   accent: DesktopStatusAccentTone;
+  controllable?: boolean;
+  observationCode?: "available" | "unsupported" | "permission-denied" | "error";
 };
 
 export type DesktopNotificationState = DesktopStatusBaseState & {

@@ -204,6 +204,8 @@ pub struct WindowPositionCorrection {
 pub struct FocusAssistStatePayload {
     pub active: bool,
     pub profile: String,
+    pub code: &'static str,
+    pub controllable: bool,
     pub checked_at: u64,
 }
 

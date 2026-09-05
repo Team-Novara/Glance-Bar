@@ -55,12 +55,51 @@ describe("FocusStatusTemplate", () => {
   });
 
   it("renders the stop-focus action icon with the shared 14/2.4 sizing", () => {
-    const { container } = render(<FocusStatusTemplate state={mockFocusState()} />);
+    const { container } = render(
+      <FocusStatusTemplate state={mockFocusState({ controllable: true })} />,
+    );
     const btn = screen.getByRole("button", { name: /stop session/i });
     const svg = btn.querySelector("svg");
     expect(svg).toBeInTheDocument();
     expect(svg?.getAttribute("width")).toBe("14");
     expect(svg?.getAttribute("height")).toBe("14");
     expect(svg?.getAttribute("stroke-width")).toBe("2.4");
+  });
+
+  it("hides the stop action when the native observation is not controllable", () => {
+    render(
+      <FocusStatusTemplate
+        state={mockFocusState({
+          source: "system",
+          controllable: false,
+          observationCode: "unsupported",
+          sourceHealth: {
+            kind: "focus",
+            quality: "unavailable",
+            code: "unsupported",
+            safeToDisplay: false,
+            lastCheckedAt: 1,
+          },
+        })}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /stop session/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Unavailable")).toBeInTheDocument();
+  });
+
+  it("hides the stop action after the focus session ends", () => {
+    render(
+      <FocusStatusTemplate
+        state={mockFocusState({
+          source: "system",
+          active: false,
+          controllable: true,
+          observationCode: "available",
+        })}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /stop session/i })).not.toBeInTheDocument();
   });
 });

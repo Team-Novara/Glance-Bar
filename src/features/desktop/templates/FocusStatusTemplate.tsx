@@ -11,7 +11,6 @@ import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-
 type FocusStatusTemplateProps = {
   state: DesktopFocusState;
 };
@@ -19,6 +18,7 @@ type FocusStatusTemplateProps = {
 export function FocusStatusTemplate({ state }: FocusStatusTemplateProps) {
   const { t } = useTranslation();
   const copy = getDesktopStatusTemplateChromeCopy();
+  const canControl = state.active !== false && state.controllable === true;
   const { toast, showToast } = useStatusToast();
 
   const handleStop = useCallback(async () => {
@@ -44,15 +44,17 @@ export function FocusStatusTemplate({ state }: FocusStatusTemplateProps) {
               <span>{state.sessionLabel}</span>
               <span>{state.detail}</span>
             </span>
-            <button
-              type="button"
-              className="product-status-guest-btn product-status-guest-btn-primary"
-              aria-label={t("focus.stop")}
-              title={t("focus.stop")}
-              onClick={() => void handleStop()}
-            >
-              <MoonStar size={14} strokeWidth={2.4} />
-            </button>
+            {canControl ? (
+              <button
+                type="button"
+                className="product-status-guest-btn product-status-guest-btn-primary"
+                aria-label={t("focus.stop")}
+                title={t("focus.stop")}
+                onClick={() => void handleStop()}
+              >
+                <MoonStar size={14} strokeWidth={2.4} />
+              </button>
+            ) : null}
           </span>
         }
       />
