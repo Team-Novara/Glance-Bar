@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { DesktopStatusPreferences } from "@/entities";
 import {
@@ -24,34 +24,29 @@ export type UsePreferencesResult = {
 
 export function usePreferences(): UsePreferencesResult {
   const [preferences, setPreferences] = useState<DesktopStatusPreferences>(DEFAULT_PREFERENCES);
+  const preferencesRef = useRef(DEFAULT_PREFERENCES);
+  const mutationVersionRef = useRef(0);
 
-  const updatePreferences = useCallback(
-    async (patch: Partial<DesktopStatusPreferences>) => {
-      // Capture the merged value here so the IPC call below uses the SAME
-      // value the local state updater just committed. The previous
-      // implementation read `preferences` from a closure that could lag
-      // one render behind the setState call, and dispatched the IPC with
-      // a stale snapshot when the user double-clicked a toggle quickly.
-      let nextValue: DesktopStatusPreferences = preferences;
-      setPreferences((prev) => {
-        nextValue = { ...prev, ...patch };
-        return nextValue;
+  const updatePreferences = useCallback(async (patch: Partial<DesktopStatusPreferences>) => {
+    ++mutationVersionRef.current;
+    // Compute from a ref so the IPC call and React state receive the same
+    // snapshot even when React defers functional state updaters.
+    const nextValue: DesktopStatusPreferences = { ...preferencesRef.current, ...patch };
+    preferencesRef.current = nextValue;
+    setPreferences(nextValue);
+
+    const invoke = getTauriInvoke();
+    if (invoke) {
+      await invoke(SET_STATUS_CENTER_PREFERENCES_COMMAND, {
+        preferences: nextValue,
       });
-
-      const invoke = getTauriInvoke();
-      if (invoke) {
-        await invoke(SET_STATUS_CENTER_PREFERENCES_COMMAND, {
-          preferences: nextValue,
+      if (typeof patch.alwaysFloat === "boolean") {
+        await invoke(STATUS_WINDOW_FLOATING_COMMAND, {
+          floating: nextValue.alwaysFloat,
         });
-        if (typeof patch.alwaysFloat === "boolean") {
-          await invoke(STATUS_WINDOW_FLOATING_COMMAND, {
-            floating: nextValue.alwaysFloat,
-          });
-        }
       }
-    },
-    [preferences],
-  );
+    }
+  }, []);
 
   // Load initial settings + subscribe to external settings changes
   useEffect(() => {
@@ -62,23 +57,40 @@ export function usePreferences(): UsePreferencesResult {
 
     let disposed = false;
     let offSettings: (() => void) | undefined;
+    const readVersion = mutationVersionRef.current;
 
     void (async () => {
+      try {
+        const unlisten = await listenStatusCenterSettings((payload) => {
+          if (!disposed) {
+            preferencesRef.current = payload.preferences;
+            setPreferences({ ...payload.preferences });
+          }
+        });
+
+        if (disposed) {
+          unlisten();
+        } else {
+          offSettings = unlisten;
+        }
+      } catch {
+        // A failed listener registration should not prevent the initial
+        // preference read below from hydrating the shell state.
+      }
+
       try {
         const settingsResult = parseStatusCenterSettingsPayload(
           await invoke(STATUS_CENTER_SETTINGS_COMMAND),
         );
-        if (!disposed && settingsResult) {
+        // A user can change a preference before the initial native read
+        // resolves. Keep that local mutation instead of rolling it back to
+        // an older persisted snapshot.
+        if (!disposed && mutationVersionRef.current === readVersion && settingsResult) {
+          preferencesRef.current = settingsResult.preferences;
           setPreferences(settingsResult.preferences);
         }
-
-        offSettings = await listenStatusCenterSettings((payload) => {
-          if (!disposed) {
-            setPreferences({ ...payload.preferences });
-          }
-        });
       } catch {
-        // Keep browser diagnostics usable when the native product event bridge is absent.
+        // Keep browser diagnostics usable when the native product bridge is absent.
       }
     })();
 

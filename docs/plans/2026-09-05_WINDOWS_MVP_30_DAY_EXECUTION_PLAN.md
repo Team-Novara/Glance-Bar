@@ -297,6 +297,26 @@ Record browser version, application commit, expected result, actual result, and 
 - Restart after every persisted preference change and verify the restored behavior.
 - Test with one and two monitors when hardware is available; record untested configurations explicitly.
 
+### Day 17 implementation checkpoint — 2026-09-05
+
+- Added focused hook regression coverage for native preference hydration,
+  merged preference IPC payloads, listener recovery after an initial read
+  failure, and stale startup reads after a local mutation.
+- Hardened `usePreferences` to compute the next snapshot synchronously from a
+  ref, so React scheduling cannot send a stale preference payload to Tauri.
+- Hardened `useAutostart` with mutation generations, so a delayed initial read
+  or an older toggle result cannot overwrite a newer user choice.
+- Added drag-controller regression coverage for locked and interactive targets,
+  one persistence call per successful drag, native drag failure, and browser
+  fallback behavior.
+- Expanded the menu-action parser coverage to every tray/context-menu action
+  (`refresh-data`, toggles, reset, settings, and quit), including malformed
+  `checked` values.
+- Automated evidence is recorded in
+  [WINDOWS_SHELL_VERIFICATION.md](../qa/WINDOWS_SHELL_VERIFICATION.md). Physical
+  Windows install/tray/autostart/restart and multi-monitor evidence remains
+  outstanding and is not claimed as complete by this checkpoint.
+
 ### Day 18 — diagnostics and bug-report evidence
 
 - Provide a privacy-safe diagnostics view or export containing application version, platform, provider capability/health, last error code, and last checked time.
