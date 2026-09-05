@@ -2,6 +2,10 @@
 
 > Active guide for code placement and dependency direction. Structural refactors must preserve the boundaries below.
 
+## Current checkpoint — 2026-09-05
+
+PR #39 is merged on `main`. Its production-composition test guard keeps real provider startup and Showcase-only mock fixtures separated without changing the dependency direction above. No further structural refactor is scheduled while development is paused; the next structural evidence is the physical Windows packaging and shell validation listed in the active execution plan.
+
 ## Layout
 
 ```text

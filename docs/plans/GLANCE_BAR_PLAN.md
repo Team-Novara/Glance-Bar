@@ -1,6 +1,6 @@
 # Glance Bar Unified Plan
 
-> Active product and execution plan. Updated against the repository on 2026-08-30.
+> Active product and execution plan. Updated against the repository on 2026-09-05.
 
 The dated delivery plan currently in force is [2026-09-05_WINDOWS_MVP_30_DAY_EXECUTION_PLAN.md](2026-09-05_WINDOWS_MVP_30_DAY_EXECUTION_PLAN.md). It converts the priorities below into daily work, PR boundaries, evidence gates, and a 30-day Windows MVP release decision.
 
@@ -12,10 +12,17 @@ Glance Bar is a compact, privacy-safe desktop status hub. It selects one clear s
 
 - Desktop product surface: `src/features/desktop/`; showcase and QA surface: `src/features/showcase/`.
 - Status path: `Provider -> HubEventBus -> aggregation -> resolver/scheduler -> UI`.
-- Provider manager default set: 9 real providers and 4 mock providers.
+- Provider registry contains 9 real providers and 4 mock providers; the production desktop composition explicitly starts real providers only, while mocks remain showcase fixtures.
 - Scheduler: pure policy in `src/state/desktopStatusScheduler.ts` and stateful service in `src/runtime/scheduler/schedulerService.ts`.
 - Native shell: commands are split under `src-tauri/src/commands/`; `lib.rs` is application assembly.
-- Verification snapshot: 50 Vitest files and 783 tests pass. Run the quality commands rather than relying on this count.
+- Verification snapshot: 58 Vitest files and 919 tests pass, including the Showcase interaction journey and production build. Run the quality commands rather than relying on this count.
+
+## Closeout checkpoint — 2026-09-05
+
+- The Download Provider truthfulness work, runtime lifecycle hardening, privacy-safe diagnostics, tray preference fixes, and production-composition QA are merged on `main` through PRs #32–#39.
+- PR #39 adds an executable guard that the `/desktop` path uses `{ realProviders: true, mockProviders: false }` and that Showcase fixtures do not cross the route boundary.
+- Local `npm run qa`, typecheck, and lint are green; the post-merge `main` CI run is green across Node 20/22, Vite build, TypeScript, ESLint, and Rust on Ubuntu, macOS, and Windows.
+- Development is paused at this checkpoint. Physical Windows packaging/install, tray recovery, autostart, restart, DPI/multi-monitor, uninstall, workday soak, and three-tester evidence remain open before a limited-release decision.
 
 ## Execution priorities
 
@@ -51,4 +58,4 @@ Glance Bar is a compact, privacy-safe desktop status hub. It selects one clear s
 
 ## Superseded plans
 
-`IMPLEMENTATION_PLAN.md`, `STAGE5_WIP_LANDING.md`, and `v0.7_TAURI_SPIKE_PLAN.md` are historical snapshots. Their archive copies remain for traceability; neither set is an active execution source.
+`IMPLEMENTATION_PLAN.md`, `MVP_PARALLEL_EXECUTION.md`, `STAGE5_WIP_LANDING.md`, and `v0.7_TAURI_SPIKE_PLAN.md` are historical snapshots. Their archive copies remain for traceability; neither set is an active execution source.

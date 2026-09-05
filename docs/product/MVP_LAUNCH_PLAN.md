@@ -2,6 +2,10 @@
 
 > Purpose: turn the existing technical foundation into a Windows-first product that users can keep running every day. This is a product-validation plan, not a replacement for the engineering execution plan.
 
+## Current execution checkpoint — 2026-09-05
+
+The automated implementation checkpoint is complete and merged on `main`: the Download Provider reports only truthful observation facts, real-provider production composition is guarded against Showcase mocks, and the post-merge CI matrix is green. The limited Windows release decision remains deferred until physical packaging/install, tray and preference recovery, restart/DPI/multi-monitor checks, uninstall, workday soak, and three-tester validation are recorded.
+
 ## 1. MVP decision
 
 The MVP answers one question:
