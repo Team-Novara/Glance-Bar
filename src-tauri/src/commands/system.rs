@@ -5,8 +5,7 @@
 use crate::clamp_percent;
 use crate::types::{
     DownloadControlResult, DownloadFolderStatus, OverlayPolicy, SharedDesktopProductState,
-    SystemPerformanceDiagnosticPayload, SystemPerformanceSnapshot,
-    SystemPerformanceStatusPayload,
+    SystemPerformanceDiagnosticPayload, SystemPerformanceSnapshot, SystemPerformanceStatusPayload,
 };
 use sysinfo::{Networks, System};
 use tauri::State;
@@ -119,7 +118,9 @@ pub(crate) fn sample_network_speeds(state: &SharedDesktopProductState<tauri::Wry
         let elapsed = cache
             .network_sample
             .as_ref()
-            .map_or(std::time::Duration::ZERO, |sample| now.duration_since(sample.sampled_at));
+            .map_or(std::time::Duration::ZERO, |sample| {
+                now.duration_since(sample.sampled_at)
+            });
         let rate = calculate_network_rate(
             cache.network_sample.as_ref(),
             received_bytes,
@@ -363,12 +364,7 @@ mod tests {
             }
         );
         assert_eq!(
-            calculate_network_rate(
-                Some(&previous),
-                200,
-                100,
-                Duration::from_millis(100),
-            ),
+            calculate_network_rate(Some(&previous), 200, 100, Duration::from_millis(100),),
             NetworkRate {
                 download_bps: 1_000,
                 upload_bps: 500,
@@ -385,12 +381,7 @@ mod tests {
         };
 
         assert_eq!(
-            calculate_network_rate(
-                Some(&previous),
-                500,
-                2_500,
-                Duration::from_secs(1),
-            ),
+            calculate_network_rate(Some(&previous), 500, 2_500, Duration::from_secs(1),),
             NetworkRate {
                 download_bps: 0,
                 upload_bps: 500,
@@ -412,9 +403,12 @@ mod tests {
             u64::MAX,
             Duration::from_millis(100),
         );
-        assert_eq!(rate, NetworkRate {
-            download_bps: MAX_NETWORK_SPEED_BPS,
-            upload_bps: MAX_NETWORK_SPEED_BPS,
-        });
+        assert_eq!(
+            rate,
+            NetworkRate {
+                download_bps: MAX_NETWORK_SPEED_BPS,
+                upload_bps: MAX_NETWORK_SPEED_BPS,
+            }
+        );
     }
 }
