@@ -11,6 +11,7 @@ import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "..
 
 
 const PROVIDER_ID = "real-media-session-provider";
+const MEDIA_EVENT_ID = `${PROVIDER_ID}-media-observation`;
 const POLL_FALLBACK_MS = 30_000;
 
 function mediaPayloadToEvent(payload: MediaSessionChangedPayload): HubEvent {
@@ -18,9 +19,10 @@ function mediaPayloadToEvent(payload: MediaSessionChangedPayload): HubEvent {
   const expiresAt = payload.available ? createdAt + MEDIA_DISPLAY_WINDOW_MS : createdAt;
 
   return {
-    id: `${PROVIDER_ID}-media-${createdAt}`,
+    id: MEDIA_EVENT_ID,
     type: "media",
     source: "media",
+    origin: "system",
     createdAt,
     expiresAt,
     progress: payload.progress,
@@ -56,6 +58,8 @@ function statusToPayload(status: TauriMediaSessionStatus): MediaSessionChangedPa
 
 export function createRealMediaSessionProvider(): HubProvider {
   let unlisten: (() => void) | undefined;
+  let listenerGeneration = 0;
+  let lastPublishedCheckedAt: number | undefined;
 
   const metadata: HubProviderMetadata = {
     id: PROVIDER_ID,
@@ -74,6 +78,28 @@ export function createRealMediaSessionProvider(): HubProvider {
     capabilities,
 
     start(handle) {
+      const generation = ++listenerGeneration;
+      lastPublishedCheckedAt = undefined;
+
+      const publishObservation = (
+        payload: MediaSessionChangedPayload,
+        source: "initial" | "event",
+      ) => {
+        if (generation !== listenerGeneration) {
+          return;
+        }
+        if (
+          lastPublishedCheckedAt !== undefined &&
+          (source === "initial"
+            ? payload.checkedAt <= lastPublishedCheckedAt
+            : payload.checkedAt < lastPublishedCheckedAt)
+        ) {
+          return;
+        }
+        lastPublishedCheckedAt = payload.checkedAt;
+        handle.emit([mediaPayloadToEvent(payload)]);
+      };
+
       // Fetch the current state once so we don't wait for the next
       // change event before the bar knows about an already-playing
       // session.
@@ -83,7 +109,7 @@ export function createRealMediaSessionProvider(): HubProvider {
             return;
           }
           const payload = statusToPayload(result.status);
-          handle.emit([mediaPayloadToEvent(payload)]);
+          publishObservation(payload, "initial");
         })
         .catch(() => {
           // Initial fetch failed — non-critical, the listener below will
@@ -96,17 +122,24 @@ export function createRealMediaSessionProvider(): HubProvider {
       // so adding a frontend hash on top of that caused the play/pause
       // icon to lag the actual session state.
       onMediaSessionChanged((payload) => {
-        handle.emit([mediaPayloadToEvent(payload)]);
+        publishObservation(payload, "event");
       })
         .then((unlistenFn) => {
+          if (generation !== listenerGeneration) {
+            unlistenFn();
+            return;
+          }
           unlisten = unlistenFn;
         })
         .catch(() => {
-          handle.markDegraded();
+          if (generation === listenerGeneration) {
+            handle.markDegraded();
+          }
         });
     },
 
     stop() {
+      listenerGeneration += 1;
       unlisten?.();
       unlisten = undefined;
     },

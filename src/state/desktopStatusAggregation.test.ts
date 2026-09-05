@@ -81,6 +81,32 @@ describe("desktopStatusAggregation.test", () => {
     assert.equal(result.states?.download?.sourceHealth?.safeToDisplay, true);
   });
 
+  test("desktop status aggregation marks a native media timeline as indeterminate", () => {
+    const result = aggregateDesktopStatusInput({
+      events: [
+        {
+          id: "real-media-no-timeline",
+          type: "media",
+          source: "media",
+          createdAt: now,
+          payload: {
+            available: true,
+            playbackStatus: "playing",
+            progress: 0,
+          },
+          metadata: {
+            code: "no-timeline",
+          },
+        },
+      ],
+      now,
+    });
+
+    assert.equal(result.states?.media?.progressAccuracy, "none");
+    assert.equal(result.states?.media?.sourceHealth?.quality, "native");
+    assert.equal(result.states?.media?.sourceHealth?.safeToDisplay, true);
+  });
+
   test("desktop status aggregation maps mock ai task input into update state", () => {
     const result = aggregateDesktopStatusInput({
       events: [createMockAiTaskEvent({ now })],

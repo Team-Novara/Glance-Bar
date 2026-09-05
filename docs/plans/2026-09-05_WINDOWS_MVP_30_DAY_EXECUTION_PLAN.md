@@ -140,6 +140,17 @@ Record browser version, application commit, expected result, actual result, and 
 
 **Gate B:** Media, Downloads, and Focus each have a truthful capability statement, focused automated coverage, and Windows evidence.
 
+### Media implementation checkpoint — 2026-09-05
+
+- Media provider startup now orders initial snapshots against the event stream,
+  invalidates stale lifecycle generations, and cleans up listeners that resolve
+  after stop. A stable logical event ID prevents duplicate media sessions.
+- Runtime validation accepts the Windows no-session/no-timeline diagnostic codes,
+  rejects malformed timeline facts, and exposes an indeterminate rail when a
+  native session has no trustworthy duration.
+- Focus provider hardening, Windows evidence, and the remaining Gate B walkthrough
+  are still pending.
+
 ### Days 8-9 — Media provider
 
 - Test Windows GSMTC behavior with at least two media applications or browser media sessions.

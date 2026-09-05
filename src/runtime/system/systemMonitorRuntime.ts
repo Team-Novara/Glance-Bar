@@ -1,12 +1,12 @@
 import { listen } from "@tauri-apps/api/event";
 
-import type { DownloadObservation } from "@/entities";
+import type { DownloadObservation, MediaSessionCode } from "@/entities";
 
 import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 
 const FOCUS_ASSIST_COMMAND = "get_focus_assist_state";
 const NOTIFICATION_SUMMARY_COMMAND = "get_notification_summary";
-const MAX_DOWNLOAD_TIMESTAMP_FUTURE_SKEW_MS = 24 * 60 * 60 * 1_000;
+const MAX_OBSERVATION_TIMESTAMP_FUTURE_SKEW_MS = 24 * 60 * 60 * 1_000;
 
 export const FOCUS_ASSIST_CHANGED_EVENT = "status-center://focus-assist-changed";
 export const NOTIFICATIONS_CHANGED_EVENT = "status-center://notifications-changed";
@@ -40,7 +40,7 @@ export type MediaSessionChangedPayload = {
   durationMs?: number;
   title?: string;
   artist?: string;
-  code: string;
+  code: MediaSessionCode;
   checkedAt: number;
 };
 
@@ -120,9 +120,83 @@ export function onClipboardChanged(
 export function onMediaSessionChanged(
   handler: (status: MediaSessionChangedPayload) => void,
 ): Promise<() => void> {
-  return listen<MediaSessionChangedPayload>(MEDIA_SESSION_CHANGED_EVENT, (event) => {
-    handler(event.payload);
+  return listen<unknown>(MEDIA_SESSION_CHANGED_EVENT, (event) => {
+    const payload = parseMediaSessionChangedPayload(event.payload);
+    if (payload) {
+      handler(payload);
+    }
   });
+}
+
+export function parseMediaSessionChangedPayload(
+  value: unknown,
+): MediaSessionChangedPayload | undefined {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const playbackStatus = record.playbackStatus;
+  const code = record.code;
+  const progress = record.progress;
+  const checkedAt = record.checkedAt;
+
+  if (
+    typeof record.available !== "boolean" ||
+    (playbackStatus !== "playing" &&
+      playbackStatus !== "paused" &&
+      playbackStatus !== "unavailable" &&
+      playbackStatus !== "unsupported") ||
+    typeof progress !== "number" ||
+    !Number.isFinite(progress) ||
+    progress < 0 ||
+    progress > 100 ||
+    !isMediaSessionCode(code) ||
+    typeof checkedAt !== "number" ||
+    !Number.isSafeInteger(checkedAt) ||
+    checkedAt < 0 ||
+    (checkedAt > 0 && checkedAt > Date.now() + MAX_OBSERVATION_TIMESTAMP_FUTURE_SKEW_MS)
+  ) {
+    return undefined;
+  }
+
+  const positionMs = record.positionMs;
+  const durationMs = record.durationMs;
+  if (
+    (positionMs !== undefined &&
+      (typeof positionMs !== "number" || !Number.isFinite(positionMs) || positionMs < 0)) ||
+    (durationMs !== undefined &&
+      (typeof durationMs !== "number" || !Number.isFinite(durationMs) || durationMs < 0)) ||
+    (record.title !== undefined && typeof record.title !== "string") ||
+    (record.artist !== undefined && typeof record.artist !== "string")
+  ) {
+    return undefined;
+  }
+
+  return {
+    available: record.available,
+    playbackStatus,
+    progress: Math.round(progress),
+    positionMs,
+    durationMs,
+    title: record.title,
+    artist: record.artist,
+    code,
+    checkedAt,
+  };
+}
+
+function isMediaSessionCode(value: unknown): value is MediaSessionCode {
+  return (
+    value === "available" ||
+    value === "not-playing" ||
+    value === "unsupported" ||
+    value === "provider-failed" ||
+    value === "sta-timeout" ||
+    value === "no-session" ||
+    value === "no-playback-info" ||
+    value === "no-status" ||
+    value === "no-timeline"
+  );
 }
 
 /**
@@ -204,7 +278,7 @@ export function parseDownloadChangedPayload(
     !Number.isSafeInteger(record.checkedAt) ||
     record.checkedAt < 0 ||
     (record.checkedAt > 0 &&
-      record.checkedAt > Date.now() + MAX_DOWNLOAD_TIMESTAMP_FUTURE_SKEW_MS)
+      record.checkedAt > Date.now() + MAX_OBSERVATION_TIMESTAMP_FUTURE_SKEW_MS)
   ) {
     return undefined;
   }

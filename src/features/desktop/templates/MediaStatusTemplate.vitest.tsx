@@ -75,6 +75,21 @@ describe("MediaStatusTemplate", () => {
 
     expect(screen.getByText("Native")).toBeInTheDocument();
   });
+
+  it("uses an indeterminate rail when a native session has no timeline", () => {
+    const state = mockMediaState({
+      source: "system",
+      progressAccuracy: "none",
+      positionMs: undefined,
+      durationMs: undefined,
+      progress: 0,
+    });
+    render(<MediaStatusTemplate state={state} />);
+
+    const progressBar = screen.getByRole("progressbar");
+    expect(progressBar).not.toHaveAttribute("aria-valuenow");
+    expect(progressBar).toHaveAttribute("aria-label", "Media timeline unavailable");
+  });
 });
 
 describe("MediaStatusTemplate UI details", () => {

@@ -17,4 +17,5 @@ export {
   onFocusAssistChanged,
   onMediaSessionChanged,
   onNotificationsChanged,
+  parseMediaSessionChangedPayload,
 } from './systemMonitorRuntime';
