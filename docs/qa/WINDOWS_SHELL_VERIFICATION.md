@@ -1,7 +1,7 @@
 # Windows Shell Integration Verification
 
 > Verification of the MVP release criteria for the Glance Bar Windows desktop shell.
-> Date: 2026-08-31
+> Date: 2026-09-05
 
 ## Release criteria under test
 
@@ -16,10 +16,11 @@
 | 5a | Fullscreen avoidance works | **PASS** |
 | 5b | Lock position prevents drag | **PASS** |
 | 5c | Always-float works as described | **PASS** (after fix — see below) |
-| 5d | Position saved and restored | **PARTIAL** — gap identified |
+| 5d | Position saved and restored | **IMPLEMENTED** — automated evidence; Windows restart matrix pending |
 
-One correctness bug was found and fixed (always-float). One feature gap was found
-(position persistence) and is documented for follow-up.
+One correctness bug was found and fixed (always-float). Position persistence is
+now implemented with bounded, DPI-aware geometry; the physical Windows restart
+and multi-monitor matrix remains follow-up evidence.
 
 ---
 
@@ -97,17 +98,24 @@ One correctness bug was found and fixed (always-float). One feature gap was foun
     only ever initiated through this gated path, so the preference is authoritative.
 
 ### Position saved and restored
-- **PARTIAL — gap.** The window is *placed* at startup (bottom-right of the primary
-  monitor's work area, `lib.rs:300-318`) and *clamped* to the work area on reveal and
-  drag-correct (`window.rs:48-68`), but the chosen position is **never persisted**.
-  `DesktopStatusPreferences` has no position fields (`types.rs:36-40`), and nothing
-  writes a dragged position back. On every launch the bar returns to the computed
-  default, so a user's dragged position is lost across restarts.
-
-  This is a missing feature, not a correctness bug in existing code. The clamp and
-  reset-position flows work; only cross-launch persistence is absent. Recommend adding
-  optional `positionX`/`positionY` fields to the preferences, saving on drag-end, and
-  restoring (then clamping) on startup.
+- **IMPLEMENTED.** `DesktopStatusPreferences.windowPosition` is optional, so legacy
+  JSON remains valid. The saved record contains only bounded x/y, work-area geometry,
+  and a scale-factor multiplier (`types.rs`).
+- The drag controller invokes `persist_status_window_position` once on pointer-up;
+  the native command clamps first, captures the current work area, persists the updated
+  preference, and emits the updated settings event (`useDragController.ts`,
+  `commands/window.rs`).
+- Startup restores the saved logical offset, scales it to the current monitor DPI,
+  selects the matching monitor when available, falls back to the nearest monitor when
+  it was removed, and clamps the final rectangle to the work area (`lib.rs`,
+  `commands/window.rs`).
+- Reset Position moves the window to the first monitor's bottom-right safe area and
+  clears the saved position. The native drag command also rejects locked-position
+  starts, so lock state cannot be bypassed by a direct invoke.
+- Automated evidence covers legacy preference decoding, position round-trip,
+  malformed frontend payloads, DPI scaling, off-screen-safe math, reset/persist
+  command routing, and the lock guard. A physical Windows restart/two-monitor matrix
+  is still required before marking the release criterion fully verified.
 
 ---
 
@@ -126,12 +134,14 @@ One correctness bug was found and fixed (always-float). One feature gap was foun
 1. `src-tauri/src/commands/system.rs` — `get_overlay_policy` now honors the
    `always_float` preference; extracted and unit-tested `compute_overlay_policy`.
    This closes the release-criterion-5c gap.
+2. `src-tauri/src/commands/window.rs` and `src-tauri/src/types.rs` — added
+   optional DPI-aware window-position persistence, startup restoration, reset,
+   and a native lock-position drag guard.
 
 ## Gaps documented
 
-1. Position is not persisted across launches (`docs/qa/WINDOWS_SHELL_VERIFICATION.md`,
-   "Position saved and restored"). No code change — out of scope for a correctness
-   pass; flagged for follow-up.
+1. Physical Windows restart, DPI-change, monitor-removal, and two-monitor evidence
+   still need to be recorded on a Windows-capable runner.
 
 ## Verification notes
 

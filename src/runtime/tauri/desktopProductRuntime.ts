@@ -1,6 +1,10 @@
 import { listen, type Event, type UnlistenFn } from "@tauri-apps/api/event";
 
-import type { DesktopStatusMenuActionId, DesktopStatusPreferencesPayload } from "@/entities";
+import type {
+  DesktopStatusMenuActionId,
+  DesktopStatusPreferencesPayload,
+  DesktopStatusWindowPosition,
+} from "@/entities";
 
 import { isRecord } from "../../shared/lib/runtimeGuards";
 
@@ -48,8 +52,16 @@ export function parseStatusCenterSettingsPayload(
     return undefined;
   }
 
+  const preferences = value.preferences;
   return {
-    preferences: { ...value.preferences },
+    preferences: {
+      alwaysFloat: preferences.alwaysFloat,
+      avoidFullscreen: preferences.avoidFullscreen,
+      lockPosition: preferences.lockPosition,
+      ...(isDesktopStatusWindowPosition(preferences.windowPosition)
+        ? { windowPosition: { ...preferences.windowPosition } }
+        : {}),
+    },
   };
 }
 
@@ -117,6 +129,42 @@ function isDesktopStatusPreferences(
     isRecord(value) &&
     typeof value.alwaysFloat === "boolean" &&
     typeof value.avoidFullscreen === "boolean" &&
-    typeof value.lockPosition === "boolean"
+    typeof value.lockPosition === "boolean" &&
+    (value.windowPosition === undefined ||
+      value.windowPosition === null ||
+      isDesktopStatusWindowPosition(value.windowPosition))
   );
+}
+
+function isDesktopStatusWindowPosition(value: unknown): value is DesktopStatusWindowPosition {
+  return (
+    isRecord(value) &&
+    isI32(value.x) &&
+    isI32(value.y) &&
+    isI32(value.workAreaX) &&
+    isI32(value.workAreaY) &&
+    isU32(value.workAreaWidth) &&
+    value.workAreaWidth > 0 &&
+    isU32(value.workAreaHeight) &&
+    value.workAreaHeight > 0 &&
+    isU16(value.scaleFactorMilli) &&
+    value.scaleFactorMilli > 0 &&
+    value.scaleFactorMilli <= 65_535
+  );
+}
+
+function isSafeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value);
+}
+
+function isI32(value: unknown): value is number {
+  return isSafeInteger(value) && value >= -2_147_483_648 && value <= 2_147_483_647;
+}
+
+function isU32(value: unknown): value is number {
+  return isSafeInteger(value) && value >= 0 && value <= 4_294_967_295;
+}
+
+function isU16(value: unknown): value is number {
+  return isSafeInteger(value) && value >= 0 && value <= 65_535;
 }

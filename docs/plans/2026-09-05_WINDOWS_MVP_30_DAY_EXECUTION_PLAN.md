@@ -256,6 +256,22 @@ Record browser version, application commit, expected result, actual result, and 
 
 **PR boundary:** preferences schema, native window placement, drag-end persistence bridge, focused Rust/frontend tests, and position documentation.
 
+### Position persistence implementation checkpoint — 2026-09-05
+
+- The implementation is staged on `feat/window-position-persistence` and is
+  limited to the Week 3 shell boundary.
+- `DesktopStatusPreferences.windowPosition` is optional and backward-compatible;
+  it stores bounded x/y, work-area geometry, and a scale-factor multiplier only.
+- Drag-end persistence clamps the native window before saving. Startup restores
+  the logical offset against the matching monitor, chooses the nearest remaining
+  monitor when the saved display is gone, and clamps off-screen coordinates.
+- Reset Position moves to the first monitor's safe bottom-right area and clears
+  the saved position. The native drag command rejects locked-position starts.
+- Focused tests cover legacy preference decoding, malformed position payloads,
+  DPI scaling, safe bounds, reset/persist command routing, and lock behavior.
+- Physical Windows restart, DPI-change, monitor-removal, and two-monitor evidence
+  remain required before Gate C can be marked complete.
+
 ### Day 17 — tray and preference regression pass
 
 - Test install/launch, close-to-tray, tray left-click toggle, Show, Settings, Quit, autostart on/off, always-float on/off, fullscreen avoidance on/off, and lock position.

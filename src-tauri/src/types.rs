@@ -37,6 +37,8 @@ pub struct DesktopStatusPreferences {
     pub always_float: bool,
     pub avoid_fullscreen: bool,
     pub lock_position: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_position: Option<StatusWindowPosition>,
 }
 
 impl Default for DesktopStatusPreferences {
@@ -45,8 +47,27 @@ impl Default for DesktopStatusPreferences {
             always_float: true,
             avoid_fullscreen: true,
             lock_position: false,
+            window_position: None,
         }
     }
+}
+
+/// Last known physical window position plus the monitor work-area facts used
+/// to restore it as a logical position after DPI or monitor changes.
+///
+/// We intentionally persist only bounded geometry and scale data. Monitor
+/// names, paths, usernames, and other machine-identifying values never enter
+/// the preferences file or IPC payload.
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusWindowPosition {
+    pub x: i32,
+    pub y: i32,
+    pub work_area_x: i32,
+    pub work_area_y: i32,
+    pub work_area_width: u32,
+    pub work_area_height: u32,
+    pub scale_factor_milli: u16,
 }
 
 #[derive(Clone, Serialize)]

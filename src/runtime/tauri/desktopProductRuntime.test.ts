@@ -66,6 +66,30 @@ describe("desktopProductRuntime.test", () => {
     );
   });
 
+  it("accepts and clones an optional persisted window position", () => {
+    const input = {
+      preferences: {
+        alwaysFloat: true,
+        avoidFullscreen: false,
+        lockPosition: true,
+        windowPosition: {
+          x: 120,
+          y: 640,
+          workAreaX: 0,
+          workAreaY: 0,
+          workAreaWidth: 1920,
+          workAreaHeight: 1040,
+          scaleFactorMilli: 1250,
+        },
+      },
+    };
+
+    const parsed = parseStatusCenterSettingsPayload(input);
+
+    assert.deepEqual(parsed, input);
+    assert.notEqual(parsed?.preferences.windowPosition, input.preferences.windowPosition);
+  });
+
   it("clones settings payloads before returning them", () => {
     const input = {
       preferences: {
@@ -84,6 +108,17 @@ describe("desktopProductRuntime.test", () => {
     assert.equal(parseStatusCenterSettingsPayload(null), undefined);
     assert.equal(
       parseStatusCenterSettingsPayload({ preferences: { alwaysFloat: true } }),
+      undefined,
+    );
+    assert.equal(
+      parseStatusCenterSettingsPayload({
+        preferences: {
+          alwaysFloat: true,
+          avoidFullscreen: true,
+          lockPosition: false,
+          windowPosition: { x: 0, y: 0 },
+        },
+      }),
       undefined,
     );
   });

@@ -4,6 +4,8 @@ import { getTauriInvoke, type TauriInvoke } from "../tauri/tauriRuntime";
 export const STATUS_WINDOW_OVERLAY_POLICY_COMMAND = "get_overlay_policy";
 export const STATUS_WINDOW_FLOATING_COMMAND = "set_status_window_floating";
 export const STATUS_WINDOW_CORRECT_POSITION_COMMAND = "correct_status_window_position";
+export const STATUS_WINDOW_PERSIST_POSITION_COMMAND = "persist_status_window_position";
+export const STATUS_WINDOW_RESET_POSITION_COMMAND = "reset_status_window_position";
 const STATUS_WINDOW_TOPMOST_REASSERT_MS = 1800;
 const STATUS_WINDOW_POSITION_CORRECTION_MS = 2400;
 const STATUS_WINDOW_STARTUP_REASSERT_AT_MS = [1000, 5000, 9000] as const;
@@ -52,6 +54,22 @@ export async function correctStatusWindowPosition(invoke = getTauriInvoke()): Pr
   }
 
   await invoke(STATUS_WINDOW_CORRECT_POSITION_COMMAND);
+}
+
+export async function persistStatusWindowPosition(invoke = getTauriInvoke()): Promise<void> {
+  if (!invoke) {
+    return;
+  }
+
+  await invoke(STATUS_WINDOW_PERSIST_POSITION_COMMAND);
+}
+
+export async function resetStatusWindowPosition(invoke = getTauriInvoke()): Promise<void> {
+  if (!invoke) {
+    return;
+  }
+
+  await invoke(STATUS_WINDOW_RESET_POSITION_COMMAND);
 }
 
 export async function enforceStatusWindowOverlay(

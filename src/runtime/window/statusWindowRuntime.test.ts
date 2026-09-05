@@ -2,8 +2,12 @@ import {
   createDebouncedWindowCorrection,
   createStatusWindowOverlayState,
   STATUS_WINDOW_CORRECT_POSITION_COMMAND,
+  STATUS_WINDOW_PERSIST_POSITION_COMMAND,
+  STATUS_WINDOW_RESET_POSITION_COMMAND,
   enforceStatusWindowOverlay,
   parseOverlayPolicy,
+  persistStatusWindowPosition,
+  resetStatusWindowPosition,
   scheduleOverlayStartupReassert,
   STATUS_WINDOW_FLOATING_COMMAND,
   STATUS_WINDOW_OVERLAY_POLICY_COMMAND,
@@ -27,6 +31,30 @@ describe("statusWindowRuntime.test", () => {
       return undefined;
     };
   }
+
+  it("persists the native window position after a drag ends", async () => {
+    const calls: Array<{ command: string; args?: Record<string, unknown> }> = [];
+    const invoke: TauriInvoke = async (command, args) => {
+      calls.push({ command, args });
+      return undefined;
+    };
+
+    await persistStatusWindowPosition(invoke);
+
+    assert.deepEqual(calls, [{ command: STATUS_WINDOW_PERSIST_POSITION_COMMAND }]);
+  });
+
+  it("resets the native window position through the shell command", async () => {
+    const calls: string[] = [];
+    const invoke: TauriInvoke = async (command) => {
+      calls.push(command);
+      return undefined;
+    };
+
+    await resetStatusWindowPosition(invoke);
+
+    assert.deepEqual(calls, [STATUS_WINDOW_RESET_POSITION_COMMAND]);
+  });
 
   it("parses current overlay policy payload", () => {
     assert.deepEqual(parseOverlayPolicy({ foregroundFullscreen: true, shouldFloat: false }), {
