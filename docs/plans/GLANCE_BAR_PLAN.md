@@ -96,7 +96,12 @@ Verification snapshot at `9ed86e0`: all gates green — full `npm run qa` chain 
 
 Verification snapshot at `0110f47`: all gates green; Vitest 59 files / 984 tests; Rust 97/97; coverage — providers/runtime/state scope now 98+ lines aggregate on impl/real.
 
-## Execution priorities
+### Continuation — PRs #83–#84 (Wave 18, 2026-10-25)
+
+- **#83 — coverage toolchain noise resolved**: the pre-existing v8 PARSE_ERROR (seen since #79) was root-caused to src/providers/impl/platform/README.md matching the CI coverage include glob — vitest 4.1.8's uncovered-files map parses untested included files as JavaScript and soft-fails on markdown. Fixed by `test.coverage.exclude: ["**/*.md"]` in vitest.config.ts (with an explanatory comment); the exact CI coverage command now runs clean with identical totals. The #79 mockHubData side-note is also settled: never-imported fixture, normal v8 rendering, no action.
+- **#84 — runtime/state coverage**: 10 more tests; desktopProductRuntime lines 81.25 → 100 (one provably-unreachable branch documented per the #79 convention), statusWindowRuntime and desktopStatusScheduler now fully clean rows. Combined CI-scope coverage lines 95.76 → 97.0.
+
+Verification snapshot at `55a0ab9`: all gates green; Vitest 59 files / 994 tests; Rust 97/97; coverage toolchain noise-free.
 
 ### P0: preserve reliable product behavior
 
