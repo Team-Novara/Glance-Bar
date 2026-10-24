@@ -58,3 +58,11 @@ zbus = "5"
 # `HasWindowHandle` impl tauri provides for `WebviewWindow` so window/linux.rs
 # can read the X11 window id. No new code is compiled by this line.
 raw-window-handle = "0.6"
+# Same 0.18 series the GTK stack tauri already locks resolves (gio 0.18.4 /
+# glib 0.18.5, Cargo.lock): libgio is already loaded at runtime by the
+# GTK-based app, so this line compiles no new packages — it only names the
+# existing binding stack for the gated Linux focus reader
+# (commands/focus/linux.rs; docs/plans/LINUX_FOCUS_FEASIBILITY.md). A newer
+# series would compile a second full glib stack, exactly like the zbus
+# alignment above.
+gio = "0.18"

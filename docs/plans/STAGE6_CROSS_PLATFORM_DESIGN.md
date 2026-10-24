@@ -277,3 +277,123 @@ validated on a real Linux desktop.
   acceptable on the paths that poll fullscreen state. After evidence is
   recorded, flip `LINUX_WINDOW_VALIDATED`, update the gate test, and
   revisit capability reporting.
+
+## Linux focus implementation checkpoint - 2026-10-25
+
+The Linux focus capability now contains a complete observation-only
+implementation behind the STAGE6 validation gate, following the mechanism
+research in `docs/plans/LINUX_FOCUS_FEASIBILITY.md`. The capability still
+reports `unsupported`; per the design rules above it stays that way until it
+has been validated on a real Linux desktop.
+
+- **Gate state.** `LINUX_FOCUS_VALIDATED` in
+  `src-tauri/src/commands/focus/linux.rs:45` is `false`: the focus read
+  returns the bounded `unsupported` payload — field-for-field the stub
+  earlier builds reported — without probing the environment, touching gio,
+  or opening a session-bus connection (the gate check at `linux.rs:263`
+  precedes all of that; the gate test asserts the payload and that the
+  connection cache is still empty). `commands/focus.rs` keeps the per-OS
+  dispatch: Linux routes through the gated submodule (`focus.rs:58-66`),
+  macOS and other non-Windows targets keep the previous stub verbatim
+  (`focus.rs:68-76`), and the 2s focus monitor thread is unchanged — it
+  already polls `read_focus_assist_state` on every platform, so event
+  emission comes free once the gate flips. Flip the const only together
+  with recorded real-desktop evidence and the gate test, in the same
+  change.
+
+- **Mechanism map.** GNOME-family sessions: `org.gnome.desktop.notifications`
+  `show-banners` read in-process through the gio crate — the same key GNOME
+  Shell equates with Do Not Disturb (`active = !show-banners`), never a
+  `gsettings` shell-out. The mandatory guard runs first
+  (`SettingsSchemaSource::default()` → `lookup(schema, recursive)` →
+  `has_key`): constructing a `GSettings` object for a missing schema is a
+  fatal C-level error, so a missing schema/key maps to bounded
+  `unsupported`, never a panic. KDE-family sessions: the read-only
+  `Inhibited` property on `org.freedesktop.Notifications`
+  (`/org/freedesktop/Notifications`) via zbus — Plasma's aggregate DND
+  state — over a process-wide cached blocking connection with a
+  connection-wide ~1s method timeout (the `media/linux.rs` pattern), so a
+  hung daemon cannot stall the 2s poll. `Inhibit`/`UnInhibit` are never
+  called. The gio dependency is Linux-target only (`Cargo.toml`), pinned to
+  the same 0.18 series the GTK stack already locks resolves (gio 0.18.4 /
+  glib 0.18.5): libgio is already loaded by the app, and the Cargo.lock
+  diff is exactly one line (the `app` → `gio` edge) — no new packages
+  compiled.
+
+- **Conservative selection.** `XDG_CURRENT_DESKTOP` (colon-separated) is
+  authoritative: its first recognized entry decides (case-sensitive standard
+  spellings; `GNOME`/`GNOME-*` → GNOME plan, `KDE`/`KDE-*` → KDE plan). A
+  set-but-unrecognized value yields no mechanism and never falls through to
+  `DESKTOP_SESSION`; the legacy variable is consulted only when
+  `XDG_CURRENT_DESKTOP` is unset or empty. GNOME sessions try the GSettings
+  key first and the KDE D-Bus probe only as a fall-through when the schema
+  is missing (where it can only report another absent surface); KDE sessions
+  never probe the GNOME schema, because gsettings-desktop-schemas is often
+  installed as a GTK-stack side effect and its default
+  (`show-banners = true`) would masquerade as an observation — the probe
+  below caught exactly that situation on this WSL box. Unknown desktops
+  probe nothing and report `unsupported`.
+
+- **Error vocabulary and scope.** Only the frontend-pinned
+  `available`/`error`/`unsupported` codes are produced: absent surfaces →
+  `unsupported` (schema/key missing; KDE name unowned or the published
+  `org.freedesktop.DBus.Error.{ServiceUnknown,UnknownObject,UnknownInterface,UnknownProperty,UnknownMethod}`
+  family), present-surface read failures → `error` (KDE transport, timeout,
+  or unexpected property; the GNOME getter is infallible past its guard, so
+  `GnomeObservation` deliberately has no read-failure variant), successful
+  reads → `available`. `profile` stays empty, `controllable` stays false on
+  every Linux path, and `stop_focus_session` is unchanged (observation-only;
+  control remains Windows-only). `get_notification_summary` now derives its
+  `focus_assist_active` from the focus read on non-Windows, mirroring the
+  Windows branch — byte-identical while the gate is off.
+
+- **Test strategy.** 17 new `#[cfg(test)]` unit tests in
+  `commands/focus/linux.rs` (97 total in the crate) cover pure logic only —
+  desktop classification and plan selection, payload/code mapping for both
+  mechanisms, the plan walk with laziness pinned by panicking observer
+  closures (unknown desktops and KDE-only plans probe nothing), KDE
+  error-name classification, and the gate-off contract (payload fields plus
+  an untouched connection cache) — no gio access and no session bus, so
+  they run in CI without a desktop session.
+
+- **Verified on Linux (this worktree, WSL).** Gates: `cargo fmt -- --check`
+  clean; `cargo check` clean; `cargo clippy -- -W clippy::all -W
+  clippy::pedantic --allow clippy::module_name_repetitions` — 79 warnings,
+  all pre-existing crate-wide (the window checkpoint's baseline; zero in
+  the focus files); `cargo test` 97 passed / 0 failed. A throwaway
+  read-only machinery probe (run, then deleted; not committed) recorded
+  absence-path evidence on this WSLg box — NOT capability validation:
+  `XDG_CURRENT_DESKTOP`/`DESKTOP_SESSION` are both absent, so the product
+  path would classify an unknown desktop and probe nothing. The machinery
+  itself behaved: the gio schema-source lookup found
+  `org.gnome.desktop.notifications` (gsettings-desktop-schemas is installed
+  here), `show-banners` exists, and the in-process boolean read returned
+  `true` with no main loop, no GTK init, and no panic — evidencing both the
+  schema-installed-everywhere caveat above and that the guarded getter is
+  safe on a non-GNOME session. The zbus probe connected to the WSLg user
+  bus in ~5ms and the `Inhibited` `Properties.Get` failed in ~2ms with the
+  typed `FDO(ServiceUnknown)` error — the exact absent-surface shape the
+  module maps to `unsupported`, bounded far under the 1s timeout, no stall.
+  (Both classifier branches — typed FDO variants and raw `MethodError`
+  names — are retained, since which one surfaces can vary across zbus
+  versions.)
+
+- **Remaining validation work.** From the feasibility checklist, all still
+  open: on pinned GNOME distro versions (X11 and Wayland, including one
+  GNOME ≥ 49 where the toggle moved to Quick Settings), toggle DND from the
+  UI and confirm `active` flips within one 2s poll, the
+  `status-center://focus-assist-changed` event fires, `profile` stays empty
+  and `controllable` stays false; on a non-GNOME session without the schema
+  installed, confirm the schema-source guard returns `unsupported` without
+  panicking (this box had the schema, so the missing-schema lookup path is
+  unit-covered but not yet exercised against a schema-less machine); on
+  pinned Plasma 6.x, toggle DND in the notification applet and confirm
+  `Inhibited` flips through the cached connection, with `active=false` when
+  off; with plasmashell down or the name unowned on a KDE-classified
+  session, confirm bounded ~1s `unsupported`, no poll-loop stall, no event
+  storm; pin per-version surfaces (whether `Inhibited` exists on the oldest
+  targeted Plasma; whether `show-banners` exists on the oldest targeted
+  GNOME); confirm the 2s one-boolean-read poll costs no measurable CPU or
+  battery regression against the Windows registry poll it mirrors. After
+  evidence is recorded, flip `LINUX_FOCUS_VALIDATED`, update the gate test,
+  and revisit capability reporting.
