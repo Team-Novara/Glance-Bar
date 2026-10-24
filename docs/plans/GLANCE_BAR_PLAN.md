@@ -113,6 +113,10 @@ Verification snapshot at `407d8be`: all gates green; Vitest 59 files / 1015 test
 
 `node scripts/release-precheck.mjs` was run for real on a clean `main` at `d9cf43f`: **RELEASE-PRECHECK PASSED** — all 11 gates green in one run (typecheck, lint, format:check, full Vitest incl. both browser journeys under real Chromium, production build, cargo fmt/check/CI-level clippy/test 97/97). This is the routine freeze-grade evidence line: the tree at `d9cf43f` is one `git tag` away from a frozen candidate per `docs/release/CANDIDATE_FREEZE.md` (freezing itself remains a release decision, not taken autonomously).
 
+### Wave 21 — PR #89 (2026-10-25)
+
+- **#89 — screenshot baseline becomes the 12th precheck gate**: the three-viewport PNG baseline (`qa:showcase:screenshots`, local evidence by design) now runs between the desktop journey and build inside `release-precheck`; CANDIDATE_FREEZE synchronized (12-row gate table, counts, tag template). Verified with a real full run on the clean branch commit: **RELEASE-PRECHECK PASSED, 12/12 gates** (screenshot gate 4.9s, three PNGs written). The freeze-grade evidence bar now covers the visual baseline too.
+
 ### P0: preserve reliable product behavior
 
 - Keep the provider event pipeline intact and testable.
