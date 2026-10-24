@@ -30,5 +30,15 @@ export default defineConfig({
     ],
     globals: false,
     css: false,
+    coverage: {
+      // The CI coverage include globs (e.g. "src/providers/**") also match
+      // non-code files such as src/providers/impl/platform/README.md. For
+      // included-but-untested files the v8 provider parses the source as
+      // JavaScript (rollup parseAst in getCoverageMapForUncoveredFiles),
+      // which logged a noisy RollupError PARSE_ERROR for the markdown.
+      // Markdown can never carry coverage, so exclude it. Note: vitest's
+      // coverage.exclude default is an empty list, so this replaces nothing.
+      exclude: ["**/*.md"],
+    },
   },
 });
