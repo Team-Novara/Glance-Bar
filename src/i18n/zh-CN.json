@@ -1,9 +1,7 @@
 {
   "common": {
     "enabled": "当前已开启",
-    "disabled": "当前已关闭",
-    "copy": "复制",
-    "copied": "已复制"
+    "disabled": "当前已关闭"
   },
   "shell": {
     "ariaLabel": "Cober Windows 状态中心"
@@ -142,9 +140,7 @@
       },
       "autostart": {
         "title": "开机自启",
-        "description": "系统启动时自动运行状态中心。",
-        "activeLabel": "已启用",
-        "inactiveLabel": "未启用"
+        "description": "系统启动时自动运行状态中心。"
       }
     },
     "actions": {
@@ -220,7 +216,6 @@
     "previous": "上一首",
     "play": "播放",
     "pause": "暂停",
-    "playPause": "播放/暂停",
     "next": "下一首",
     "positionLabel": "播放进度",
     "unavailable": {
@@ -229,7 +224,6 @@
     "controlFailed": "无法控制播放"
   },
   "clipboard": {
-    "copyToClipboard": "复制到剪贴板",
     "openInBrowser": "打开浏览器",
     "openFailed": "无法打开链接"
   },
@@ -255,13 +249,6 @@
   "notFound": {
     "title": "Cober 页面未找到",
     "openDesktop": "打开 /desktop"
-  },
-  "git": {
-    "branch": "分支",
-    "modified": "{count} 个文件已修改",
-    "noRepo": "非 Git 仓库",
-    "noGitCli": "未找到 git 命令行",
-    "unavailable": "Git 状态不可用"
   },
   "developer": {
     "eyebrow": "开发者",
