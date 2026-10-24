@@ -50,6 +50,15 @@ Open items are unchanged in kind: physical Windows packaging/install, tray recov
 
 Verification snapshot at `3f2c0eb` (WSL Ubuntu; green CI matrix on every PR): typecheck, lint, format:check, and build pass; Vitest 59 files / 926 tests; `npm run qa` — including the Showcase interaction journey under real Chromium — passes end-to-end for the first time this session; `cargo check`, `cargo fmt -- --check`, CI-level clippy, and `cargo test` 65/65 pass with zero dead-code warnings on the Linux target.
 
+### Same-day continuation — PRs #56–#59 at `a990f18`
+
+- **#56 — typed NSNumber bindings** for the macOS media number extraction (the `NSValue` feature; msg_send probing removed; semantics preserved, integer truncation deliberately avoided).
+- **#57 — browser smoke journey for `/desktop`** (`qa:desktop:interactions`): genuine no-Tauri preview, console/page-error guards, mock-boundary assertions. Writing it surfaced the next item.
+- **#59 — developer provider honesty restored (P1-severity fix)**: the npm/git/docker "real" providers were unconditional Stage 6 stubs returning fabricated data (`available: true`, "npm scripts 1 running") labeled `native` — in a plain browser and therefore in the packaged app too. They now report `not-implemented`, emit nothing, and never activate the developer card; aggregation derives `native` quality only from explicitly available events; the browser journey is re-grounded to the truthful rendering (resident fallback, source honestly labeled Unavailable). KNOWN_LIMITATIONS gained section 3.5 recording the not-implemented state until a real native contract exists.
+- **#58 — showcase journey process hygiene**: the QA script no longer leaks an orphaned Vite process group in WSL (detached spawn + group kill + bounded reap-wait), and two real flake paths (networkidle stall, storage-denied init script) are hardened.
+
+Verification snapshot at `a990f18`: same gates as above, all green — both browser journeys run for real (desktop + showcase), Vitest 59 files / 926 tests, Rust 65/65. Known follow-up recorded by #59: the resident fallback card still displays placeholder metric values (honestly labeled Unavailable) — display refinement pending.
+
 ## Execution priorities
 
 ### P0: preserve reliable product behavior
