@@ -117,6 +117,11 @@ Verification snapshot at `407d8be`: all gates green; Vitest 59 files / 1015 test
 
 - **#89 — screenshot baseline becomes the 12th precheck gate**: the three-viewport PNG baseline (`qa:showcase:screenshots`, local evidence by design) now runs between the desktop journey and build inside `release-precheck`; CANDIDATE_FREEZE synchronized (12-row gate table, counts, tag template). Verified with a real full run on the clean branch commit: **RELEASE-PRECHECK PASSED, 12/12 gates** (screenshot gate 4.9s, three PNGs written). The freeze-grade evidence bar now covers the visual baseline too.
 
+### Wave 22–23 — PR #91 + routine patrol (2026-10-25)
+
+- **#91 — second periodic checkpoint audit**: full re-verification (SHAs, PRs through #90, gate constants, precheck structure, per-SHA Rust test counts, link resolution); two provable corrections applied (header freshness stamp; Current-baseline counts to 59 files / 1015 tests / 97 Rust); four questionable items listed unchanged, including the STAGE6 61-vs-65 count ambiguity that squash history cannot resolve.
+- Routine patrol: `node scripts/release-precheck.mjs` on clean `main` at `a0a2dc0` — **RELEASE-PRECHECK PASSED (12/12 gates)**. The tree remains one tag away from a frozen candidate; freezing stays a release decision.
+
 ### P0: preserve reliable product behavior
 
 - Keep the provider event pipeline intact and testable.
