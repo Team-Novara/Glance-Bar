@@ -6,6 +6,13 @@
 // impls live in the windows/macos/linux sub-modules.
 
 pub mod linux;
+// `macos.rs` is the provider behind the non-Windows, non-Linux branch of
+// `commands::media::get_media_session_status` (macOS today; that branch also
+// covers any other target in that position, where the same bounded
+// `unsupported` payload applies). Gate it to exactly that consumer — like
+// `windows.rs` below — so platforms with their own read path compile no
+// unused provider code.
+#[cfg(not(any(windows, target_os = "linux")))]
 pub mod macos;
 // `windows.rs` is pure WinRT/GSMTC code and the `windows` crate is a
 // cfg(windows)-only dependency — compiling the file on other platforms
@@ -15,12 +22,22 @@ pub mod macos;
 pub mod windows;
 
 use crate::types::*;
+// Everything below the trait serves the Windows media event thread (see
+// `start_mta_media_thread`), so the imports and cadence constants are gated
+// to Windows alongside their only consumer. Non-Windows builds compile the
+// trait and the per-platform providers only.
+#[cfg(windows)]
 use std::sync::atomic::AtomicBool;
+#[cfg(windows)]
 use std::sync::Arc;
+#[cfg(windows)]
 use std::time::Duration;
 
+#[cfg(windows)]
 pub(super) const MEDIA_SESSION_EVENT: &str = "status-center://media-session-changed";
+#[cfg(windows)]
 pub(super) const MEDIA_REFRESH_INTERVAL: Duration = Duration::from_secs(20);
+#[cfg(windows)]
 pub(super) const MEDIA_POLL_INTERVAL: Duration = Duration::from_secs(1);
 
 /// Platform media provider trait. Each OS back-end implements this to expose
@@ -134,13 +151,4 @@ pub fn start_mta_media_thread(
         .expect("failed to spawn WinRT media thread");
 
     Some(sender_clone)
-}
-
-/// Non-Windows stub — no media thread.
-#[cfg(not(windows))]
-pub fn start_mta_media_thread(
-    _app_handle: tauri::AppHandle,
-    _shutdown: Arc<AtomicBool>,
-) -> Option<MediaRequestSender> {
-    None
 }
