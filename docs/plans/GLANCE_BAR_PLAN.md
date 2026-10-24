@@ -124,6 +124,7 @@ Verification snapshot at `407d8be`: all gates green; Vitest 59 files / 1015 test
 - Wave 24 patrol (no new PRs): clean `main` at `f25c5b7`, in sync with origin, no stray worktrees — **RELEASE-PRECHECK PASSED (12/12 gates)**, the fourth consecutive routine pass. Maintenance cadence holds.
 - Wave 25 patrol (no new PRs): `main` at `a7ab5bc` in sync with origin — **RELEASE-PRECHECK PASSED (12/12 gates)**, fifth consecutive routine pass.
 - Wave 26 patrol (no new PRs): `main` at `ad4f05e` in sync with origin — **RELEASE-PRECHECK PASSED (12/12 gates)**, sixth consecutive routine pass.
+- Wave 27 patrol (no new PRs): `main` at `a0b14d2` in sync with origin — **RELEASE-PRECHECK PASSED (12/12 gates)**, seventh consecutive routine pass.
 
 ### P0: preserve reliable product behavior
 
