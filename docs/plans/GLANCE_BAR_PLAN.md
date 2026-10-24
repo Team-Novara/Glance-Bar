@@ -109,6 +109,10 @@ Verification snapshot at `55a0ab9`: all gates green; Vitest 59 files / 994 tests
 
 Verification snapshot at `407d8be`: all gates green; Vitest 59 files / 1015 tests; Rust 97/97; scoped coverage 97.5 lines — the coverage campaign that started at #79 has now lifted every CI-covered file tree to ~97+ lines with all residuals individually proven unreachable or documented.
 
+### Wave 20 routine snapshot — 2026-10-25 (no new PRs)
+
+`node scripts/release-precheck.mjs` was run for real on a clean `main` at `d9cf43f`: **RELEASE-PRECHECK PASSED** — all 11 gates green in one run (typecheck, lint, format:check, full Vitest incl. both browser journeys under real Chromium, production build, cargo fmt/check/CI-level clippy/test 97/97). This is the routine freeze-grade evidence line: the tree at `d9cf43f` is one `git tag` away from a frozen candidate per `docs/release/CANDIDATE_FREEZE.md` (freezing itself remains a release decision, not taken autonomously).
+
 ### P0: preserve reliable product behavior
 
 - Keep the provider event pipeline intact and testable.
