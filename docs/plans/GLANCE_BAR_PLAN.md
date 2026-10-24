@@ -59,6 +59,14 @@ Verification snapshot at `3f2c0eb` (WSL Ubuntu; green CI matrix on every PR): ty
 
 Verification snapshot at `a990f18`: same gates as above, all green — both browser journeys run for real (desktop + showcase), Vitest 59 files / 926 tests, Rust 65/65. Known follow-up recorded by #59: the resident fallback card still displays placeholder metric values (honestly labeled Unavailable) — display refinement pending.
 
+### Same-day continuation — PRs #61–#64 at `9ed86e0`
+
+- **#61 — resident unavailable display refined**: the resident card no longer renders placeholder metric values when the native source is unmeasured — CPU/Memory show em-dashes over the empty indeterminate rail (accessible names via a new bilingual `metrics.usageUnavailable` key), network slots show dashes; live/stale measured rendering is unchanged behind the unit-tested `hasMeasuredResidentMetrics` predicate. This closes the follow-up recorded at `a990f18`.
+- **#62/#63 — QA composition and i18n hygiene**: `npm run qa` now runs the desktop interaction journey between the showcase journey and the build; 11 provably-unused locale keys were removed from both locales (179 → 168, parity verified; the 16 dynamic `template.${kind}` keys kept with cited runtime composition evidence).
+- **#64 — gated Linux EWMH window policy**: `window/linux.rs` replaces its Stage 6 no-ops with a full implementation behind `LINUX_WINDOW_VALIDATED = false` — z-order via `_NET_WM_STATE` messages, `_NET_WM_WINDOW_TYPE_UTILITY` styling, fullscreen detection via `_NET_ACTIVE_WINDOW` (conservative false on every failure), XID via raw-window-handle with a Wayland no-op path, and a 1s watchdog around the timeout-less x11rb 0.13 blocking API. 15 pure-logic unit tests; a real WSLg smoke probe validated the connection machinery and documented that WSLg advertises only partial EWMH (z-order conservatively no-ops there even post-gate). Full-EWMH window managers remain the validation target before the gate flips.
+
+Verification snapshot at `9ed86e0`: all gates green — full `npm run qa` chain (Vitest 59 files / 931 tests, both browser journeys, build), `cargo check` / `fmt` / CI-level clippy, `cargo test` 80/80, zero dead-code warnings on the Linux target. All three platform capabilities implemented this session (Linux MPRIS media, macOS media, Linux EWMH window) remain gated behind their VALIDATED constants pending real-hardware validation.
+
 ## Execution priorities
 
 ### P0: preserve reliable product behavior
