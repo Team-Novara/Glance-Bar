@@ -122,6 +122,7 @@ Verification snapshot at `407d8be`: all gates green; Vitest 59 files / 1015 test
 - **#91 — second periodic checkpoint audit**: full re-verification (SHAs, PRs through #90, gate constants, precheck structure, per-SHA Rust test counts, link resolution); two provable corrections applied (header freshness stamp; Current-baseline counts to 59 files / 1015 tests / 97 Rust); four questionable items listed unchanged, including the STAGE6 61-vs-65 count ambiguity that squash history cannot resolve.
 - Routine patrol: `node scripts/release-precheck.mjs` on clean `main` at `a0a2dc0` — **RELEASE-PRECHECK PASSED (12/12 gates)**. The tree remains one tag away from a frozen candidate; freezing stays a release decision.
 - Wave 24 patrol (no new PRs): clean `main` at `f25c5b7`, in sync with origin, no stray worktrees — **RELEASE-PRECHECK PASSED (12/12 gates)**, the fourth consecutive routine pass. Maintenance cadence holds.
+- Wave 25 patrol (no new PRs): `main` at `a7ab5bc` in sync with origin — **RELEASE-PRECHECK PASSED (12/12 gates)**, fifth consecutive routine pass.
 
 ### P0: preserve reliable product behavior
 
