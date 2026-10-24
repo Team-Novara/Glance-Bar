@@ -88,8 +88,13 @@ Verification snapshot at `9ed86e0`: all gates green — full `npm run qa` chain 
 - **#76/#77 — capability matrix and post-window pointers**: `docs/plans/PLATFORM_CAPABILITY_MATRIX.md` consolidates 11 capabilities × 3 platforms with the four gate constants (grep-proven exactly four), evidence citations, and flip conditions; README/CONTRIBUTING/execution-plan headers now point at the matrix, the precheck script, and the honest post-window status.
 - **#78 — checkpoint freshness audit**: all seven GLANCE_BAR_PLAN checkpoints and four STAGE6 checkpoints re-verified against the tree (SHAs, all 28 cited PRs via gh, counts, gate const lines, links); exactly one born-imprecise line-range citation corrected.
 - **#79 — coverage gap sweep**: 19 new tests (suite 950); reachable gaps filled (aggregation branch 74.3 → 89.6 percent; mockAiProvider to 100/100; CI-scope branch 85.6 → 88.3). Key finding proved empirically: the npm/git/docker providers' remaining uncovered lines sit behind the honest module-local stubs and are unreachable without a future source refactor (checker injection) — recorded as the follow-up, not papered over.
+- **#80 — checkpoint eight** (this document).
 
-Verification snapshot at `2deed32`: all gates green; Vitest 59 files / 950 tests; Rust 97/97; `npm run qa` chain includes both journeys and the three-viewport screenshots.
+### Continuation — PR #81 (Wave 17, 2026-10-25)
+
+- **#81 — provider checker injection (the #79 follow-up, closed)**: the three stub providers now accept an optional injected checker through their existing factories while defaulting to the untouched honest not-implemented stub — production composition byte-identical (providerManager and index exports unmodified; #59 preserved and grep-verified). 34 new tests drive the previously-unreachable wired paths (initial snapshot mapping, poll/dedupe, mid-run unavailable, checker rejection degradation, clean stop with in-flight poll dropped, mapper defensive branches). Coverage: all three providers at 100/100/100/100; impl/real aggregate 78.87 → 98.14 lines. Suite 950 → 984.
+
+Verification snapshot at `0110f47`: all gates green; Vitest 59 files / 984 tests; Rust 97/97; coverage — providers/runtime/state scope now 98+ lines aggregate on impl/real.
 
 ## Execution priorities
 
