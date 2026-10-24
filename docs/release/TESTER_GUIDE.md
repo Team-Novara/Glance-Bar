@@ -69,11 +69,11 @@ Launch the app. Expected behavior:
 
 1. A compact status bar window appears; with no media, downloads, or focus
    activity it shows the **Resident** state (CPU / memory / network speeds).
-2. A tray icon appears. Its tooltip currently reads `Cober Windows Bar`
-   (a legacy name — see [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) §6).
+2. A tray icon appears. Its tooltip reads `Glance Bar`.
 3. The Settings panel language defaults per the app locale and can be switched
-   between English and 简体中文 in Settings. Tray menu labels remain Simplified
-   Chinese regardless.
+   between English and 简体中文 in Settings. The tray menu does not follow the
+   in-app language switch yet (labels are English; full tray i18n is a backlog
+   item — see [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) §6).
 
 ## 4. Tray behavior and window recovery
 
@@ -83,9 +83,9 @@ The tray is the primary way to get the bar back. Exercise all of it:
 |---|---|
 | Close the bar window (window close button) | The window hides; the app keeps running in the tray (close-to-tray). No exit. |
 | Tray icon **left-click** | Toggles the bar window: shows it if hidden, hides it if visible. |
-| Tray menu `显示 / 召回状态中心` (show / recall) | Shows the bar window. |
-| Tray menu `打开设置` (open settings) | Opens the Settings panel. |
-| Tray menu `退出` (quit) | Exits the app completely; no lingering process or tray icon. |
+| Tray menu `Show / Recall Status Center` | Shows the bar window. |
+| Tray menu `Open Settings` | Opens the Settings panel. |
+| Tray menu `Quit` | Exits the app completely; no lingering process or tray icon. |
 | Drag the bar (with Lock Position off) | The bar moves; the position is saved on drag end. |
 | Settings → Quick Controls → **Reset Position** | The bar returns to the default safe area (first monitor, bottom-right). |
 
@@ -95,7 +95,7 @@ serious (P0/P1) finding — see the severity definitions in
 
 ## 5. Settings and shell preferences
 
-Open Settings (tray menu `打开设置`, or Quick Controls → Open Native Settings).
+Open Settings (tray menu `Open Settings`, or Quick Controls → Open Native Settings).
 The **Window Behavior** section has four toggles:
 
 | Toggle | Expected behavior |
