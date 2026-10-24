@@ -41,7 +41,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all
 ```
 
-Run the checks relevant to the change at minimum. A provider, runtime, resolver, or scheduler change requires focused Vitest coverage.
+Run the checks relevant to the change at minimum. A provider, runtime, resolver, or scheduler change requires focused Vitest coverage. To run the full gate set exactly as release freezing does, use `node scripts/release-precheck.mjs` (see [docs/release/CANDIDATE_FREEZE.md](docs/release/CANDIDATE_FREEZE.md)).
 
 ## Git workflow
 
