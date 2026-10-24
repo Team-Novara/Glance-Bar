@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import i18n from "../../../i18n";
-import { sourceQualityClassName, sourceQualityLabel } from "./ResidentStatusTemplate";
+import {
+  hasMeasuredResidentMetrics,
+  sourceQualityClassName,
+  sourceQualityLabel,
+} from "./ResidentStatusTemplate";
 import type { SystemPerformanceSourceQuality } from "@/entities";
 
 import { describe, it } from "vitest";
@@ -34,6 +38,14 @@ describe("ResidentStatusTemplate.test", () => {
 
   assert.equal(sourceQualityLabel(undefined), "Fallback");
   assert.equal(sourceQualityClassName(undefined), "is-fallback");
+
+  // Only a source that measured the values may render numeric metrics.
+  // fallback/unavailable/unknown carry placeholder data (PR #59).
+  assert.equal(hasMeasuredResidentMetrics("live"), true);
+  assert.equal(hasMeasuredResidentMetrics("stale"), true);
+  assert.equal(hasMeasuredResidentMetrics("fallback"), false);
+  assert.equal(hasMeasuredResidentMetrics("unavailable"), false);
+  assert.equal(hasMeasuredResidentMetrics(undefined), false);
 
   console.log("ok resident status source health labels stay high-level");
 });

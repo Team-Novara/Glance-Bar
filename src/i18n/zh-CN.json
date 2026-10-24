@@ -59,7 +59,8 @@
     "memory": "内存",
     "download": "下载",
     "upload": "上传",
-    "usageRate": "{{label}} 使用率 {{value}}%"
+    "usageRate": "{{label}} 使用率 {{value}}%",
+    "usageUnavailable": "{{label}} 使用率不可用"
   },
   "states": {
     "resident": {
