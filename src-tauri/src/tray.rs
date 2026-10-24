@@ -20,13 +20,10 @@ pub(crate) fn create_tray_menu<R: tauri::Runtime>(
     app: &AppHandle<R>,
 ) -> Result<Menu<R>, tauri::Error> {
     MenuBuilder::new(app)
-        .text(
-            TRAY_MENU_SHOW_STATUS_CENTER,
-            "\u{663E}\u{793A}\u{0020}/\u{0020}\u{53EC}\u{56DE}\u{72B6}\u{6001}\u{4E2D}\u{5FC3}",
-        )
-        .text(TRAY_MENU_OPEN_SETTINGS, "\u{6253}\u{5F00}\u{8BBE}\u{7F6E}")
+        .text(TRAY_MENU_SHOW_STATUS_CENTER, "Show / Recall Status Center")
+        .text(TRAY_MENU_OPEN_SETTINGS, "Open Settings")
         .separator()
-        .text(TRAY_MENU_QUIT, "\u{9000}\u{51FA}")
+        .text(TRAY_MENU_QUIT, "Quit")
         .build()
 }
 
@@ -42,7 +39,7 @@ where
     let mut tray_builder = TrayIconBuilder::with_id(TRAY_ID)
         .menu(tray_menu)
         .show_menu_on_left_click(false)
-        .tooltip("Cober Windows Bar")
+        .tooltip("Glance Bar")
         .on_tray_icon_event(move |tray, event| {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,

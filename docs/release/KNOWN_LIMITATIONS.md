@@ -100,10 +100,15 @@ version-specific detection gaps, if any, are unknown. **Pending evidence.**
 Observed in the current source; recorded here so testers are not surprised, and
 to be triaged during Gate D:
 
-- Tray menu labels are hardcoded Simplified Chinese
+- Tray menu labels were hardcoded Simplified Chinese
   (`显示 / 召回状态中心` = show/recall, `打开设置` = open settings, `退出` =
-  quit) and the tray tooltip reads `Cober Windows Bar`, a legacy product name.
-  The in-app Settings language switch does not affect the tray menu.
+  quit) and the tray tooltip read `Cober Windows Bar`, a legacy product name.
+  **Fixed on this branch** (`src-tauri/src/tray.rs`): the labels now read
+  `Show / Recall Status Center`, `Open Settings`, and `Quit`, and the tooltip
+  reads `Glance Bar`. This is a code-level fix, not release evidence — it has
+  not been demonstrated on a packaged build. Still open as a backlog item:
+  full tray-menu i18n that follows the in-app Settings language switch; until
+  that lands, the tray menu is English regardless of the in-app language.
 
 ## Maintenance rule
 
