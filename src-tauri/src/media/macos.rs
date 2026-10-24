@@ -288,9 +288,8 @@ mod mapping {
 mod now_playing {
     use super::mapping::{self, NowPlayingPlaybackState, RawNowPlayingInfo};
     use crate::types::MediaSessionStatus;
-    use objc2::runtime::{AnyObject, Bool};
-    use objc2::{msg_send, sel};
-    use objc2_foundation::{NSDictionary, NSString};
+    use objc2::runtime::AnyObject;
+    use objc2_foundation::{NSDictionary, NSNumber, NSString};
     use objc2_media_player::{
         MPMediaItemPropertyArtist, MPMediaItemPropertyPlaybackDuration, MPMediaItemPropertyTitle,
         MPNowPlayingInfoCenter, MPNowPlayingInfoPropertyElapsedPlaybackTime,
@@ -369,27 +368,19 @@ mod now_playing {
         Some(text.to_string())
     }
 
-    /// Read a numeric field as seconds. The dependency enables only the
-    /// NSString/NSDictionary/NSArray features of objc2-foundation (see
-    /// Cargo.toml), so NSNumber is not a typed binding here — check the
-    /// object responds to `doubleValue` at runtime, then call it. Returns
-    /// `None` when the key is absent or the value is not number-like.
+    /// Read a numeric field as seconds. The dependency enables the `NSValue`
+    /// feature of objc2-foundation (see Cargo.toml), which carries the typed
+    /// `NSNumber` binding, so the value is downcast to `NSNumber` and read
+    /// through `as_f64` (the binding's `doubleValue` wrapper). Returns `None`
+    /// when the key is absent or the value is not an `NSNumber` — NSNumber
+    /// subclasses like `NSDecimalNumber` still pass the downcast.
     fn number_field(
         info: &NSDictionary<NSString, AnyObject>,
         key: &'static NSString,
     ) -> Option<f64> {
         let value = info.objectForKey(key)?;
-        // SAFETY: `respondsToSelector:` is an NSObject protocol method, valid
-        // on any object reference; it returns BOOL by value.
-        let responds: Bool = unsafe { msg_send![&*value, respondsToSelector: sel!(doubleValue)] };
-        if !responds.as_bool() {
-            return None;
-        }
-        // SAFETY: the object confirmed above that it implements
-        // `doubleValue` with the NSNumber signature (no arguments, primitive
-        // double return).
-        let number: f64 = unsafe { msg_send![&*value, doubleValue] };
-        Some(number)
+        let number = value.downcast_ref::<NSNumber>()?;
+        Some(number.as_f64())
     }
 }
 
