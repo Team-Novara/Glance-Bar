@@ -19,6 +19,7 @@
 - [Provider registry](providers/PROVIDER_REGISTRY.md): lifecycle and health read models.
 - [Test strategy](qa/TEST_STRATEGY.md): test layers and required verification.
 - [Showcase QA](qa/SHOWCASE_QA.md): manual and scripted review of `/showcase`.
+- [Packaging rehearsal](qa/PACKAGING_REHEARSAL.md): Linux deb packaging-pipeline evidence (bundle config, icons, metadata, assembly) from the Day 19-20 rehearsal; Windows installer evidence remains pending (known limitations §1.1/§1.2).
 
 ## Release preparation (Gate D)
 
