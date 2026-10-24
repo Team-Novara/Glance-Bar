@@ -20,9 +20,32 @@ function formatSpeed(bytesPerSecond: number): string {
   return `${Math.round(bytesPerSecond)} B/s`;
 }
 
+/**
+ * Placeholder rendered in place of a numeric value the card did not measure.
+ * Concrete-looking numbers next to an "Unavailable"/"Fallback" source chip
+ * invite misreading (PR #59): the card must not render specific values it
+ * did not measure, so every value slot degrades to this dash instead.
+ */
+const UNMEASURED_VALUE_PLACEHOLDER = "—";
+
+/**
+ * A resident metric value may only render when the native source actually
+ * measured it: "live" is the native observation and "stale" carries the last
+ * real measurement (bounded by the provider's freshness window). Every other
+ * quality — "unavailable", "fallback" (mock/fixture data), or an absent
+ * source status — means the numbers on the state are placeholders, and the
+ * template must render the unknown-value idiom instead of percentages/rates.
+ */
+export function hasMeasuredResidentMetrics(
+  quality: SystemPerformanceSourceQuality | undefined,
+): boolean {
+  return quality === "live" || quality === "stale";
+}
+
 export function ResidentStatusTemplate({ state }: ResidentStatusTemplateProps) {
   const { t } = useTranslation();
   const sourceLabel = sourceQualityLabel(state.sourceStatus?.quality, t);
+  const metricsMeasured = hasMeasuredResidentMetrics(state.sourceStatus?.quality);
 
   const percentMetrics = state.metrics.filter((m) => m.id === "cpu" || m.id === "memory");
   const downloadMetric = state.metrics.find((m) => m.id === "download");
@@ -44,8 +67,23 @@ export function ResidentStatusTemplate({ state }: ResidentStatusTemplateProps) {
 
       <div className="product-status-metrics">
         {percentMetrics.map((metric) => {
-          const accent = metricAccent(metric);
-          const label = t("metrics.usageRate", { label: metric.label, value: metric.value });
+          // The aria label must not carry a value the card did not measure —
+          // the unknown branch reuses the media rail's "…unavailable" wording.
+          const label = metricsMeasured
+            ? t("metrics.usageRate", { label: metric.label, value: metric.value })
+            : t("metrics.usageUnavailable", { label: metric.label });
+          const fillStyle = metricsMeasured
+            ? { width: `${visibleMetricValue(metric.value)}%`, background: metricAccent(metric) }
+            : undefined;
+          // Built via join so prettier-plugin-tailwindcss cannot rewrite the
+          // interpolated class token (it strips the semantic leading space
+          // inside template literals — see MediaStatusTemplate).
+          const trackClassName = [
+            "product-status-track",
+            metricsMeasured ? null : "is-indeterminate",
+          ]
+            .filter(Boolean)
+            .join(" ");
 
           return (
             <div
@@ -56,22 +94,19 @@ export function ResidentStatusTemplate({ state }: ResidentStatusTemplateProps) {
             >
               <div className="product-status-label">
                 <span className="product-status-label-name">{metric.label}</span>
-                <strong>{metric.value}%</strong>
+                <strong>
+                  {metricsMeasured ? `${metric.value}%` : UNMEASURED_VALUE_PLACEHOLDER}
+                </strong>
               </div>
               <span
-                className="product-status-track"
+                className={trackClassName}
                 role="progressbar"
                 aria-label={label}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-valuenow={metric.value}
+                aria-valuenow={metricsMeasured ? metric.value : undefined}
               >
-                <span
-                  style={{
-                    width: `${visibleMetricValue(metric.value)}%`,
-                    background: accent,
-                  }}
-                />
+                <span style={fillStyle} />
               </span>
             </div>
           );
@@ -87,7 +122,9 @@ export function ResidentStatusTemplate({ state }: ResidentStatusTemplateProps) {
                 <span className="product-status-net-arrow product-status-net-arrow-down">↓</span>
                 <span className="product-status-label-name">{downloadMetric.label}</span>
                 <strong className="product-status-net-value">
-                  {formatSpeed(downloadMetric.value)}
+                  {metricsMeasured
+                    ? formatSpeed(downloadMetric.value)
+                    : UNMEASURED_VALUE_PLACEHOLDER}
                 </strong>
               </div>
             )}
@@ -96,7 +133,7 @@ export function ResidentStatusTemplate({ state }: ResidentStatusTemplateProps) {
                 <span className="product-status-net-arrow product-status-net-arrow-up">↑</span>
                 <span className="product-status-label-name">{uploadMetric.label}</span>
                 <strong className="product-status-net-value">
-                  {formatSpeed(uploadMetric.value)}
+                  {metricsMeasured ? formatSpeed(uploadMetric.value) : UNMEASURED_VALUE_PLACEHOLDER}
                 </strong>
               </div>
             )}

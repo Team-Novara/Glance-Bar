@@ -59,7 +59,8 @@
     "memory": "Memory",
     "download": "Download",
     "upload": "Upload",
-    "usageRate": "{{label}} usage {{value}}%"
+    "usageRate": "{{label}} usage {{value}}%",
+    "usageUnavailable": "{{label}} usage unavailable"
   },
   "states": {
     "resident": {

@@ -227,15 +227,38 @@ async function run() {
     // may appear. Every other guest kind (media/download/focus/clipboard)
     // also degrades without Tauri, so the scheduler deterministically falls
     // back to the resident state. The system-performance provider polls
-    // honestly and, without Tauri, publishes quality "unavailable" with the
-    // labeled placeholder metrics (CPU 23% / Memory 68% / 2.3 MB/s /
-    // 500.0 KB/s) — the resident card therefore carries the explicit source
-    // label "Unavailable", never "Native".
+    // honestly and, without Tauri, publishes quality "unavailable": the
+    // resident card carries the explicit source label "Unavailable" (never
+    // "Native") and renders NO placeholder numbers — the pre-existing
+    // fallback metrics (CPU 23% / Memory 68% / 2.3 MB/s / 500.0 KB/s) are
+    // fixture data the card did not measure, so every value slot degrades to
+    // an em-dash and the rails render in the shared indeterminate/empty
+    // state (no aria-valuenow).
     await expectText(statusWindow, "Unavailable");
     await expectText(statusWindow, "CPU");
-    await expectText(statusWindow, "23%");
-    await expectText(statusWindow, "2.3 MB/s");
-    await expectProgressBar(statusWindow, "CPU usage 23%");
+    await expectText(statusWindow, "Memory");
+
+    // All four value slots (CPU, Memory, download, upload) degrade to the
+    // em-dash placeholder. Instantaneous count check — the dashes render from
+    // first paint because the fallback quality is unmeasured too.
+    const dashCount = await statusWindow.getByText("—", { exact: true }).count();
+    if (dashCount !== 4) {
+      throw new Error(`Expected 4 unmeasured-value dashes on /desktop but found ${dashCount}`);
+    }
+
+    await expectProgressBar(statusWindow, "CPU usage unavailable");
+
+    for (const placeholder of ["23%", "68%", "2.3 MB/s", "500.0 KB/s"]) {
+      await expectAbsentText(page, placeholder);
+    }
+
+    const cpuRail = statusWindow.getByRole("progressbar", {
+      name: "CPU usage unavailable",
+      exact: true,
+    });
+    if ((await cpuRail.getAttribute("aria-valuenow")) !== null) {
+      throw new Error("Resident CPU rail carries aria-valuenow without a measured source");
+    }
 
     // The fabricated developer card must not render anywhere on the page.
     await expectAbsentText(page, "Developer");
