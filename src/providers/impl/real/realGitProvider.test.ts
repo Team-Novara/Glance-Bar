@@ -118,6 +118,21 @@ describe("createRealGitProvider", () => {
       expect(events).toHaveLength(0);
       provider.stop();
     });
+
+    it("stops cleanly before start() and can still start afterwards", async () => {
+      const provider = createRealGitProvider();
+      const events = collectEvents(provider);
+
+      expect(() => provider.stop()).not.toThrow();
+      expect(provider.status().lifecycle).toBe("Stopped");
+
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(provider.status().lifecycle).toBe("Publishing");
+      // The unimplemented source still publishes nothing after the restart.
+      expect(events).toHaveLength(0);
+      provider.stop();
+    });
   });
 
   describe("honest emissions", () => {
