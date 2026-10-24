@@ -1,9 +1,10 @@
 # Known Limitations — Windows MVP Release Candidate
 
 > Status: Draft for Gate D preparation — not release evidence. Compiled from the
-> execution plan and current documentation at `main` commit `2ffff11`. Items
-> marked **pending evidence** have no hardware, packaging, or tester proof yet;
-> they must not be reported as verified behavior.
+> execution plan and current documentation at `main` commit `2ffff11`; rows
+> re-audited against the current codebase at `main` commit `91feec8`
+> (2026-10-24). Items marked **pending evidence** have no hardware, packaging,
+> or tester proof yet; they must not be reported as verified behavior.
 
 Related: [TESTER_GUIDE.md](TESTER_GUIDE.md), [TESTER_CHECKLIST.md](TESTER_CHECKLIST.md),
 [RELEASE_DECISION_TEMPLATE.md](RELEASE_DECISION_TEMPLATE.md).
@@ -26,7 +27,7 @@ Sources: [30-day execution plan](../plans/2026-09-05_WINDOWS_MVP_30_DAY_EXECUTIO
 | # | Limitation | Status |
 |---|---|---|
 | 1.1 | No packaged installer has been produced or verified. Clean-checkout packaging evidence, installer launch, and uninstall-without-leftover-process checks are still open (plan Days 19-20). | **Pending evidence** |
-| 1.2 | All current verification ran through development workspaces and CI runners. The CI matrix (Node 20/22, Vite build, TypeScript, ESLint, Rust on Ubuntu/macOS/Windows) is green, but no run proves the packaged app's behavior. | **Pending evidence** |
+| 1.2 | All current verification ran through development workspaces and CI runners. The CI matrix (Node 20/22, Vite build, TypeScript, ESLint, Prettier check, Rust check/clippy/fmt plus `cargo test` on Ubuntu/macOS/Windows) is green, but no run proves the packaged app's behavior. | **Pending evidence** |
 | 1.3 | No versioned candidate build exists yet (plan Days 22-23). Until one is frozen, every tester session must record its source commit. | **Pending evidence** |
 
 ## 2. Windows hardware verification gaps
@@ -126,12 +127,12 @@ to be triaged during Gate D:
 - Tray menu labels were hardcoded Simplified Chinese
   (`显示 / 召回状态中心` = show/recall, `打开设置` = open settings, `退出` =
   quit) and the tray tooltip read `Cober Windows Bar`, a legacy product name.
-  **Fixed on this branch** (`src-tauri/src/tray.rs`): the labels now read
-  `Show / Recall Status Center`, `Open Settings`, and `Quit`, and the tooltip
-  reads `Glance Bar`. **Tray labels now follow the in-app language setting**
-  (same branch): the choice is persisted in the desktop preferences
-  (`language: "en" | "zh-CN"`), both label sets live in a bounded table in
-  Rust (`src-tauri/src/tray.rs`, English fallback for missing/unknown
+  **Fixed** (merged to `main` as #44; `src-tauri/src/tray.rs`): the labels now
+  read `Show / Recall Status Center`, `Open Settings`, and `Quit`, and the
+  tooltip reads `Glance Bar`. **Tray labels now follow the in-app language
+  setting** (merged to `main` as #52): the choice is persisted in the desktop
+  preferences (`language: "en" | "zh-CN"`), both label sets live in a bounded
+  table in Rust (`src-tauri/src/tray.rs`, English fallback for missing/unknown
   values), and switching language in Settings rebuilds the tray menu through
   the existing `set_status_center_preferences` path — no new IPC channel.
   Startup builds the tray menu from the stored preference, and the frontend
@@ -139,11 +140,11 @@ to be triaged during Gate D:
   `i18nextLng` localStorage cache key) as the fallback when no preference
   exists. The in-window right-click context menu (`create_status_center_menu`
   in `src-tauri/src/lib.rs`) had the same fixed Simplified Chinese labels.
-  **Fixed on this branch** as well: its labels now come from a sibling
-  bounded table in `src-tauri/src/tray.rs` (`status_center_menu_labels`, both
-  en and zh-CN sets, English fallback for missing/unknown values), built from
-  the same stored `language` preference, and a language switch rebuilds the
-  cached context menu in place through the existing
+  **Fixed** as well (merged to `main` as #53): its labels now come from a
+  sibling bounded table in `src-tauri/src/tray.rs` (`status_center_menu_labels`,
+  both en and zh-CN sets, English fallback for missing/unknown values), built
+  from the same stored `language` preference, and a language switch rebuilds
+  the cached context menu in place through the existing
   `set_status_center_preferences` path — no new IPC channel. Like the tray
   fix this is a code-level change with automated unit-test coverage, not
   release evidence — it has not been demonstrated on a packaged build or
