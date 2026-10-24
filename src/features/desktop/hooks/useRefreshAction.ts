@@ -1,9 +1,6 @@
 import { useCallback, type RefObject } from "react";
 
-import {
-  emitTauriFixtureEvents,
-  getTauriInvoke,
-} from "@/runtime/tauri/tauriRuntime";
+import { emitTauriFixtureEvents, getTauriInvoke } from "@/runtime/tauri/tauriRuntime";
 
 export type UseRefreshActionOptions = {
   isDraggingRef: RefObject<boolean>;

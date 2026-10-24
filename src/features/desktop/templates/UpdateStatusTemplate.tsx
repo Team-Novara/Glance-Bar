@@ -12,7 +12,6 @@ import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-
 type UpdateStatusTemplateProps = {
   state: DesktopUpdateState;
 };

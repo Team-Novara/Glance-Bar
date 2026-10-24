@@ -10,7 +10,6 @@ import {
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
-
 const PROVIDER_ID = "real-download-provider";
 const DOWNLOAD_EVENT_ID = `${PROVIDER_ID}-download-observation`;
 
@@ -34,10 +33,7 @@ function downloadPayloadToEvent(payload: DownloadChangedPayload): HubEvent | und
   let title = "Downloads";
   let subtitle = "No active download activity";
   if (payload.status === "active") {
-    title =
-      payload.activeDownloads > 1
-        ? `${payload.activeDownloads} downloads`
-        : "Downloading";
+    title = payload.activeDownloads > 1 ? `${payload.activeDownloads} downloads` : "Downloading";
     subtitle = "In progress";
   } else if (payload.status === "completed") {
     title = "Download complete";
@@ -56,10 +52,7 @@ function downloadPayloadToEvent(payload: DownloadChangedPayload): HubEvent | und
     source: "download",
     origin: "system",
     createdAt,
-    expiresAt:
-      payload.status === "active"
-        ? undefined
-        : createdAt + 8_000,
+    expiresAt: payload.status === "active" ? undefined : createdAt + 8_000,
     progress: payload.progress,
     payload: {
       id: "real-download-task",
@@ -83,9 +76,7 @@ function downloadPayloadToEvent(payload: DownloadChangedPayload): HubEvent | und
 export function createRealDownloadProvider(): HubProvider {
   let unlisten: (() => void) | undefined;
   let listenerGeneration = 0;
-  let lastPublishedObservation:
-    | { checkedAt: number; source: "initial" | "event" }
-    | undefined;
+  let lastPublishedObservation: { checkedAt: number; source: "initial" | "event" } | undefined;
 
   const metadata: HubProviderMetadata = {
     id: PROVIDER_ID,
@@ -117,10 +108,7 @@ export function createRealDownloadProvider(): HubProvider {
       const generation = ++listenerGeneration;
       lastPublishedObservation = undefined;
 
-      const publishObservation = (
-        payload: DownloadChangedPayload,
-        source: "initial" | "event",
-      ) => {
+      const publishObservation = (payload: DownloadChangedPayload, source: "initial" | "event") => {
         if (generation !== listenerGeneration) {
           return;
         }

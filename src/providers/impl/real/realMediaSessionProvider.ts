@@ -4,11 +4,13 @@ import {
   onMediaSessionChanged,
   type MediaSessionChangedPayload,
 } from "../../../runtime/system/systemMonitorRuntime";
-import { loadTauriMediaSessionStatus, type TauriMediaSessionStatus } from "../../../runtime/tauri/tauriRuntime";
+import {
+  loadTauriMediaSessionStatus,
+  type TauriMediaSessionStatus,
+} from "../../../runtime/tauri/tauriRuntime";
 import { MEDIA_DISPLAY_WINDOW_MS, formatMediaTime } from "../../../shared/lib/mediaTime";
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
-
 
 const PROVIDER_ID = "real-media-session-provider";
 const MEDIA_EVENT_ID = `${PROVIDER_ID}-media-observation`;

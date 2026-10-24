@@ -1,4 +1,3 @@
-
 import type { HubMode } from "@/entities";
 import { showcaseSteps } from "@/providers/impl/mock/mockHubData";
 

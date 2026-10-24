@@ -3,7 +3,6 @@ import type { HubEvent } from "@/entities";
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
-
 const PROVIDER_ID = "real-docker-provider";
 const POLL_INTERVAL_MS = 5_000;
 
@@ -16,11 +15,7 @@ export type DockerContainer = {
   ports: string;
 };
 
-export type DockerStatusCode =
-  | "available"
-  | "no-docker-cli"
-  | "docker-daemon-down"
-  | "error";
+export type DockerStatusCode = "available" | "no-docker-cli" | "docker-daemon-down" | "error";
 
 export type DockerStatus = {
   available: boolean;

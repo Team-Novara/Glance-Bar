@@ -60,10 +60,7 @@ describe("createHubDemoScenario", () => {
     // unhandled value can only reach the switch via a cast. With no
     // default branch, the function must fall through and return undefined.
     // Act
-    const result = createHubDemoScenario(
-      "unknown-mode" as unknown as HubDemoScenarioId,
-      BASE_NOW,
-    );
+    const result = createHubDemoScenario("unknown-mode" as unknown as HubDemoScenarioId, BASE_NOW);
 
     // Assert
     expect(result).toBeUndefined();
@@ -97,11 +94,7 @@ describe("createHubDemoScenario", () => {
     const multiTaskTimestamps = multiTask.events
       .map((event) => event.createdAt)
       .sort((a, b) => b - a);
-    expect(multiTaskTimestamps).toEqual([
-      BASE_NOW,
-      BASE_NOW - 120,
-      BASE_NOW - 240,
-    ]);
+    expect(multiTaskTimestamps).toEqual([BASE_NOW, BASE_NOW - 120, BASE_NOW - 240]);
   });
 });
 
@@ -130,9 +123,7 @@ describe("createAutoDemoSequence", () => {
   it("exposes each non-idle HubMode at most once between the idle bookends", () => {
     // Act
     const sequence = createAutoDemoSequence(BASE_NOW);
-    const innerModes = sequence
-      .slice(1, -1)
-      .map((scenario) => scenario.expectedMode);
+    const innerModes = sequence.slice(1, -1).map((scenario) => scenario.expectedMode);
 
     // Assert — 5 distinct inner modes covering music/aiProgress/download/notification/multiTask
     expect(new Set(innerModes).size).toBe(innerModes.length);
@@ -170,9 +161,7 @@ describe("playHubDemoScenario", () => {
 
     // Assert — one publish per scenario event; ids match the scenario payload
     expect(publishSpy).toHaveBeenCalledTimes(scenario.events.length);
-    const publishedIds = publishSpy.mock.calls
-      .map(([event]) => event.id)
-      .sort();
+    const publishedIds = publishSpy.mock.calls.map(([event]) => event.id).sort();
     const scenarioIds = scenario.events.map((event) => event.id).sort();
     expect(publishedIds).toEqual(scenarioIds);
     publishSpy.mockRestore();

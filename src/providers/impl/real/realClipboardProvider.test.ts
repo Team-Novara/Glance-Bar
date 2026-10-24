@@ -146,9 +146,7 @@ describe("createRealClipboardProvider", () => {
 
     it("stop() is a no-op when the listener has not registered yet", async () => {
       // listen() never resolves, so `unlisten` stays undefined through stop()
-      listenMock.mockImplementation(
-        () => new Promise<() => void>(() => undefined),
-      );
+      listenMock.mockImplementation(() => new Promise<() => void>(() => undefined));
 
       const provider = createRealClipboardProvider();
       provider.start();

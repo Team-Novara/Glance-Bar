@@ -6,7 +6,6 @@ import {
   type ShowcaseFluentMode,
 } from "./ShowcaseFluentTokens";
 
-
 type MultiTaskHubProps = {
   tasks: HubTask[];
 };

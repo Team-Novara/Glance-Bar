@@ -2,15 +2,8 @@ import type { HubEvent, HubMode } from "@/entities";
 
 import type { HubEventBus } from "./hubState";
 
-
 export type HubDemoScenarioId =
-  | "idle"
-  | "clear"
-  | "music"
-  | "ai"
-  | "download"
-  | "notification"
-  | "multiTask";
+  "idle" | "clear" | "music" | "ai" | "download" | "notification" | "multiTask";
 
 type HubDemoScenario = {
   id: HubDemoScenarioId;

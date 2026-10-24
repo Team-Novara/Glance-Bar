@@ -8,11 +8,7 @@ import {
   createTickingProvider,
   resolveNow,
 } from "./shared";
-import type {
-  HubProvider,
-  MockProviderOptions,
-} from "../../core/types";
-
+import type { HubProvider, MockProviderOptions } from "../../core/types";
 
 export const createMockDownloadEvent = (options: MockProviderOptions = {}): HubEvent => {
   const createdAt = resolveNow(options);

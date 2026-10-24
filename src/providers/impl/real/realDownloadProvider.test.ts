@@ -167,7 +167,11 @@ describe("createRealDownloadProvider", () => {
       // A Tauri runtime is required for support to be "available", which is
       // what gates listener registration. The initial fetch returns idle so it
       // emits nothing in these lifecycle-only tests.
-      stubTauriDownloadState(makeDownloadInvoke(makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0 })));
+      stubTauriDownloadState(
+        makeDownloadInvoke(
+          makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0 }),
+        ),
+      );
     });
 
     it("starts Registered and transitions to Publishing on start()", async () => {
@@ -202,9 +206,7 @@ describe("createRealDownloadProvider", () => {
     });
 
     it("stop() is a no-op when the listener has not registered yet", async () => {
-      listenMock.mockImplementation(
-        () => new Promise<() => void>(() => undefined),
-      );
+      listenMock.mockImplementation(() => new Promise<() => void>(() => undefined));
       const provider = createRealDownloadProvider();
       provider.start();
       provider.stop();
@@ -255,7 +257,9 @@ describe("createRealDownloadProvider", () => {
     it("does not emit when the native fetch reports idle", async () => {
       captureListen();
       stubTauriDownloadState(
-        makeDownloadInvoke(makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0 })),
+        makeDownloadInvoke(
+          makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0 }),
+        ),
       );
       const provider = createRealDownloadProvider();
       const events = collectEvents(provider);
@@ -270,7 +274,12 @@ describe("createRealDownloadProvider", () => {
       captureListen();
       stubTauriDownloadState(
         makeDownloadInvoke(
-          makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0, code: "unsupported" }),
+          makeDownloadingState({
+            status: "idle",
+            activeDownloads: 0,
+            progress: 0,
+            code: "unsupported",
+          }),
         ),
       );
       const provider = createRealDownloadProvider();
@@ -343,7 +352,11 @@ describe("createRealDownloadProvider", () => {
       vi.stubGlobal("navigator", { platform: "Win32" });
       // Tauri runtime present so support is "available" and the listener
       // registers. Initial fetch returns idle so it emits nothing here.
-      stubTauriDownloadState(makeDownloadInvoke(makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0 })));
+      stubTauriDownloadState(
+        makeDownloadInvoke(
+          makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0 }),
+        ),
+      );
     });
 
     it("maps a downloading payload from the change event to a download HubEvent", async () => {
@@ -546,7 +559,11 @@ describe("createRealDownloadProvider", () => {
       vi.stubGlobal("navigator", { platform: "Win32" });
       // Tauri runtime present so support is "available" and the listener
       // registration path is exercised.
-      stubTauriDownloadState(makeDownloadInvoke(makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0 })));
+      stubTauriDownloadState(
+        makeDownloadInvoke(
+          makeDownloadingState({ status: "idle", activeDownloads: 0, progress: 0 }),
+        ),
+      );
     });
 
     it("marks the provider Degraded when the native listener registration fails", async () => {

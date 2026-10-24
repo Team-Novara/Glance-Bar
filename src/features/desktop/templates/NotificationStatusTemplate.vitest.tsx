@@ -46,7 +46,8 @@ describe("NotificationStatusTemplate", () => {
   });
 
   it("calls dismissNotification when the dismiss button is clicked", async () => {
-    const { dismissNotification } = await import("../../../runtime/actions/notificationDismissRuntime");
+    const { dismissNotification } =
+      await import("../../../runtime/actions/notificationDismissRuntime");
     const mockDismiss = vi.mocked(dismissNotification);
     mockDismiss.mockClear();
 
@@ -58,7 +59,8 @@ describe("NotificationStatusTemplate", () => {
   });
 
   it("surfaces a dismissFailed toast when dismiss returns success=false", async () => {
-    const { dismissNotification } = await import("../../../runtime/actions/notificationDismissRuntime");
+    const { dismissNotification } =
+      await import("../../../runtime/actions/notificationDismissRuntime");
     vi.mocked(dismissNotification).mockResolvedValueOnce({ success: false });
 
     const state = mockNotificationState();
@@ -69,7 +71,8 @@ describe("NotificationStatusTemplate", () => {
   });
 
   it("surfaces a dismissFailed toast when dismiss returns undefined", async () => {
-    const { dismissNotification } = await import("../../../runtime/actions/notificationDismissRuntime");
+    const { dismissNotification } =
+      await import("../../../runtime/actions/notificationDismissRuntime");
     vi.mocked(dismissNotification).mockResolvedValueOnce(undefined);
 
     const state = mockNotificationState();

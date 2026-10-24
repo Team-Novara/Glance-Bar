@@ -1,9 +1,11 @@
 import type { HubEvent } from "@/entities";
 
-import { onClipboardChanged, type ClipboardChangedPayload } from "../../../runtime/system/systemMonitorRuntime";
+import {
+  onClipboardChanged,
+  type ClipboardChangedPayload,
+} from "../../../runtime/system/systemMonitorRuntime";
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
-
 
 const PROVIDER_ID = "real-clipboard-provider";
 const CLIPBOARD_DISPLAY_WINDOW_MS = 5_000;

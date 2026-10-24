@@ -5,11 +5,7 @@ import {
   snapshotProviderHealth,
   type HealthRecordInput,
 } from "./providerHealthMonitor";
-import type {
-  HubProviderHealth,
-  HubProviderLifecycle,
-  HubProviderStatus,
-} from "./types";
+import type { HubProviderHealth, HubProviderLifecycle, HubProviderStatus } from "./types";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

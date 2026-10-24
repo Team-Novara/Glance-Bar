@@ -8,7 +8,6 @@ import type {
 
 import { isRecord } from "../../shared/lib/runtimeGuards";
 
-
 export const STATUS_CENTER_SETTINGS_EVENT = "status-center://settings";
 
 export type StatusCenterMenuAction =

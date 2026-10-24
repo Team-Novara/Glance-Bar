@@ -6,65 +6,73 @@ import type { ProviderConnection } from "./providerAdapter";
 
 // ── Hoisted: create test doubles available to both mock factories and test code ──
 
-const { providerFactories, connectMock, disconnectMock, mockEventBus } = vi.hoisted(
-  () => {
-    const disconnectMock = vi.fn();
+const { providerFactories, connectMock, disconnectMock, mockEventBus } = vi.hoisted(() => {
+  const disconnectMock = vi.fn();
 
-    function makeSpyProvider(id: string, kind: string) {
-      let lifecycle: "Stopped" | "Publishing" = "Stopped";
-      return {
-        id,
-        label: `Spy Provider ${kind}`,
-        metadata: {
-          id,
-          name: `Spy Provider ${kind}`,
-          kind,
-          version: "0.6.0",
-          mock: false,
-        },
-        capabilities: [
-          { id: kind, kind, origin: "mock" as const, support: "available" as const },
-        ],
-        start() {
-          lifecycle = "Publishing";
-        },
-        stop() {
-          lifecycle = "Stopped";
-        },
-        subscribe: () => () => {},
-        status: () => ({ lifecycle, health: "Healthy" }),
-      };
-    }
-
+  function makeSpyProvider(id: string, kind: string) {
+    let lifecycle: "Stopped" | "Publishing" = "Stopped";
     return {
-      providerFactories: {
-        createMockMusicProvider: vi.fn(() => makeSpyProvider("mock-music-provider", "music")),
-        createMockDownloadProvider: vi.fn(() => makeSpyProvider("mock-download-provider", "download")),
-        createMockAIProvider: vi.fn(() => makeSpyProvider("mock-ai-task-provider", "ai")),
-        createMockNotificationProvider: vi.fn(() => makeSpyProvider("mock-notification-provider", "notification")),
-        createRealClipboardProvider: vi.fn(() => makeSpyProvider("real-clipboard-provider", "clipboard")),
-        createRealDockerProvider: vi.fn(() => makeSpyProvider("real-docker-provider", "docker")),
-        createRealFocusProvider: vi.fn(() => makeSpyProvider("real-focus-provider", "focus")),
-        createRealGitProvider: vi.fn(() => makeSpyProvider("real-git-provider", "git")),
-        createRealMediaSessionProvider: vi.fn(() => makeSpyProvider("real-media-session-provider", "media")),
-        createRealNpmProvider: vi.fn(() => makeSpyProvider("real-npm-provider", "npm")),
-        createRealSystemPerformanceProvider: vi.fn(() => makeSpyProvider("real-system-performance-provider", "system")),
-        createRealDownloadProvider: vi.fn(() => makeSpyProvider("real-download-provider", "download")),
-        createRealUpdateProvider: vi.fn(() => makeSpyProvider("real-update-provider", "ai")),
+      id,
+      label: `Spy Provider ${kind}`,
+      metadata: {
+        id,
+        name: `Spy Provider ${kind}`,
+        kind,
+        version: "0.6.0",
+        mock: false,
       },
-      connectMock: vi.fn(() => ({ disconnect: disconnectMock } satisfies ProviderConnection)),
-      disconnectMock,
-      mockEventBus: {
-        getState: vi.fn(),
-        publishHubEvent: vi.fn(),
-        replaceHubEvents: vi.fn(),
-        clearHubEvents: vi.fn(),
-        clearExpiredEvents: vi.fn(),
-        subscribe: vi.fn(() => vi.fn()),
-      } satisfies Partial<HubEventBus>,
+      capabilities: [{ id: kind, kind, origin: "mock" as const, support: "available" as const }],
+      start() {
+        lifecycle = "Publishing";
+      },
+      stop() {
+        lifecycle = "Stopped";
+      },
+      subscribe: () => () => {},
+      status: () => ({ lifecycle, health: "Healthy" }),
     };
-  },
-);
+  }
+
+  return {
+    providerFactories: {
+      createMockMusicProvider: vi.fn(() => makeSpyProvider("mock-music-provider", "music")),
+      createMockDownloadProvider: vi.fn(() =>
+        makeSpyProvider("mock-download-provider", "download"),
+      ),
+      createMockAIProvider: vi.fn(() => makeSpyProvider("mock-ai-task-provider", "ai")),
+      createMockNotificationProvider: vi.fn(() =>
+        makeSpyProvider("mock-notification-provider", "notification"),
+      ),
+      createRealClipboardProvider: vi.fn(() =>
+        makeSpyProvider("real-clipboard-provider", "clipboard"),
+      ),
+      createRealDockerProvider: vi.fn(() => makeSpyProvider("real-docker-provider", "docker")),
+      createRealFocusProvider: vi.fn(() => makeSpyProvider("real-focus-provider", "focus")),
+      createRealGitProvider: vi.fn(() => makeSpyProvider("real-git-provider", "git")),
+      createRealMediaSessionProvider: vi.fn(() =>
+        makeSpyProvider("real-media-session-provider", "media"),
+      ),
+      createRealNpmProvider: vi.fn(() => makeSpyProvider("real-npm-provider", "npm")),
+      createRealSystemPerformanceProvider: vi.fn(() =>
+        makeSpyProvider("real-system-performance-provider", "system"),
+      ),
+      createRealDownloadProvider: vi.fn(() =>
+        makeSpyProvider("real-download-provider", "download"),
+      ),
+      createRealUpdateProvider: vi.fn(() => makeSpyProvider("real-update-provider", "ai")),
+    },
+    connectMock: vi.fn(() => ({ disconnect: disconnectMock }) satisfies ProviderConnection),
+    disconnectMock,
+    mockEventBus: {
+      getState: vi.fn(),
+      publishHubEvent: vi.fn(),
+      replaceHubEvents: vi.fn(),
+      clearHubEvents: vi.fn(),
+      clearExpiredEvents: vi.fn(),
+      subscribe: vi.fn(() => vi.fn()),
+    } satisfies Partial<HubEventBus>,
+  };
+});
 
 // ── Mock provider factory modules ─────────────────────────────────────
 
@@ -111,8 +119,7 @@ vi.mock("./realSystemPerformanceProvider", () => ({
   createRealSystemPerformanceProvider: providerFactories.createRealSystemPerformanceProvider,
 }));
 
-vi.mock("./realWslProvider", () => ({
-}));
+vi.mock("./realWslProvider", () => ({}));
 
 vi.mock("./providerAdapter", () => ({
   connectProviderToEventBus: connectMock,
@@ -198,7 +205,7 @@ describe("createProviderManager", () => {
 
   // ── Options: realProviders / mockProviders ──────────────────────────
 
-  it('supports realProviders: false — registers only mock providers', () => {
+  it("supports realProviders: false — registers only mock providers", () => {
     const manager = createManager({ realProviders: false });
     const ids = manager.listProviderIds();
 
@@ -208,7 +215,7 @@ describe("createProviderManager", () => {
     }
   });
 
-  it('supports mockProviders: false — registers only real providers', () => {
+  it("supports mockProviders: false — registers only real providers", () => {
     const manager = createManager({ mockProviders: false });
     const ids = manager.listProviderIds();
 
@@ -218,7 +225,7 @@ describe("createProviderManager", () => {
     }
   });
 
-  it('supports both false — registers zero providers', () => {
+  it("supports both false — registers zero providers", () => {
     const manager = createManager({ realProviders: false, mockProviders: false });
 
     assert.equal(manager.listProviderIds().length, 0);
@@ -323,9 +330,7 @@ describe("createProviderManager", () => {
         version: "0.6.0",
         mock: true,
       },
-      capabilities: [
-        { id: "music", kind: "music", origin: "mock", support: "available" },
-      ],
+      capabilities: [{ id: "music", kind: "music", origin: "mock", support: "available" }],
       start: () => {},
       stop: () => {},
       subscribe: () => () => {},

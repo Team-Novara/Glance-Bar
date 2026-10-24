@@ -7,7 +7,6 @@ import { DesktopStatusTemplateFrame } from "./DesktopStatusTemplateFrame";
 import { GuestSourceHealthIndicator } from "./GuestSourceHealthIndicator";
 import { StatusRail } from "./StatusRail";
 
-
 type DeveloperStatusTemplateProps = {
   state: DesktopDeveloperState;
 };
@@ -28,12 +27,7 @@ export function DeveloperStatusTemplate({ state }: DeveloperStatusTemplateProps)
         meta={<span>{state.detail}</span>}
       >
         {typeof state.progress === "number" ? (
-          <StatusRail
-            value={state.progress}
-            label={copy.developerProgress}
-            accent="green"
-            active
-          />
+          <StatusRail value={state.progress} label={copy.developerProgress} accent="green" active />
         ) : null}
       </DesktopStatusTemplateFrame>
     </>

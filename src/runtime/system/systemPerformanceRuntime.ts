@@ -12,13 +12,12 @@ const DEFAULT_SYSTEM_STATUS_PREFLIGHT_TIMEOUT_MS = 1500;
 // mock provider's snapshot (providers/impl/mock/mockHubData) but is built
 // from the entities factory so runtime never imports providers —
 // runtime -> providers is a forbidden direction in the FSD zones.
-const DEFAULT_FALLBACK_METRICS: SystemPerformanceMetric[] =
-  createSystemPerformanceMetricSnapshot({
-    cpu: 23,
-    memory: 68,
-    downloadSpeed: 2_457_600,
-    uploadSpeed: 512_000,
-  });
+const DEFAULT_FALLBACK_METRICS: SystemPerformanceMetric[] = createSystemPerformanceMetricSnapshot({
+  cpu: 23,
+  memory: 68,
+  downloadSpeed: 2_457_600,
+  uploadSpeed: 512_000,
+});
 
 function getSystemPerformanceLabels() {
   return {

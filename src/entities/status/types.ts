@@ -11,20 +11,12 @@ export type HubTask = {
   metadata?: Record<string, unknown>;
 };
 
-export type DownloadObservationStatus =
-  | "active"
-  | "completed"
-  | "ended_unknown"
-  | "error";
+export type DownloadObservationStatus = "active" | "completed" | "ended_unknown" | "error";
 
 export type ProgressAccuracy = "none" | "estimated" | "exact";
 export type DownloadProgressAccuracy = ProgressAccuracy;
 
-export type DownloadObservationCode =
-  | "available"
-  | "unsupported"
-  | "permission-denied"
-  | "error";
+export type DownloadObservationCode = "available" | "unsupported" | "permission-denied" | "error";
 
 export type DownloadObservation = {
   status: "idle" | DownloadObservationStatus;
@@ -95,7 +87,19 @@ export type SystemPerformancePayload = {
 export type HubEvent = {
   id: string;
   type: "music" | "ai" | "download" | "notification" | "media" | "clipboard" | "focus" | "system";
-  source: "mock" | "system" | "music" | "download" | "ai" | "notification" | "media" | "clipboard" | "focus" | "git" | "docker" | "npm";
+  source:
+    | "mock"
+    | "system"
+    | "music"
+    | "download"
+    | "ai"
+    | "notification"
+    | "media"
+    | "clipboard"
+    | "focus"
+    | "git"
+    | "docker"
+    | "npm";
   /** Origin of the observation, independent from the provider kind in `source`. */
   origin?: "mock" | "system";
   createdAt: number;

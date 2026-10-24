@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // navigates to /showcase — the main bundle stays free of ~7KB of
 // showcase-only gzipped styles.
 // NOTE: CSS is a static asset, exempt from FSD boundary rules.
- 
+
 import "../../styles/showcase.css";
 import type { HubMode, HubStoreState } from "@/entities";
 
@@ -22,10 +22,7 @@ import {
   createMockMusicProvider,
   createMockNotificationProvider,
 } from "../../providers";
-import {
-  connectProviderToEventBus,
-  type ProviderConnection,
-} from "../../providers";
+import { connectProviderToEventBus, type ProviderConnection } from "../../providers";
 import type { HubProvider } from "../../providers";
 import { publishTauriFixtureEvents } from "../../runtime/tauri/tauriRuntime";
 import {
@@ -35,7 +32,6 @@ import {
   type HubDemoScenarioId,
 } from "../../state/hubScenarios";
 import { createHubEventBus } from "../../state/hubState";
-
 
 type ProviderDemoId = "music" | "ai" | "download" | "notification";
 

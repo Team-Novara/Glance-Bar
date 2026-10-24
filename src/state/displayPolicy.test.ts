@@ -29,7 +29,10 @@ import {
 } from "@/runtime/window/statusWindowRuntime";
 import { createProviderRegistry } from "@/providers/core/providerRegistry";
 import { guestSourceQualityLabel } from "@/features/desktop/templates/GuestSourceHealthIndicator";
-import { sourceQualityClassName, sourceQualityLabel } from "@/features/desktop/templates/ResidentStatusTemplate";
+import {
+  sourceQualityClassName,
+  sourceQualityLabel,
+} from "@/features/desktop/templates/ResidentStatusTemplate";
 import type { TauriInvoke } from "@/runtime/tauri/tauriRuntime";
 import type { HubProvider, HubProviderCapability } from "@/providers/core/types";
 
@@ -251,7 +254,11 @@ describe("displayPolicy", () => {
 
     it("should alternate media (15s) and resident (8s) across full cycles", () => {
       const t0 = 900_000;
-      const first = scheduleDesktopStatus({ now: t0, activeKinds: ["media", "resident"], availableKinds: available });
+      const first = scheduleDesktopStatus({
+        now: t0,
+        activeKinds: ["media", "resident"],
+        availableKinds: available,
+      });
       assert.equal(first.kind, "media");
       assert.equal(first.changed, true);
 
@@ -290,7 +297,11 @@ describe("displayPolicy", () => {
 
     it("should not flip the alternation mid-window", () => {
       const t0 = 900_000;
-      const start = scheduleDesktopStatus({ now: t0, activeKinds: ["media", "resident"], availableKinds: available });
+      const start = scheduleDesktopStatus({
+        now: t0,
+        activeKinds: ["media", "resident"],
+        availableKinds: available,
+      });
       const midWindow = scheduleDesktopStatus({
         now: t0 + 5_000,
         activeKinds: ["media", "resident"],
@@ -402,11 +413,22 @@ describe("displayPolicy", () => {
       // supported platform) must not be treated as available sources, so the
       // scheduler never selects them and shows no misleading live data.
       const registry = createProviderRegistry();
-      const cap: HubProviderCapability = { id: "download", kind: "download", origin: "real", support: "unsupported" };
+      const cap: HubProviderCapability = {
+        id: "download",
+        kind: "download",
+        origin: "real",
+        support: "unsupported",
+      };
       const provider: HubProvider = {
         id: "real-download-provider",
         label: "Real Download",
-        metadata: { id: "real-download-provider", name: "Real Download", kind: "download", version: "1.0.0", mock: false },
+        metadata: {
+          id: "real-download-provider",
+          name: "Real Download",
+          kind: "download",
+          version: "1.0.0",
+          mock: false,
+        },
         capabilities: [cap],
         start() {},
         stop() {},
@@ -421,12 +443,23 @@ describe("displayPolicy", () => {
       assert.equal(available.length, 0, "unsupported capability must not be listed as available");
 
       // Whereas an available capability IS listed.
-      const availableCap: HubProviderCapability = { id: "media", kind: "media", origin: "real", support: "available" };
+      const availableCap: HubProviderCapability = {
+        id: "media",
+        kind: "media",
+        origin: "real",
+        support: "available",
+      };
       const mediaProvider: HubProvider = {
         ...provider,
         id: "real-media-provider",
         label: "Real Media",
-        metadata: { id: "real-media-provider", name: "Real Media", kind: "media", version: "1.0.0", mock: false },
+        metadata: {
+          id: "real-media-provider",
+          name: "Real Media",
+          kind: "media",
+          version: "1.0.0",
+          mock: false,
+        },
         capabilities: [availableCap],
       };
       assert.equal(registry.register(mediaProvider).ok, true);

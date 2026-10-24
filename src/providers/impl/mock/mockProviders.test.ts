@@ -187,8 +187,7 @@ describe("createMockMusicProvider", () => {
       provider.start();
 
       const payload = batches[0]?.[0]?.payload as
-        | { title: string; subtitle: string; time: string; progress: number }
-        | undefined;
+        { title: string; subtitle: string; time: string; progress: number } | undefined;
 
       expect(payload).toEqual({
         title: "Midnight City",
@@ -386,8 +385,7 @@ describe("createMockAIProvider", () => {
 
       const event = batches[0]?.[0];
       const payload = event?.payload as
-        | { id: string; type: "ai"; title: string; subtitle: string; accent: "blue" }
-        | undefined;
+        { id: string; type: "ai"; title: string; subtitle: string; accent: "blue" } | undefined;
 
       expect(payload?.id).toBe("mock-ai-task");
       expect(payload?.type).toBe("ai");

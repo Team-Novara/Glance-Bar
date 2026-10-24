@@ -141,7 +141,9 @@ describe("createRealUpdateProvider", () => {
 
       vi.advanceTimersByTime(REAL_UPDATE_TICK_INTERVAL_MS * 12);
 
-      expect(events.map((e) => e.progress)).toEqual([0, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
+      expect(events.map((e) => e.progress)).toEqual([
+        0, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100,
+      ]);
     });
 
     it("resets progress to 0 when the cycle restarts", () => {
@@ -221,7 +223,10 @@ describe("nextUpdateState", () => {
       const events = collectEvents(provider);
       provider.start();
 
-      let current: { state: UpdateProviderState; progress: number } = { state: "idle", progress: 0 };
+      let current: { state: UpdateProviderState; progress: number } = {
+        state: "idle",
+        progress: 0,
+      };
       for (let tick = 0; tick < 6; tick += 1) {
         current = nextUpdateState(current);
         vi.advanceTimersByTime(REAL_UPDATE_TICK_INTERVAL_MS);

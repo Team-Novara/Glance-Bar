@@ -81,7 +81,9 @@ function makeMediaInvoke(statusPayload: unknown): TauriInvoke {
   };
 }
 
-function makePlayingStatus(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
+function makePlayingStatus(
+  overrides: Partial<Record<string, unknown>> = {},
+): Record<string, unknown> {
   return {
     available: true,
     playbackStatus: "playing",
@@ -182,9 +184,7 @@ describe("createRealMediaSessionProvider", () => {
     });
 
     it("stop() is a no-op when the listener has not registered yet", async () => {
-      listenMock.mockImplementation(
-        () => new Promise<() => void>(() => undefined),
-      );
+      listenMock.mockImplementation(() => new Promise<() => void>(() => undefined));
       const provider = createRealMediaSessionProvider();
       provider.start();
       provider.stop();

@@ -943,9 +943,7 @@ describe("providerRegistry.test", () => {
       name: "Native Music Preflight",
       mock: false,
     };
-    nativePreflight.provider.capabilities = [
-      { ...musicCapabilityPreflightDescriptor },
-    ];
+    nativePreflight.provider.capabilities = [{ ...musicCapabilityPreflightDescriptor }];
 
     nativeUnsupported.provider.metadata = {
       ...nativeUnsupported.provider.metadata,
@@ -1052,9 +1050,7 @@ describe("providerRegistry.test", () => {
     ];
 
     alpha.provider.metadata = { ...alpha.provider.metadata, kind: "ai" };
-    alpha.provider.capabilities = [
-      { id: "ai", kind: "ai", origin: "mock", support: "available" },
-    ];
+    alpha.provider.capabilities = [{ id: "ai", kind: "ai", origin: "mock", support: "available" }];
 
     mango.provider.metadata = { ...mango.provider.metadata, kind: "download" };
     mango.provider.capabilities = [

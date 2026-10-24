@@ -16,7 +16,6 @@ import type {
   MockProviderOptions,
 } from "../../core/types";
 
-
 export const createMockMusicEvent = (options: MockProviderOptions = {}): HubEvent => {
   const createdAt = resolveNow(options);
 

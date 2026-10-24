@@ -19,14 +19,7 @@ const ALL_KINDS = [
   "notification",
 ] as const;
 
-const NO_CLIPBOARD_AVAILABLE = [
-  "resident",
-  "media",
-  "download",
-  "update",
-  "focus",
-  "notification",
-];
+const NO_CLIPBOARD_AVAILABLE = ["resident", "media", "download", "update", "focus", "notification"];
 
 const FOCUS_AVAILABLE = ["resident", "media", "focus"];
 
@@ -54,7 +47,11 @@ describe("schedulerService", () => {
     service.start();
     const firstTimerCount = setIntervalSpy.mock.calls.length;
     service.start();
-    assert.equal(setIntervalSpy.mock.calls.length, firstTimerCount, "second start should not register another timer");
+    assert.equal(
+      setIntervalSpy.mock.calls.length,
+      firstTimerCount,
+      "second start should not register another timer",
+    );
   });
 
   it("stop() clears the interval and a later tick produces no callbacks", () => {
@@ -63,7 +60,11 @@ describe("schedulerService", () => {
     service.start();
     service.stop();
     vi.advanceTimersByTime(1_000);
-    assert.equal(listener.mock.calls.length, 0, "stop should clear the interval so no further ticks fire");
+    assert.equal(
+      listener.mock.calls.length,
+      0,
+      "stop should clear the interval so no further ticks fire",
+    );
   });
 
   it("subscribe returns an unsubscribe that detaches the listener", () => {
@@ -88,7 +89,10 @@ describe("schedulerService", () => {
     const snapshot = service.getSnapshot();
     assert.equal(snapshot.kind, "media", "media is the highest-priority kind in the active set");
     assert.ok(listener.mock.calls.length >= 1, "subscriber should be notified when kind changes");
-    const lastCall = listener.mock.calls[listener.mock.calls.length - 1]?.[0] as { kind: string; changed: boolean };
+    const lastCall = listener.mock.calls[listener.mock.calls.length - 1]?.[0] as {
+      kind: string;
+      changed: boolean;
+    };
     assert.equal(lastCall.kind, "media");
     assert.equal(lastCall.changed, true);
   });
@@ -143,7 +147,11 @@ describe("schedulerService", () => {
     assert.equal(service.getSnapshot().kind, "media");
 
     service.clearPreferred();
-    assert.equal(service.getSnapshot().kind, "focus", "after clearPreferred, priority should resume");
+    assert.equal(
+      service.getSnapshot().kind,
+      "focus",
+      "after clearPreferred, priority should resume",
+    );
   });
 
   it("setPreferred() does not pin a kind that is not in the available set", () => {
@@ -152,7 +160,11 @@ describe("schedulerService", () => {
     // Pass an available set that does NOT include `download`. The pin should not hold.
     service.updateKinds(["focus", "media"], FOCUS_AVAILABLE);
     // focus is the highest-priority active available kind; download pin is ignored.
-    assert.equal(service.getSnapshot().kind, "focus", "preferred kind not in available set should be ignored");
+    assert.equal(
+      service.getSnapshot().kind,
+      "focus",
+      "preferred kind not in available set should be ignored",
+    );
   });
 
   it("media ↔ resident alternation: forces media on first eligible tick, then alternates on wall-clock", () => {
@@ -167,13 +179,21 @@ describe("schedulerService", () => {
     now += DESKTOP_STATUS_MEDIA_DURATION_MS + 1;
     vi.setSystemTime(now);
     vi.advanceTimersByTime(250);
-    assert.equal(service.getSnapshot().kind, "resident", "after 15s media window, alternation should flip to resident");
+    assert.equal(
+      service.getSnapshot().kind,
+      "resident",
+      "after 15s media window, alternation should flip to resident",
+    );
 
     // Advance time past the resident window (8s). The next tick should flip back to media.
     now += DESKTOP_STATUS_RESIDENT_DURATION_MS + 1;
     vi.setSystemTime(now);
     vi.advanceTimersByTime(250);
-    assert.equal(service.getSnapshot().kind, "media", "after 8s resident window, alternation should flip back to media");
+    assert.equal(
+      service.getSnapshot().kind,
+      "media",
+      "after 8s resident window, alternation should flip back to media",
+    );
   });
 
   it("media ↔ resident alternation does not flip mid-window", () => {
@@ -264,7 +284,11 @@ describe("schedulerService", () => {
     // So the alternation fires, hasEverShownMedia=false, kind=media.
     //
     // So at t=0, snapshot = media. Let me adjust the test.
-    assert.equal(service.getSnapshot().kind, "media", "alternation wins when both media+resident available and active");
+    assert.equal(
+      service.getSnapshot().kind,
+      "media",
+      "alternation wins when both media+resident available and active",
+    );
   });
 
   it("Rule 2: a download surfaces over media via updateKinds, then returns to media when removed", () => {
@@ -280,7 +304,11 @@ describe("schedulerService", () => {
     // The download completes and leaves the active set; the bar should return
     // to the next useful state (media, still playing).
     service.updateKinds(["media", "resident"], ["resident", "media", "download"]);
-    assert.equal(service.getSnapshot().kind, "media", "after download completes the bar returns to media");
+    assert.equal(
+      service.getSnapshot().kind,
+      "media",
+      "after download completes the bar returns to media",
+    );
   });
 
   it("Rule 3: focus surfaces over download+media via updateKinds, then returns to download when it ends", () => {
@@ -289,12 +317,20 @@ describe("schedulerService", () => {
 
     // A focus session starts; focus outranks everything and must take over.
     service.updateKinds(["focus", "download", "media"], ["resident", "media", "download", "focus"]);
-    assert.equal(service.getSnapshot().kind, "focus", "focus should surface over download and media");
+    assert.equal(
+      service.getSnapshot().kind,
+      "focus",
+      "focus should surface over download and media",
+    );
 
     // The focus session ends; the bar should move to the next highest active
     // kind (download), not drop straight to resident.
     service.updateKinds(["download", "media"], ["resident", "media", "download", "focus"]);
-    assert.equal(service.getSnapshot().kind, "download", "after focus ends the bar returns to the next state");
+    assert.equal(
+      service.getSnapshot().kind,
+      "download",
+      "after focus ends the bar returns to the next state",
+    );
   });
 
   it("Rule 4: a higher-priority kind activated via updateKinds interrupts media/resident alternation", () => {
@@ -310,7 +346,11 @@ describe("schedulerService", () => {
 
     // Now a download activates mid-alternation: it must interrupt and take over.
     service.updateKinds(["media", "resident", "download"], ["resident", "media", "download"]);
-    assert.equal(service.getSnapshot().kind, "download", "download should interrupt the media/resident alternation");
+    assert.equal(
+      service.getSnapshot().kind,
+      "download",
+      "download should interrupt the media/resident alternation",
+    );
   });
 
   it("getSnapshot() returns a fresh object each call (no shared reference)", () => {
