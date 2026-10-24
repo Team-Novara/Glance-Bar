@@ -2,9 +2,9 @@
 // Windows platform window policy — real Win32 implementation.
 // ---------------------------------------------------------------------------
 // Owns all the unsafe Win32 interop: DWM shadow suppression, fullscreen
-// detection, z-order control, and tool-window styling. On non-windows targets
-// this file still compiles (the no-op impl below keeps the crate cross-platform),
-// but callers select this struct only via #[cfg(windows)].
+// detection, z-order control, and tool-window styling. The whole module is
+// gated to Windows by `#[cfg(windows)] pub mod windows;` in mod.rs, so the
+// `#[cfg(not(windows))]` no-op impl below is never compiled.
 
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
