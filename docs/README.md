@@ -20,6 +20,15 @@
 - [Test strategy](qa/TEST_STRATEGY.md): test layers and required verification.
 - [Showcase QA](qa/SHOWCASE_QA.md): manual and scripted review of `/showcase`.
 
+## Release preparation (Gate D)
+
+Draft documents for the limited Windows release decision. They describe preparation state, not verified release evidence; each file states its own status.
+
+- [Known limitations](release/KNOWN_LIMITATIONS.md): designed limitations and evidence still pending for the Windows MVP candidate.
+- [Tester guide](release/TESTER_GUIDE.md): install, tray recovery, preferences, and privacy-safe feedback reporting for validation testers.
+- [Tester checklist](release/TESTER_CHECKLIST.md): guided 30-60 minute checklist and normal-work-session checklist with severity definitions.
+- [Release decision record template](release/RELEASE_DECISION_TEMPLATE.md): Day 30 GO / NO-GO / EXTEND record structure.
+
 ## Planning documents
 
 [GLANCE_BAR_PLAN.md](plans/GLANCE_BAR_PLAN.md) is the only active product and execution plan. [STRUCTURE_REFACTOR_PLAN.md](plans/STRUCTURE_REFACTOR_PLAN.md) defines the maintained directory and dependency rules.
