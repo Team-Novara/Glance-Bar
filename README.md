@@ -29,7 +29,7 @@ System performance and provider health support those experiences. Developer-orie
 | macOS | Platform modules compile; individual capabilities may report unsupported. |
 | Linux | Platform modules compile; individual capabilities may report unsupported. |
 
-Do not treat compile-time support as feature parity. A capability is only available when its native path, provider state, fallback behavior, and validation evidence all exist.
+Do not treat compile-time support as feature parity. A capability is only available when its native path, provider state, fallback behavior, and validation evidence all exist. Per-capability implementation state, gate constants, and validation checklists are consolidated in [docs/plans/PLATFORM_CAPABILITY_MATRIX.md](docs/plans/PLATFORM_CAPABILITY_MATRIX.md).
 
 ## Quick start
 

@@ -1,6 +1,6 @@
 # 2026-09-05 Windows MVP 30-Day Execution Plan
 
-> Status: paused after the 2026-09-05 automated checkpoint; the evidence plan remains the source of truth through 2026-10-04
+> Status: the 2026-09-05 checkpoint paused this plan; the evidence window lapsed 2026-10-04 with the hardware-dependent items (Gates B–D) still open. Code-side work continued past the window — see the Development checkpoint sections in [GLANCE_BAR_PLAN.md](GLANCE_BAR_PLAN.md) (PRs #41–#76) and [PLATFORM_CAPABILITY_MATRIX.md](PLATFORM_CAPABILITY_MATRIX.md) for current state. The plan's evidence requirements remain the source of truth for any release decision.
 >
 > Parent plans: [GLANCE_BAR_PLAN.md](GLANCE_BAR_PLAN.md) and [MVP_LAUNCH_PLAN.md](../product/MVP_LAUNCH_PLAN.md)
 >
