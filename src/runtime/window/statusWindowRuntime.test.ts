@@ -1,4 +1,6 @@
 import {
+  correctStatusWindowPosition,
+  correctStatusWindowPositionForDisplayChange,
   createDebouncedWindowCorrection,
   createStatusWindowOverlayState,
   STATUS_WINDOW_CORRECT_POSITION_COMMAND,
@@ -341,5 +343,95 @@ describe("statusWindowRuntime.test", () => {
     } finally {
       (globalThis as typeof globalThis & { window: typeof window }).window = restoreWindow;
     }
+  });
+
+  it("debounced correction cancel drops the pending trigger and stays safe while idle", async () => {
+    let callCount = 0;
+    const restoreWindow = globalThis.window;
+    const timers = new Map<number, () => void>();
+    let nextTimerId = 1;
+
+    (
+      globalThis as typeof globalThis & {
+        window: {
+          setTimeout: (handler: () => void, timeout?: number) => number;
+          clearTimeout: (id: number) => void;
+        };
+      }
+    ).window = {
+      setTimeout(handler) {
+        const id = nextTimerId++;
+        timers.set(id, handler);
+        return id;
+      },
+      clearTimeout(id) {
+        timers.delete(id);
+      },
+    };
+
+    try {
+      const debounced = createDebouncedWindowCorrection(async () => {
+        callCount += 1;
+      }, 100);
+
+      // cancel with a pending timer clears it before it can fire
+      debounced.trigger();
+      assert.equal(timers.size, 1);
+      debounced.cancel();
+      assert.equal(timers.size, 0);
+
+      // a later trigger still schedules and fires normally
+      debounced.trigger();
+      assert.equal(timers.size, 1);
+      timers.values().next().value?.();
+      await Promise.resolve();
+      assert.equal(callCount, 1);
+
+      // cancel while idle (no pending timer) is a no-op
+      debounced.cancel();
+      assert.equal(callCount, 1);
+    } finally {
+      (globalThis as typeof globalThis & { window: typeof window }).window = restoreWindow;
+    }
+  });
+
+  it("skips the shell commands when no tauri invoke is available", async () => {
+    // jsdom has no __TAURI__ global, so the default invoke resolvers return
+    // undefined and the position helpers must degrade to no-ops instead of
+    // throwing.
+    assert.equal(await correctStatusWindowPosition(), undefined);
+    assert.equal(await correctStatusWindowPositionForDisplayChange(), undefined);
+    assert.equal(await persistStatusWindowPosition(), undefined);
+    assert.equal(await resetStatusWindowPosition(), undefined);
+
+    const state = createStatusWindowOverlayState();
+    assert.equal(await enforceStatusWindowOverlay(state), undefined);
+    assert.equal(state.mode, "restoring");
+  });
+
+  it("falls back to the default floating policy when the shell returns a malformed payload", async () => {
+    const calls: Array<{ command: string; args?: Record<string, unknown> }> = [];
+    const state = createStatusWindowOverlayState();
+
+    const policy = await enforceStatusWindowOverlay(state, {
+      invoke: async (command, args) => {
+        calls.push({ command, args });
+        return "not-a-policy";
+      },
+      // Omitting `now` and `positionCorrectionMs` exercises the wall-clock
+      // and correction-interval defaults.
+    });
+
+    assert.deepEqual(policy, { foregroundFullscreen: false, shouldFloat: true });
+    assert.deepEqual(
+      calls.map((call) => call.command),
+      [
+        STATUS_WINDOW_OVERLAY_POLICY_COMMAND,
+        STATUS_WINDOW_FLOATING_COMMAND,
+        STATUS_WINDOW_CORRECT_POSITION_COMMAND,
+      ],
+    );
+    assert.deepEqual(calls[1]?.args, { floating: true });
+    assert.equal(state.mode, "floating");
   });
 });

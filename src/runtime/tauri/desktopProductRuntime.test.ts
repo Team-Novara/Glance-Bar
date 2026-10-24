@@ -1,10 +1,58 @@
+// Hoist: shared by both the mock factory and the test body so
+// `vi.mock` can reference the same spy as the test assertions.
+const { listenMock } = vi.hoisted(() => ({
+  listenMock: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: listenMock,
+}));
+
+// Imports must come AFTER vi.mock so they pick up the mocked module.
 import {
+  STATUS_CENTER_SETTINGS_EVENT,
+  listenStatusCenterSettings,
   parseStatusCenterMenuActionPayload,
   parseStatusCenterSettingsPayload,
 } from "./desktopProductRuntime";
 
-import { describe, it } from "vitest";
+import { beforeEach, describe, it, vi } from "vitest";
+
+/**
+ * Configure listenMock to capture the registered handler and return a
+ * spy for the unlisten function. Tests use `fire(payload)` to simulate
+ * a native status-center settings event being emitted.
+ */
+function captureSettingsListen(): {
+  unlisten: ReturnType<typeof vi.fn>;
+  fire: (payload: unknown) => Promise<void>;
+} {
+  const unlisten = vi.fn();
+  let captured: ((event: { payload: unknown }) => Promise<void>) | undefined;
+
+  listenMock.mockImplementation(
+    async (_event: string, handler: (event: { payload: unknown }) => Promise<void>) => {
+      captured = handler;
+      return unlisten;
+    },
+  );
+
+  return {
+    unlisten,
+    async fire(payload: unknown) {
+      if (!captured) {
+        throw new Error("listen handler was not registered");
+      }
+      await captured({ payload });
+    },
+  };
+}
+
 describe("desktopProductRuntime.test", () => {
+  beforeEach(() => {
+    listenMock.mockReset();
+  });
+
   it("accepts canonical status center menu payloads", () => {
     assert.deepEqual(
       parseStatusCenterMenuActionPayload({
@@ -186,5 +234,59 @@ describe("desktopProductRuntime.test", () => {
       }),
       undefined,
     );
+  });
+
+  it("normalizes the legacy lock-position menu action id", () => {
+    assert.deepEqual(parseStatusCenterMenuActionPayload({ action: "lock-position" }), {
+      action: "toggle-lock-position",
+      checked: undefined,
+    });
+  });
+
+  it("subscribes to the status-center settings event and returns the unlisten fn", async () => {
+    const { unlisten } = captureSettingsListen();
+
+    const registered = listenStatusCenterSettings(() => {});
+
+    assert.equal(registered instanceof Promise, true);
+    assert.equal(await registered, unlisten);
+    assert.equal(listenMock.mock.calls.length, 1);
+    assert.equal(listenMock.mock.calls[0]?.[0], STATUS_CENTER_SETTINGS_EVENT);
+  });
+
+  it("forwards parsed status center settings payloads to the handler", async () => {
+    const { fire } = captureSettingsListen();
+    const received: Array<{ payload: unknown; event: unknown }> = [];
+    await listenStatusCenterSettings(async (payload, event) => {
+      received.push({ payload, event });
+    });
+
+    const preferences = { alwaysFloat: true, avoidFullscreen: false, lockPosition: true };
+    await fire({ preferences });
+
+    assert.equal(received.length, 1);
+    assert.deepEqual(received[0]?.payload, { preferences });
+    assert.deepEqual(received[0]?.event, { payload: { preferences } });
+  });
+
+  it("drops malformed settings events without invoking the handler", async () => {
+    const { fire } = captureSettingsListen();
+    const received: unknown[] = [];
+    await listenStatusCenterSettings(async (payload) => {
+      received.push(payload);
+    });
+
+    await fire(null);
+    await fire({ preferences: { alwaysFloat: "yes" } });
+    await fire({
+      preferences: {
+        alwaysFloat: true,
+        avoidFullscreen: true,
+        lockPosition: true,
+        windowPosition: { x: 0 },
+      },
+    });
+
+    assert.equal(received.length, 0);
   });
 });
