@@ -83,6 +83,14 @@ Verification snapshot at `9ed86e0`: all gates green — full `npm run qa` chain 
 - **#73 — macOS Focus feasibility research** (`docs/plans/MACOS_FOCUS_FEASIBILITY.md`): the honest verdict is that the capability stays unsupported on macOS — the historical defaults path broke at macOS 12; the one public API (INFocusStatusCenter) is app-relative by Apple's own semantics and cannot fill the aggregate `active` field; FamilyControls exposes nothing; the DB JSON path is documented but not App-Store-safe. No gate is named; reopen conditions are recorded.
 - **#74 — gated Linux Focus observation** per the #70 blueprint: `commands/focus/linux.rs` implements GNOME (gio in-process `show-banners` read, new Linux-target dependency aligned with the already-resolved gio 0.18.4) and KDE (zbus `Properties.Get` of `Inhibited`, cached connection, ~1s bound) behind `LINUX_FOCUS_VALIDATED = false`; conservative XDG-driven mechanism selection that never probes the GNOME schema from KDE (the schemas-installed-everywhere hazard); observation-only on every path; 17 new pure-logic unit tests (crate 97/97); read-only WSL probe evidence recorded in the STAGE6 checkpoint. Rust unit tests now 97.
 
+### Continuation — PRs #76–#79 (Waves 15–16, 2026-10-25)
+
+- **#76/#77 — capability matrix and post-window pointers**: `docs/plans/PLATFORM_CAPABILITY_MATRIX.md` consolidates 11 capabilities × 3 platforms with the four gate constants (grep-proven exactly four), evidence citations, and flip conditions; README/CONTRIBUTING/execution-plan headers now point at the matrix, the precheck script, and the honest post-window status.
+- **#78 — checkpoint freshness audit**: all seven GLANCE_BAR_PLAN checkpoints and four STAGE6 checkpoints re-verified against the tree (SHAs, all 28 cited PRs via gh, counts, gate const lines, links); exactly one born-imprecise line-range citation corrected.
+- **#79 — coverage gap sweep**: 19 new tests (suite 950); reachable gaps filled (aggregation branch 74.3 → 89.6 percent; mockAiProvider to 100/100; CI-scope branch 85.6 → 88.3). Key finding proved empirically: the npm/git/docker providers' remaining uncovered lines sit behind the honest module-local stubs and are unreachable without a future source refactor (checker injection) — recorded as the follow-up, not papered over.
+
+Verification snapshot at `2deed32`: all gates green; Vitest 59 files / 950 tests; Rust 97/97; `npm run qa` chain includes both journeys and the three-viewport screenshots.
+
 ## Execution priorities
 
 ### P0: preserve reliable product behavior
