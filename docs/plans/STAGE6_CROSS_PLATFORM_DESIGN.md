@@ -172,3 +172,108 @@ validated on a real Mac.
   same validation step. After evidence is recorded, flip
   `MACOS_MEDIA_VALIDATED`, update the gate test, and revisit capability
   reporting.
+
+## Linux window policy implementation checkpoint - 2026-10-24
+
+The Linux platform window policy (`src-tauri/src/window/linux.rs`) now
+contains a complete X11/EWMH implementation behind the STAGE6 validation
+gate, replacing the Stage6 TODO stubs. The capability keeps its stub
+behavior; per the design rules above it stays that way until it has been
+validated on a real Linux desktop.
+
+- **What is implemented behind the gate.** `LINUX_WINDOW_VALIDATED` in
+  `window/linux.rs` is `false`, so every trait method returns exactly the
+  stub results of earlier builds (`Ok(())`, `false`) without touching X11 —
+  byte-identical to the pre-implementation no-op. Behind the gate:
+  `set_z_order` sends the two `_NET_WM_STATE` client messages
+  (add `_NET_WM_STATE_ABOVE` + remove `_NET_WM_STATE_BELOW` when floating,
+  the inverse when parked) to the root window with the
+  `SubstructureNotify | SubstructureRedirect` event mask and
+  source-indication `application`, mirroring the Windows policy's
+  `HWND_TOPMOST` / `HWND_BOTTOM`; `apply_tool_style` replaces
+  `_NET_WM_WINDOW_TYPE` with exactly `[_NET_WM_WINDOW_TYPE_UTILITY]`
+  (skipping the write when already set), mirroring
+  `WS_EX_TOOLWINDOW`-without-`WS_EX_APPWINDOW`; `foreground_is_fullscreen`
+  reads `_NET_ACTIVE_WINDOW` on the root window, rejects `XCB_NONE`/the
+  root itself, and checks the active window's `_NET_WM_STATE` list for
+  `_NET_WM_STATE_FULLSCREEN`. The window's XID comes from the rwh 0.6
+  `HasWindowHandle` impl tauri provides for `WebviewWindow` (GTK's gdk-x11
+  backend reports an `Xlib` handle under X11/XWayland), which required
+  adding `raw-window-handle = "0.6"` to the Linux target dependencies — the
+  same 0.6.2 tauri already locks, so no new code is compiled. Shadow
+  suppression stays a documented no-op: Linux window shadows are
+  compositor-specific (picom/kwin rules) with no portable X11 mechanism,
+  and faking it would hide the gap.
+
+- **Bounded connection handling.** Every X11 exchange runs on one
+  short-lived x11rb blocking connection opened by a single helper
+  (`x11rb::connect`, same auth/abstract-socket handling the toolkit uses).
+  x11rb 0.13 ships no EWMH helper API (no `ewmh` module / `EwmhConnection`;
+  those landed after 0.13), so the client messages and properties are built
+  from the core protocol as libxcb clients do. x11rb 0.13's blocking API
+  offers no per-call timeout (its poll waits indefinitely), so each whole
+  exchange (connect, requests, replies) runs on a worker thread and the
+  calling thread waits at most ~1s; a hung or absent server degrades to the
+  conservative result instead of freezing the main thread (where the sync
+  Tauri commands that invoke this policy run). Every failure path is
+  conservative: setters do nothing and report success, the fullscreen query
+  reports `false` — including a non-EWMH window manager (the `_NET_*` atoms
+  do not intern), a native Wayland session (no XID on the raw handle), and
+  any X error, timeout, or missing `$DISPLAY`.
+
+- **Wayland limitations.** EWMH exists only on X11. A native Wayland
+  session exposes no XID on the `WebviewWindow` raw handle, so the setters
+  conservatively do nothing and the fullscreen query reports `false`;
+  nothing errors or pretends. XWayland sessions (WSLg, X11-compat mode of
+  major compositors) are the supported path and report an `Xlib` handle.
+  Native Wayland layer-shell — the "real" way to build a bar on Wayland —
+  is out of scope for Stage6; adopting it would mean a per-protocol
+  backend (gtk-layer-shell), not an extension of this module.
+
+- **Test strategy.** `#[cfg(all(test, target_os = "linux"))]` unit tests
+  (15 new, 80 total in the crate) cover pure logic only, mirroring the
+  media/linux.rs style: z-order transition tables, EWMH atom-name choices,
+  client-message construction (action/property/source-indication payload),
+  native-endian format-32 property parsing (empty, wrong-format, truncated
+  tails), the conservative fullscreen predicate, active-window candidate
+  filtering, XID extraction from `Xlib`/`Xcb` handles (zero and
+  out-of-range rejected, Wayland rejected), the no-XID short-circuit
+  (no X11 connection is ever opened), and the gate-off contract
+  (`assert!(!LINUX_WINDOW_VALIDATED)`; a `WebviewWindow` cannot be
+  constructed headlessly, so the trait methods are pinned structurally —
+  the gate check precedes every X11 call — plus the const assertion).
+  Verified on Linux: `cargo test` 80 passed / 0 failed; `cargo fmt
+  --check`, `cargo check`, and `cargo clippy` (CI flags) clean for the new
+  code (zero findings in `window/linux.rs`; the crate's 79 pre-existing
+  pedantic warnings are unchanged).
+
+- **WSLg smoke evidence (real X11 connection).** A throwaway probe (not
+  committed) connected to `DISPLAY=:0` under WSLg and queried the root
+  window: the x11rb connection, atom interning, and property round trips
+  all work. WSLg's Weston-based XWayland advertises only partial EWMH:
+  `_NET_ACTIVE_WINDOW`, `_NET_WM_STATE`, and `_NET_WM_STATE_FULLSCREEN`
+  are supported, while `_NET_WM_STATE_ABOVE`, `_NET_WM_STATE_BELOW`,
+  `_NET_WM_WINDOW_TYPE`, and `_NET_WM_WINDOW_TYPE_UTILITY` are not
+  advertised and the ABOVE/BELOW atoms do not even intern. This is exactly
+  the environment the conservative paths were built for: under WSLg the
+  z-order setter would (behind the gate) find no ABOVE/BELOW atoms and do
+  nothing, and the fullscreen query would read `_NET_ACTIVE_WINDOW = 0x0`
+  (no X11 client focused at probe time) and report `false`. The smoke test
+  proves the connection machinery, not policy effectiveness — WSLg cannot
+  validate z-order or tool-window styling.
+
+- **Remaining validation work.** On a real Linux desktop with a full EWMH
+  window manager (KWin / Mutter / XFWM / wlroots-XWayland): confirm the
+  `Xlib` raw-handle XID resolves for the status window; that the
+  `_NET_WM_STATE` client messages actually raise/park the pill with
+  `_NET_WM_STATE_ABOVE`/`_NET_WM_STATE_BELOW`; that replacing
+  `_NET_WM_WINDOW_TYPE` with `UTILITY` after mapping removes the window
+  from taskbar/pager/alt-tab (some WMs only honor the type at map time —
+  if so, the write needs to move before the first `show`, which is a
+  command-layer sequencing question, not a policy rewrite); that
+  `foreground_is_fullscreen` tracks real fullscreen apps without
+  flickering false positives; and the ~1s exchange bound against a frozen
+  server. Also confirm the watchdog pattern's thread spawn rate is
+  acceptable on the paths that poll fullscreen state. After evidence is
+  recorded, flip `LINUX_WINDOW_VALIDATED`, update the gate test, and
+  revisit capability reporting.
