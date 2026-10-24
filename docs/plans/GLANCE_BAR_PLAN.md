@@ -38,6 +38,18 @@ Verification snapshot at `27dc8f0` (run in WSL Ubuntu, plus a green CI matrix on
 
 Open items are unchanged in kind: physical Windows packaging/install, tray recovery, autostart, restart, DPI/multi-monitor, uninstall, workday soak, and three-tester evidence remain open before the Gate D limited-release decision; MPRIS real-desktop validation precedes any Linux availability claim; tray-menu i18n and the `media/` dead-code warnings are tracked follow-ups.
 
+### Same-day continuation — PRs #48–#54 at `3f2c0eb`
+
+- **#48 — media dead-code cleared**: the crate now has zero dead-code warnings on the Linux target (22 at session start). The macOS provider was rewired into real use instead of deleted, keeping the next platform capability coherent.
+- **#49 — i18n locale key parity**: zh-CN gained the two keys missing against en (`media.progressUnknown`, `download.progressUnknown`); deterministic direct-JSON comparison shows 178/178 keys both locales.
+- **#50 — contributor docs gates aligned** with what CI enforces (fmt, test, prettier added to AGENTS.md / CONTRIBUTING.md).
+- **#51 — whole-tree prettier + CI Prettier gate**: `npm run format:check` is green and now enforced in CI. One semantic hazard found and fixed en route: prettier-plugin-tailwindcss strips the interpolated leading space inside template-literal class names; conditional class names are now built with array `.filter(Boolean).join(" ")`.
+- **#52 — tray menu follows the app language**: preferences gained a backward-compatible `language` field (`AppLanguage`, en/zh-CN, English fallback), tray labels live in a bounded in-Rust table, and the menu rebuilds through the existing preference propagation path. Frontend persists the choice on switch and initializes i18next from it at startup. Hardware verification remains pending evidence.
+- **#53 — the in-window right-click context menu follows the same language preference** (7-row bilingual label table, cached menu rebuilt through the same propagation path; check states preserved).
+- **#54 — gated macOS media observation**: mirrors the Linux MPRIS honesty pattern — `MACOS_MEDIA_VALIDATED = false` returns the identical bounded unsupported payload; a pure mapping layer (13 unit tests) compiles and runs on Linux, the objc2/MPNowPlayingInfoCenter path is cfg-gated and its first real macOS compile happened in this PR's CI matrix. Whether MPNowPlayingInfoCenter exposes system-aggregated info to an observer process is the documented open question for real-Mac validation.
+
+Verification snapshot at `3f2c0eb` (WSL Ubuntu; green CI matrix on every PR): typecheck, lint, format:check, and build pass; Vitest 59 files / 926 tests; `npm run qa` — including the Showcase interaction journey under real Chromium — passes end-to-end for the first time this session; `cargo check`, `cargo fmt -- --check`, CI-level clippy, and `cargo test` 65/65 pass with zero dead-code warnings on the Linux target.
+
 ## Execution priorities
 
 ### P0: preserve reliable product behavior
