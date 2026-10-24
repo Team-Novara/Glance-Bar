@@ -220,22 +220,27 @@ async function run() {
       .getByRole("region", { name: "Cober Windows Status Center" })
       .waitFor({ state: "visible", timeout: 5_000 });
 
-    // ── Product surface renders with honest browser-preview labels ──
-    // In a plain browser the real npm/git/docker providers (Stage 6 stubs)
-    // emit deterministic ai events without Tauri, so the developer template
-    // is active (developer outranks resident in DESKTOP_STATUS_PRIORITY_ORDER).
-    // The npm stub is the last ai publisher (providerManager registration
-    // order: docker -> git -> npm; publishHubEvent prepends), so its payload
-    // deterministically wins the developer slot: title "npm scripts",
-    // subtitle "1 running", progress 100. snapshotDeveloperEvent hardcodes
-    // sourceHealth quality "native", which the guest health indicator
-    // renders as the explicit source label "Native" — the surface labels
-    // its data source honestly instead of pretending to be a live OS read.
-    await expectText(statusWindow, "Developer");
-    await expectText(statusWindow, "npm scripts");
-    await expectText(statusWindow, "1 running");
-    await expectText(statusWindow, "Native");
-    await expectProgressBar(statusWindow, "Developer progress");
+    // ── Product surface renders the honest browser-preview state ──
+    // In a plain browser the real npm/git/docker providers report
+    // not-implemented (no Tauri shell bridge exists), emit no events, and
+    // never activate the developer card — no fabricated "npm scripts" state
+    // may appear. Every other guest kind (media/download/focus/clipboard)
+    // also degrades without Tauri, so the scheduler deterministically falls
+    // back to the resident state. The system-performance provider polls
+    // honestly and, without Tauri, publishes quality "unavailable" with the
+    // labeled placeholder metrics (CPU 23% / Memory 68% / 2.3 MB/s /
+    // 500.0 KB/s) — the resident card therefore carries the explicit source
+    // label "Unavailable", never "Native".
+    await expectText(statusWindow, "Unavailable");
+    await expectText(statusWindow, "CPU");
+    await expectText(statusWindow, "23%");
+    await expectText(statusWindow, "2.3 MB/s");
+    await expectProgressBar(statusWindow, "CPU usage 23%");
+
+    // The fabricated developer card must not render anywhere on the page.
+    await expectAbsentText(page, "Developer");
+    await expectAbsentText(page, "npm scripts");
+    await expectAbsentText(page, "Native");
 
     // ── Settings panel reachability in a plain browser ──
     // The panel starts closed. Its only in-app opener is the panel-internal

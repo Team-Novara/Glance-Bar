@@ -1,23 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   REAL_DOCKER_POLL_INTERVAL_MS,
+  checkDockerStatus,
   createRealDockerProvider,
   type DockerContainer,
   type DockerContainerStatus,
   type DockerStatus,
   type DockerStatusCode,
 } from "./realDockerProvider";
-import type { HubEvent } from "@/entities";
 import type { HubProvider } from "../../core/types";
 
-function collectEvents(provider: HubProvider): HubEvent[] {
-  const events: HubEvent[] = [];
+function collectEvents(provider: HubProvider) {
+  const events: ReturnType<Parameters<HubProvider["subscribe"]>[0]> = [];
   provider.subscribe((batch) => {
     events.push(...batch);
   });
   return events;
 }
 
+/** Local fixture builder for type-coverage asserts only — never provider output. */
 function makeContainer(overrides: Partial<DockerContainer> = {}): DockerContainer {
   return {
     name: "test-container",
@@ -28,6 +29,7 @@ function makeContainer(overrides: Partial<DockerContainer> = {}): DockerContaine
   };
 }
 
+/** Local fixture builder for type-coverage asserts only — never provider output. */
 function makeStatus(overrides: Partial<DockerStatus> = {}): DockerStatus {
   return {
     available: true,
@@ -52,7 +54,7 @@ describe("createRealDockerProvider", () => {
       expect(provider.metadata.mock).toBe(false);
     });
 
-    it("advertises a single docker capability with origin=real", () => {
+    it("advertises a single docker capability with origin=real and support=unsupported", () => {
       const provider = createRealDockerProvider();
       expect(provider.capabilities).toHaveLength(1);
       expect(provider.capabilities[0]).toEqual({
@@ -61,6 +63,20 @@ describe("createRealDockerProvider", () => {
         origin: "real",
         support: "unsupported",
       });
+    });
+  });
+
+  describe("honest status check", () => {
+    it("reports not-implemented and unavailable with no fabricated containers", async () => {
+      const status = await checkDockerStatus();
+
+      expect(status.available).toBe(false);
+      expect(status.code).toBe("not-implemented");
+      expect(status.containers).toEqual([]);
+      expect(status.runningCount).toBe(0);
+      expect(Number.isFinite(status.lastCheckedAt)).toBe(true);
+      expect(typeof status.diagnostic).toBe("string");
+      expect(status.diagnostic!.length).toBeGreaterThan(0);
     });
   });
 
@@ -83,27 +99,41 @@ describe("createRealDockerProvider", () => {
       provider.stop();
     });
 
-    it("is idempotent: start() called twice does not start a second timer", async () => {
+    it("is idempotent: start() called twice registers no timer and emits nothing", async () => {
       const provider = createRealDockerProvider();
       const events = collectEvents(provider);
       provider.start();
       provider.start();
       expect(provider.status().lifecycle).toBe("Publishing");
       await vi.advanceTimersByTimeAsync(0);
-      // The initial fixture only emits once thanks to the second start being a no-op
-      expect(events).toHaveLength(1);
+      expect(events).toHaveLength(0);
+      expect(vi.getTimerCount()).toBe(0);
       provider.stop();
     });
 
-    it("transitions to Stopped on stop()", () => {
+    it("transitions to Stopped on stop()", async () => {
       const provider = createRealDockerProvider();
       provider.start();
+      await vi.advanceTimersByTimeAsync(0);
       provider.stop();
       expect(provider.status().lifecycle).toBe("Stopped");
     });
+
+    it("can be restarted after stop()", async () => {
+      const provider = createRealDockerProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+      provider.stop();
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(provider.status().lifecycle).toBe("Publishing");
+      expect(events).toHaveLength(0);
+      provider.stop();
+    });
   });
 
-  describe("emissions", () => {
+  describe("honest emissions", () => {
     beforeEach(() => {
       vi.useFakeTimers();
     });
@@ -112,103 +142,54 @@ describe("createRealDockerProvider", () => {
       vi.useRealTimers();
     });
 
-    it("emits exactly one initial event with the docker status fixture", async () => {
+    it("does not invent a docker event when no native source exists", async () => {
+      const provider = createRealDockerProvider();
+      const events = collectEvents(provider);
+
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(events).toHaveLength(0);
+      expect(provider.capabilities[0]?.support).toBe("unsupported");
+      expect(provider.status().health).toBe("Healthy");
+      provider.stop();
+    });
+
+    it("registers no poll timer while the source is not implemented", async () => {
+      const provider = createRealDockerProvider();
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(vi.getTimerCount()).toBe(0);
+      provider.stop();
+    });
+
+    it("emits nothing across poll intervals", async () => {
       const provider = createRealDockerProvider();
       const events = collectEvents(provider);
       provider.start();
-      // The start() handler is async — let the initial fetch resolve
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(events).toHaveLength(1);
-      const evt = events[0];
-      expect(evt.type).toBe("ai");
-      expect(evt.source).toBe("docker");
-      expect(evt.payload).toMatchObject({
-        id: "docker-status",
-        type: "ai",
-        title: "Docker",
-        subtitle: "2/3 container(s) running",
-        progress: 67,
-        accent: "cyan",
-      });
-      expect(evt.metadata?.code).toBe("available");
-      expect(Array.isArray(evt.metadata?.containers)).toBe(true);
-      expect((evt.metadata?.containers as unknown[]).length).toBe(3);
+      await vi.advanceTimersByTimeAsync(REAL_DOCKER_POLL_INTERVAL_MS * 3);
+      expect(events).toHaveLength(0);
 
       provider.stop();
     });
 
-    it("does not emit again when the fixture is unchanged across ticks", async () => {
+    it("emits nothing to any subscriber while the source is not implemented", async () => {
       const provider = createRealDockerProvider();
-      const events = collectEvents(provider);
+      const a = collectEvents(provider);
+      const b = collectEvents(provider);
       provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(events).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(REAL_DOCKER_POLL_INTERVAL_MS * 2);
 
-      // Advance several poll intervals — the fixture is static, so dedup should suppress all
-      await vi.advanceTimersByTimeAsync(REAL_DOCKER_POLL_INTERVAL_MS * 3);
-      expect(events).toHaveLength(1);
-
+      expect(a).toHaveLength(0);
+      expect(b).toHaveLength(0);
       provider.stop();
-    });
-
-    it("stop() prevents further emissions", async () => {
-      const provider = createRealDockerProvider();
-      const events = collectEvents(provider);
-      provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(events).toHaveLength(1);
-
-      provider.stop();
-      // Even if a tick is in flight, lifecycle is now Stopped and emit is gated
-      await vi.advanceTimersByTimeAsync(REAL_DOCKER_POLL_INTERVAL_MS * 3);
-      expect(events).toHaveLength(1);
     });
 
     it("uses the public poll interval constant (5_000ms)", () => {
       expect(REAL_DOCKER_POLL_INTERVAL_MS).toBe(5_000);
-    });
-  });
-
-  describe("event payload shape", () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it("emits a unique event id keyed on the provider id and timestamp", async () => {
-      const provider = createRealDockerProvider();
-      const events = collectEvents(provider);
-      provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(events).toHaveLength(1);
-      const evt = events[0];
-      expect(evt.id).toMatch(/^real-docker-provider-docker-\d+$/);
-
-      provider.stop();
-    });
-
-    it("emits an offline payload with the diagnostic text when docker is unavailable", async () => {
-      // Use makeStatus to verify payload shape: unavailable + diagnostic
-      const status = makeStatus({
-        available: false,
-        containers: [],
-        runningCount: 0,
-        code: "docker-daemon-down",
-        diagnostic: "Cannot connect to the Docker daemon",
-      });
-
-      // The fixture always reports available, so we can't directly exercise this
-      // path through the real provider. We assert the contract on makeStatus() and
-      // on the structural shape of the offline payload derived from it.
-      expect(status.code).toBe("docker-daemon-down");
-      expect(status.diagnostic).toBe("Cannot connect to the Docker daemon");
-      expect(status.available).toBe(false);
-      expect(status.runningCount).toBe(0);
     });
   });
 
@@ -218,6 +199,7 @@ describe("createRealDockerProvider", () => {
         "available",
         "no-docker-cli",
         "docker-daemon-down",
+        "not-implemented",
         "error",
       ];
       for (const code of codes) {
@@ -226,7 +208,7 @@ describe("createRealDockerProvider", () => {
       }
     });
 
-    it("makeStatus defaults produce a valid available snapshot", () => {
+    it("makeStatus defaults produce a valid available snapshot (local fixture only)", () => {
       const status = makeStatus();
       expect(status).toEqual({
         available: true,
@@ -258,58 +240,6 @@ describe("createRealDockerProvider", () => {
         const container = makeContainer({ status });
         expect(container.status).toBe(status);
       }
-    });
-  });
-
-  describe("multi-subscriber fan-out", () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it("broadcasts each event to every subscriber", async () => {
-      const provider = createRealDockerProvider();
-      const a: HubEvent[] = [];
-      const b: HubEvent[] = [];
-      const c: HubEvent[] = [];
-      provider.subscribe((batch) => a.push(...batch));
-      provider.subscribe((batch) => b.push(...batch));
-      provider.subscribe((batch) => c.push(...batch));
-
-      provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(a).toHaveLength(1);
-      expect(b).toHaveLength(1);
-      expect(c).toHaveLength(1);
-      expect(a[0]!.id).toBe(b[0]!.id);
-      expect(b[0]!.id).toBe(c[0]!.id);
-
-      provider.stop();
-    });
-
-    it("unsubscribe stops a subscriber from receiving further events", async () => {
-      const provider = createRealDockerProvider();
-      const a: HubEvent[] = [];
-      const b: HubEvent[] = [];
-      const unsubA = provider.subscribe((batch) => a.push(...batch));
-      provider.subscribe((batch) => b.push(...batch));
-
-      provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(a).toHaveLength(1);
-      expect(b).toHaveLength(1);
-
-      unsubA();
-      await vi.advanceTimersByTimeAsync(REAL_DOCKER_POLL_INTERVAL_MS);
-      expect(a).toHaveLength(1);
-      // b should still see 1 (no change -> dedup) and not 2
-      expect(b).toHaveLength(1);
-
-      provider.stop();
     });
   });
 });

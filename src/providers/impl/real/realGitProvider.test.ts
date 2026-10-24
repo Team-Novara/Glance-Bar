@@ -1,21 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   REAL_GIT_POLL_INTERVAL_MS,
+  checkGitStatus,
   createRealGitProvider,
   type GitStatus,
   type GitStatusCode,
 } from "./realGitProvider";
-import type { HubEvent } from "@/entities";
 import type { HubProvider } from "../../core/types";
 
-function collectEvents(provider: HubProvider): HubEvent[] {
-  const events: HubEvent[] = [];
+function collectEvents(provider: HubProvider) {
+  const events: ReturnType<Parameters<HubProvider["subscribe"]>[0]> = [];
   provider.subscribe((batch) => {
     events.push(...batch);
   });
   return events;
 }
 
+/** Local fixture builder for type-coverage asserts only — never provider output. */
 function makeStatus(overrides: Partial<GitStatus> = {}): GitStatus {
   return {
     available: true,
@@ -26,14 +27,6 @@ function makeStatus(overrides: Partial<GitStatus> = {}): GitStatus {
     ...overrides,
   };
 }
-
-// We swap `checkGitStatus` by importing the module and re-binding
-// internals — but `checkGitStatus` is closed over by `createRealGitProvider`.
-// So we test observable behavior via the lifecycle: the provider always
-// emits the same fixture on start and on every tick. To exercise the
-// dedup/branch-change path we directly inspect `lastEmitted` via the
-// `emit` calls (each fixture emits a HubEvent), letting fake timers give
-// us deterministic scheduling.
 
 describe("createRealGitProvider", () => {
   describe("metadata and capabilities", () => {
@@ -48,7 +41,7 @@ describe("createRealGitProvider", () => {
       expect(provider.metadata.mock).toBe(false);
     });
 
-    it("advertises a single git capability with origin=real", () => {
+    it("advertises a single git capability with origin=real and support=unsupported", () => {
       const provider = createRealGitProvider();
       expect(provider.capabilities).toHaveLength(1);
       expect(provider.capabilities[0]).toEqual({
@@ -57,6 +50,20 @@ describe("createRealGitProvider", () => {
         origin: "real",
         support: "unsupported",
       });
+    });
+  });
+
+  describe("honest status check", () => {
+    it("reports not-implemented and unavailable with no fabricated branch state", async () => {
+      const status = await checkGitStatus();
+
+      expect(status.available).toBe(false);
+      expect(status.code).toBe("not-implemented");
+      expect(status.branch).toBeNull();
+      expect(status.modifiedCount).toBe(0);
+      expect(Number.isFinite(status.lastCheckedAt)).toBe(true);
+      expect(typeof status.diagnostic).toBe("string");
+      expect(status.diagnostic!.length).toBeGreaterThan(0);
     });
   });
 
@@ -79,27 +86,41 @@ describe("createRealGitProvider", () => {
       provider.stop();
     });
 
-    it("is idempotent: start() called twice does not start a second timer", async () => {
+    it("is idempotent: start() called twice registers no timer and emits nothing", async () => {
       const provider = createRealGitProvider();
       const events = collectEvents(provider);
       provider.start();
       provider.start();
       expect(provider.status().lifecycle).toBe("Publishing");
       await vi.advanceTimersByTimeAsync(0);
-      // The initial fixture only emits once thanks to the second start being a no-op
-      expect(events).toHaveLength(1);
+      expect(events).toHaveLength(0);
+      expect(vi.getTimerCount()).toBe(0);
       provider.stop();
     });
 
-    it("transitions to Stopped on stop()", () => {
+    it("transitions to Stopped on stop()", async () => {
       const provider = createRealGitProvider();
       provider.start();
+      await vi.advanceTimersByTimeAsync(0);
       provider.stop();
       expect(provider.status().lifecycle).toBe("Stopped");
     });
+
+    it("can be restarted after stop()", async () => {
+      const provider = createRealGitProvider();
+      const events = collectEvents(provider);
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+      provider.stop();
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(provider.status().lifecycle).toBe("Publishing");
+      expect(events).toHaveLength(0);
+      provider.stop();
+    });
   });
 
-  describe("emissions", () => {
+  describe("honest emissions", () => {
     beforeEach(() => {
       vi.useFakeTimers();
     });
@@ -108,55 +129,50 @@ describe("createRealGitProvider", () => {
       vi.useRealTimers();
     });
 
-    it("emits exactly one initial event with the git status fixture", async () => {
+    it("does not invent a git event when no native source exists", async () => {
+      const provider = createRealGitProvider();
+      const events = collectEvents(provider);
+
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(events).toHaveLength(0);
+      expect(provider.capabilities[0]?.support).toBe("unsupported");
+      expect(provider.status().health).toBe("Healthy");
+      provider.stop();
+    });
+
+    it("registers no poll timer while the source is not implemented", async () => {
+      const provider = createRealGitProvider();
+      provider.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(vi.getTimerCount()).toBe(0);
+      provider.stop();
+    });
+
+    it("emits nothing across poll intervals", async () => {
       const provider = createRealGitProvider();
       const events = collectEvents(provider);
       provider.start();
-      // The start() handler is async — let the initial fetch resolve
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(events).toHaveLength(1);
-      const evt = events[0];
-      expect(evt.type).toBe("ai");
-      expect(evt.source).toBe("git");
-      expect(evt.payload).toMatchObject({
-        id: "git-status",
-        type: "ai",
-        title: "Git: main",
-        subtitle: "0 file(s) modified",
-        progress: 0,
-        accent: "pink",
-      });
-      expect(evt.metadata).toEqual({ code: "available" });
+      await vi.advanceTimersByTimeAsync(REAL_GIT_POLL_INTERVAL_MS * 3);
+      expect(events).toHaveLength(0);
 
       provider.stop();
     });
 
-    it("does not emit again when the fixture is unchanged across ticks", async () => {
+    it("emits nothing to any subscriber while the source is not implemented", async () => {
       const provider = createRealGitProvider();
-      const events = collectEvents(provider);
+      const a = collectEvents(provider);
+      const b = collectEvents(provider);
       provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(events).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(REAL_GIT_POLL_INTERVAL_MS * 2);
 
-      // Advance several poll intervals — the fixture is static, so dedup should suppress all
-      await vi.advanceTimersByTimeAsync(REAL_GIT_POLL_INTERVAL_MS * 3);
-      expect(events).toHaveLength(1);
-
+      expect(a).toHaveLength(0);
+      expect(b).toHaveLength(0);
       provider.stop();
-    });
-
-    it("stop() prevents further emissions", async () => {
-      const provider = createRealGitProvider();
-      const events = collectEvents(provider);
-      provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(events).toHaveLength(1);
-
-      provider.stop();
-      // Even if a tick is in flight, lifecycle is now Stopped and emit is gated
-      await vi.advanceTimersByTimeAsync(REAL_GIT_POLL_INTERVAL_MS * 3);
-      expect(events).toHaveLength(1);
     });
 
     it("uses the public poll interval constant (5_000ms)", () => {
@@ -166,16 +182,20 @@ describe("createRealGitProvider", () => {
 
   describe("GitStatusCode coverage", () => {
     it("exposes the GitStatusCode union literal for downstream consumers", () => {
-      const codes: GitStatusCode[] = ["available", "no-repo", "no-git-cli", "error"];
-      // This is a structural check — at runtime we just make sure all four
-      // values compile and round-trip through makeStatus()
+      const codes: GitStatusCode[] = [
+        "available",
+        "no-repo",
+        "no-git-cli",
+        "not-implemented",
+        "error",
+      ];
       for (const code of codes) {
         const status = makeStatus({ code });
         expect(status.code).toBe(code);
       }
     });
 
-    it("makeStatus defaults produce a valid available snapshot", () => {
+    it("makeStatus defaults produce a valid available snapshot (local fixture only)", () => {
       const status = makeStatus();
       expect(status).toEqual({
         available: true,
@@ -184,58 +204,6 @@ describe("createRealGitProvider", () => {
         lastCheckedAt: 1_700_000_000_000,
         code: "available",
       });
-    });
-  });
-
-  describe("multi-subscriber fan-out", () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it("broadcasts each event to every subscriber", async () => {
-      const provider = createRealGitProvider();
-      const a: HubEvent[] = [];
-      const b: HubEvent[] = [];
-      const c: HubEvent[] = [];
-      provider.subscribe((batch) => a.push(...batch));
-      provider.subscribe((batch) => b.push(...batch));
-      provider.subscribe((batch) => c.push(...batch));
-
-      provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(a).toHaveLength(1);
-      expect(b).toHaveLength(1);
-      expect(c).toHaveLength(1);
-      expect(a[0]!.id).toBe(b[0]!.id);
-      expect(b[0]!.id).toBe(c[0]!.id);
-
-      provider.stop();
-    });
-
-    it("unsubscribe stops a subscriber from receiving further events", async () => {
-      const provider = createRealGitProvider();
-      const a: HubEvent[] = [];
-      const b: HubEvent[] = [];
-      const unsubA = provider.subscribe((batch) => a.push(...batch));
-      provider.subscribe((batch) => b.push(...batch));
-
-      provider.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(a).toHaveLength(1);
-      expect(b).toHaveLength(1);
-
-      unsubA();
-      await vi.advanceTimersByTimeAsync(REAL_GIT_POLL_INTERVAL_MS);
-      expect(a).toHaveLength(1);
-      // b should still see 1 (no change -> dedup) and not 2
-      expect(b).toHaveLength(1);
-
-      provider.stop();
     });
   });
 });

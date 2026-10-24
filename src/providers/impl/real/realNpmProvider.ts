@@ -15,7 +15,7 @@ export type NpmScript = {
   lastRunAt?: number;
 };
 
-export type NpmStatusCode = "available" | "no-package-json" | "error";
+export type NpmStatusCode = "available" | "no-package-json" | "not-implemented" | "error";
 
 export type NpmStatus = {
   available: boolean;
@@ -63,26 +63,22 @@ function npmStatusToEvent(status: NpmStatus): HubEvent {
 }
 
 /**
- * Stage 6 stub: returns a deterministic snapshot so the provider pipeline,
- * lifecycle, and dedup can be wired without depending on a working `npm`
- * CLI or Tauri shell plugin. Once the shell bridge is available this
- * function should read `package.json` and inspect running child processes
- * to derive script state.
+ * Stage 6 scaffolding: no native source for npm script state exists yet —
+ * there is no Tauri shell bridge to read `package.json` or running child
+ * processes. The check therefore reports an honest `not-implemented`
+ * unavailable result with no fabricated scripts. Once the shell bridge is
+ * available this function should read `package.json` and inspect running
+ * child processes to derive script state.
  */
-async function checkNpmStatus(): Promise<NpmStatus> {
-  const now = Date.now();
+export async function checkNpmStatus(): Promise<NpmStatus> {
   return {
-    available: true,
-    scripts: [
-      { name: "build", status: "success", durationMs: 2_300, lastRunAt: now - 60_000 },
-      { name: "test", status: "running", lastRunAt: now },
-      { name: "lint", status: "success", durationMs: 800, lastRunAt: now - 90_000 },
-      { name: "typecheck", status: "idle" },
-    ],
-    runningCount: 1,
+    available: false,
+    scripts: [],
+    runningCount: 0,
     failedCount: 0,
-    lastCheckedAt: now,
-    code: "available",
+    lastCheckedAt: Date.now(),
+    code: "not-implemented",
+    diagnostic: "npm script observation is not implemented: no native shell bridge exists yet.",
   };
 }
 
@@ -109,18 +105,32 @@ export function createRealNpmProvider(): HubProvider {
 
     async start(handle) {
       const initial = await checkNpmStatus().catch(() => undefined);
-      if (initial) {
-        lastEmittedRunning = initial.runningCount;
-        lastEmittedFailed = initial.failedCount;
-        handle.emit([npmStatusToEvent(initial)]);
-      } else {
+      if (!initial) {
         handle.markDegraded();
+        return;
       }
+      if (!initial.available) {
+        // No native source exists yet. Publishing this snapshot would put a
+        // fabricated "npm scripts" card on the bar, so the provider stays
+        // idle and reports nothing. The capability already advertises
+        // `unsupported`; the diagnostic vocabulary carries
+        // `not-implemented` for the same fact.
+        return;
+      }
+
+      lastEmittedRunning = initial.runningCount;
+      lastEmittedFailed = initial.failedCount;
+      handle.emit([npmStatusToEvent(initial)]);
 
       pollTimer = setInterval(async () => {
         const next = await checkNpmStatus().catch(() => undefined);
         if (!next) {
           handle.markDegraded();
+          return;
+        }
+        if (!next.available) {
+          // The source went away mid-run: publish nothing rather than a
+          // stale or invented snapshot.
           return;
         }
 

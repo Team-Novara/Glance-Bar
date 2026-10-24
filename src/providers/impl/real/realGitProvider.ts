@@ -6,7 +6,7 @@ import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "..
 const PROVIDER_ID = "real-git-provider";
 const POLL_INTERVAL_MS = 5_000;
 
-export type GitStatusCode = "available" | "no-repo" | "no-git-cli" | "error";
+export type GitStatusCode = "available" | "no-repo" | "no-git-cli" | "not-implemented" | "error";
 
 export type GitStatus = {
   available: boolean;
@@ -42,19 +42,22 @@ function gitStatusToEvent(status: GitStatus): HubEvent {
 }
 
 /**
- * Stage 6 stub: returns a deterministic snapshot so the provider pipeline,
- * lifecycle, and dedup can be wired without depending on a working `git`
- * CLI or Tauri shell plugin. Once the shell bridge is available this
- * function should call `git status --porcelain --branch` and parse the
- * output (M/A/D/?/? columns + `## branch...` header) into a GitStatus.
+ * Stage 6 scaffolding: no native source for git repository state exists
+ * yet — there is no Tauri shell bridge to run `git status`. The check
+ * therefore reports an honest `not-implemented` unavailable result with no
+ * fabricated branch or modification counts. Once the shell bridge is
+ * available this function should call
+ * `git status --porcelain --branch` and parse the output
+ * (M/A/D/?/? columns + `## branch...` header) into a GitStatus.
  */
-async function checkGitStatus(): Promise<GitStatus> {
+export async function checkGitStatus(): Promise<GitStatus> {
   return {
-    available: true,
+    available: false,
     modifiedCount: 0,
-    branch: "main",
+    branch: null,
     lastCheckedAt: Date.now(),
-    code: "available",
+    code: "not-implemented",
+    diagnostic: "git repository observation is not implemented: no native shell bridge exists yet.",
   };
 }
 
@@ -80,17 +83,31 @@ export function createRealGitProvider(): HubProvider {
 
     async start(handle) {
       const initial = await checkGitStatus().catch(() => undefined);
-      if (initial) {
-        lastEmitted = initial;
-        handle.emit([gitStatusToEvent(initial)]);
-      } else {
+      if (!initial) {
         handle.markDegraded();
+        return;
       }
+      if (!initial.available) {
+        // No native source exists yet. Publishing this snapshot would put a
+        // fabricated "Git: main" card on the bar, so the provider stays
+        // idle and reports nothing. The capability already advertises
+        // `unsupported`; the diagnostic vocabulary carries
+        // `not-implemented` for the same fact.
+        return;
+      }
+
+      lastEmitted = initial;
+      handle.emit([gitStatusToEvent(initial)]);
 
       pollTimer = setInterval(async () => {
         const next = await checkGitStatus().catch(() => undefined);
         if (!next) {
           handle.markDegraded();
+          return;
+        }
+        if (!next.available) {
+          // The source went away mid-run: publish nothing rather than a
+          // stale or invented snapshot.
           return;
         }
 
