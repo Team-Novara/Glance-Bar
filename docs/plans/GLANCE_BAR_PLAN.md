@@ -1,6 +1,6 @@
 # Glance Bar Unified Plan
 
-> Active product and execution plan. Updated against the repository on 2026-09-05.
+> Active product and execution plan. Updated against the repository on 2026-10-25.
 
 The dated delivery plan currently in force is [2026-09-05_WINDOWS_MVP_30_DAY_EXECUTION_PLAN.md](2026-09-05_WINDOWS_MVP_30_DAY_EXECUTION_PLAN.md). It converts the priorities below into daily work, PR boundaries, evidence gates, and a 30-day Windows MVP release decision.
 
@@ -15,7 +15,7 @@ Glance Bar is a compact, privacy-safe desktop status hub. It selects one clear s
 - Provider registry contains 9 real providers and 4 mock providers; the production desktop composition explicitly starts real providers only, while mocks remain showcase fixtures.
 - Scheduler: pure policy in `src/state/desktopStatusScheduler.ts` and stateful service in `src/runtime/scheduler/schedulerService.ts`.
 - Native shell: commands are split under `src-tauri/src/commands/`; `lib.rs` is application assembly.
-- Verification snapshot: 58 Vitest files and 919 tests pass, including the Showcase interaction journey and production build; Rust unit tests are 40 (CI runs them since #41). Run the quality commands rather than relying on this count.
+- Verification snapshot: 59 Vitest files and 1015 tests pass, including the Showcase interaction journey and production build; Rust unit tests are 97 (CI runs them since #41). Run the quality commands rather than relying on this count.
 
 ## Closeout checkpoint — 2026-09-05
 
