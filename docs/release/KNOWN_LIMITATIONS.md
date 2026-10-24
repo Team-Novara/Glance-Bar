@@ -26,7 +26,7 @@ Sources: [30-day execution plan](../plans/2026-09-05_WINDOWS_MVP_30_DAY_EXECUTIO
 
 | # | Limitation | Status |
 |---|---|---|
-| 1.1 | No packaged installer has been produced or verified. Clean-checkout packaging evidence, installer launch, and uninstall-without-leftover-process checks are still open (plan Days 19-20). | **Pending evidence** |
+| 1.1 | No packaged installer has been produced or verified for Windows. Clean-checkout packaging evidence, installer launch, and uninstall-without-leftover-process checks are still open (plan Days 19-20). Partial evidence exists for the Linux packaging pipeline only: a real `.deb` was built and inspected read-only from `main` at `91feec8` ([PACKAGING_REHEARSAL.md](../qa/PACKAGING_REHEARSAL.md)); it was never installed or launched, and no Windows installer was produced. | **Pending evidence** |
 | 1.2 | All current verification ran through development workspaces and CI runners. The CI matrix (Node 20/22, Vite build, TypeScript, ESLint, Prettier check, Rust check/clippy/fmt plus `cargo test` on Ubuntu/macOS/Windows) is green, but no run proves the packaged app's behavior. | **Pending evidence** |
 | 1.3 | No versioned candidate build exists yet (plan Days 22-23). Until one is frozen, every tester session must record its source commit. | **Pending evidence** |
 

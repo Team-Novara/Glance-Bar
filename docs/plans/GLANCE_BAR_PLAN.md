@@ -67,6 +67,11 @@ Verification snapshot at `a990f18`: same gates as above, all green — both brow
 
 Verification snapshot at `9ed86e0`: all gates green — full `npm run qa` chain (Vitest 59 files / 931 tests, both browser journeys, build), `cargo check` / `fmt` / CI-level clippy, `cargo test` 80/80, zero dead-code warnings on the Linux target. All three platform capabilities implemented this session (Linux MPRIS media, macOS media, Linux EWMH window) remain gated behind their VALIDATED constants pending real-hardware validation.
 
+### Same-day continuation — PRs #66–#67 (packaging evidence and limitations audit)
+
+- **#66 — first packaging evidence**: a real Linux `.deb` was built from `main` at `91feec8` (`npx tauri build --bundles deb`, exit 0) and inspected read-only (dpkg-deb metadata, dependency declarations, embedded frontend binary, hicolor icons, .desktop entry). Recorded in `docs/qa/PACKAGING_REHEARSAL.md` with commit, sha256, and an explicit scope statement: it validates the Linux packaging pipeline only — Windows installer production, packaged-runtime behavior on any OS, and code signing remain open (KNOWN_LIMITATIONS 1.1 now carries the pointer).
+- **#67 — KNOWN_LIMITATIONS re-audited** against the tree at `91feec8`: four stale wordings corrected (CI matrix list gained the Prettier-check and cargo-test steps; "fixed on this branch" bullets de-branched to merged PR numbers; audit provenance added). Every other row confirmed with file:line citations; hardware-dependent claims explicitly left as pending evidence rather than asserted.
+
 ## Execution priorities
 
 ### P0: preserve reliable product behavior
