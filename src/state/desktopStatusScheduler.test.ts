@@ -289,4 +289,47 @@ describe("desktopStatusScheduler.test", () => {
 
     assert.equal(result, "media");
   });
+
+  test("desktop status scheduler drops a missing preferred pin and falls back to the first available kind", () => {
+    // preferredUntil is missing, so the pin cannot be honored: the
+    // scheduler must skip the preferred branch and fall through to the
+    // first known available kind instead of the resident fallback.
+    const decision = scheduleDesktopStatus({
+      now: 1_000,
+      preferredKind: "media",
+      availableKinds: ["media"],
+    });
+
+    assert.equal(decision.kind, "media");
+    assert.equal(decision.reason, "fallback");
+    assert.equal(decision.changed, true);
+  });
+
+  test("desktop status scheduler falls back to resident when no known kinds are available", () => {
+    const decision = scheduleDesktopStatus({
+      activeKinds: [],
+      availableKinds: [],
+    });
+
+    assert.equal(decision.kind, "resident");
+    assert.equal(decision.reason, "fallback");
+    assert.equal(decision.changed, true);
+  });
+
+  test("desktop status scheduler leaves the alternation carve-out when the previous kind is not media/resident", () => {
+    // A stale previous kind (e.g. clipboard that just finished) must not be
+    // held by the alternation carve-out: the scheduler falls through to the
+    // priority loop and picks the highest-priority active kind.
+    const decision = scheduleDesktopStatus({
+      now: 1_000,
+      activeKinds: ["media", "resident"],
+      availableKinds: ["media", "resident"],
+      previousKind: "clipboard",
+      previousChangedAt: 900,
+    });
+
+    assert.equal(decision.kind, "media");
+    assert.equal(decision.reason, "priority");
+    assert.equal(decision.changed, true);
+  });
 });
