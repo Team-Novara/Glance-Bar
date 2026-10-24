@@ -114,11 +114,17 @@ to be triaged during Gate D:
   Startup builds the tray menu from the stored preference, and the frontend
   initializes i18next from it while keeping the browser detector (and its
   `i18nextLng` localStorage cache key) as the fallback when no preference
-  exists. This is a code-level change with automated coverage, not release
-  evidence — it has not been demonstrated on a packaged build or physical
-  hardware. Still open as a backlog item: the in-window right-click context
-  menu (`create_status_center_menu` in `src-tauri/src/lib.rs`) keeps fixed
-  Simplified Chinese labels and does not yet follow the app language.
+  exists. The in-window right-click context menu (`create_status_center_menu`
+  in `src-tauri/src/lib.rs`) had the same fixed Simplified Chinese labels.
+  **Fixed on this branch** as well: its labels now come from a sibling
+  bounded table in `src-tauri/src/tray.rs` (`status_center_menu_labels`, both
+  en and zh-CN sets, English fallback for missing/unknown values), built from
+  the same stored `language` preference, and a language switch rebuilds the
+  cached context menu in place through the existing
+  `set_status_center_preferences` path — no new IPC channel. Like the tray
+  fix this is a code-level change with automated unit-test coverage, not
+  release evidence — it has not been demonstrated on a packaged build or
+  physical Windows hardware.
 
 ## Maintenance rule
 
