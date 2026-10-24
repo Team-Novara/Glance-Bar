@@ -293,9 +293,9 @@ has been validated on a real Linux desktop.
   or opening a session-bus connection (the gate check at `linux.rs:263`
   precedes all of that; the gate test asserts the payload and that the
   connection cache is still empty). `commands/focus.rs` keeps the per-OS
-  dispatch: Linux routes through the gated submodule (`focus.rs:58-66`),
+  dispatch: Linux routes through the gated submodule (`focus.rs:58-64`),
   macOS and other non-Windows targets keep the previous stub verbatim
-  (`focus.rs:68-76`), and the 2s focus monitor thread is unchanged — it
+  (`focus.rs:68-77`), and the 2s focus monitor thread is unchanged — it
   already polls `read_focus_assist_state` on every platform, so event
   emission comes free once the gate flips. Flip the const only together
   with recorded real-desktop evidence and the gate test, in the same
