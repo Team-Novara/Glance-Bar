@@ -1,9 +1,7 @@
 {
   "common": {
     "enabled": "Enabled",
-    "disabled": "Disabled",
-    "copy": "Copy",
-    "copied": "Copied"
+    "disabled": "Disabled"
   },
   "shell": {
     "ariaLabel": "Cober Windows Status Center"
@@ -142,9 +140,7 @@
       },
       "autostart": {
         "title": "Start with Windows",
-        "description": "Automatically launch the status center on system startup.",
-        "activeLabel": "Enabled",
-        "inactiveLabel": "Disabled"
+        "description": "Automatically launch the status center on system startup."
       }
     },
     "actions": {
@@ -220,7 +216,6 @@
     "previous": "Previous",
     "play": "Play",
     "pause": "Pause",
-    "playPause": "Play/Pause",
     "next": "Next",
     "positionLabel": "Playback position",
     "unavailable": {
@@ -229,7 +224,6 @@
     "controlFailed": "Couldn't control playback"
   },
   "clipboard": {
-    "copyToClipboard": "Copy to clipboard",
     "openInBrowser": "Open in browser",
     "openFailed": "Couldn't open in browser"
   },
@@ -255,13 +249,6 @@
   "notification": {
     "dismiss": "Dismiss notification",
     "dismissFailed": "Couldn't dismiss notification"
-  },
-  "git": {
-    "branch": "Branch",
-    "modified": "{count} modified",
-    "noRepo": "Not a git repository",
-    "noGitCli": "git CLI not found",
-    "unavailable": "Git status unavailable"
   },
   "developer": {
     "eyebrow": "Developer",
