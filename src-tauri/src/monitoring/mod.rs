@@ -5,7 +5,10 @@
 // these from its `setup` closure, passing the shared `Arc<AtomicBool>`
 // shutdown flag.
 
+// Only used by the Windows download monitor and its unit tests.
+#[cfg(any(windows, test))]
 use std::collections::HashMap;
+#[cfg(any(windows, test))]
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -116,13 +119,17 @@ pub fn start_media_monitor(_app_handle: &tauri::AppHandle, _shutdown: Arc<Atomic
 // self-adapting estimate — no byte-level accuracy, and no file paths or names
 // ever leave the native boundary.
 
+#[cfg(windows)]
 const STATUS_CENTER_DOWNLOAD_CHANGED: &str = "status-center://download-changed";
+#[cfg(windows)]
 const DOWNLOAD_MONITOR_INTERVAL: std::time::Duration = std::time::Duration::from_millis(1000);
+#[cfg(any(windows, test))]
 const TEMP_DOWNLOAD_EXTENSIONS: &[&str] =
     &[".part", ".crdownload", ".tmp", ".download", ".opdownload"];
 
 /// Resolve the user's Downloads folder. On Windows we use %USERPROFILE%;
 /// falling back to the home dir keeps the helper robust to profile redirects.
+#[cfg(windows)]
 pub(crate) fn downloads_dir() -> Option<PathBuf> {
     #[cfg(windows)]
     {
@@ -134,6 +141,7 @@ pub(crate) fn downloads_dir() -> Option<PathBuf> {
     std::env::home_dir().map(|home| home.join("Downloads"))
 }
 
+#[cfg(any(windows, test))]
 pub(crate) fn is_temp_download(name: &str) -> bool {
     let lower = name.to_lowercase();
     TEMP_DOWNLOAD_EXTENSIONS
@@ -141,6 +149,7 @@ pub(crate) fn is_temp_download(name: &str) -> bool {
         .any(|ext| lower.ends_with(ext))
 }
 
+#[cfg(any(windows, test))]
 fn scan_error_code(error: &std::io::Error) -> &'static str {
     if error.kind() == std::io::ErrorKind::PermissionDenied {
         "permission-denied"
@@ -151,6 +160,7 @@ fn scan_error_code(error: &std::io::Error) -> &'static str {
 
 /// Snapshot the Downloads folder. File names and sizes remain native-only;
 /// callers use the result to derive only a bounded active count and status.
+#[cfg(any(windows, test))]
 pub(crate) fn scan_downloads(
     dir: &PathBuf,
 ) -> Result<(HashMap<String, u64>, u64, u32), &'static str> {
@@ -182,6 +192,7 @@ pub(crate) fn scan_downloads(
 /// A temporary-file set disappearing is deliberately not called completion:
 /// the filesystem alone cannot prove whether a browser finished, cancelled, or
 /// failed the transfer.
+#[cfg(any(windows, test))]
 pub(crate) fn classify_download_status(previous_active: bool, active_count: u32) -> &'static str {
     if previous_active && active_count == 0 {
         "ended_unknown"
