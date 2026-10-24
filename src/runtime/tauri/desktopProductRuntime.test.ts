@@ -113,6 +113,48 @@ describe("desktopProductRuntime.test", () => {
     assert.notEqual(parsed?.preferences.windowPosition, input.preferences.windowPosition);
   });
 
+  it("accepts the persisted language preference for both supported languages", () => {
+    for (const language of ["en", "zh-CN"] as const) {
+      assert.deepEqual(
+        parseStatusCenterSettingsPayload({
+          preferences: {
+            alwaysFloat: true,
+            avoidFullscreen: false,
+            lockPosition: true,
+            language,
+          },
+        }),
+        {
+          preferences: {
+            alwaysFloat: true,
+            avoidFullscreen: false,
+            lockPosition: true,
+            language,
+          },
+        },
+      );
+    }
+  });
+
+  it("drops unknown language values instead of widening the shell contract", () => {
+    const parsed = parseStatusCenterSettingsPayload({
+      preferences: {
+        alwaysFloat: true,
+        avoidFullscreen: false,
+        lockPosition: true,
+        language: "fr",
+      },
+    });
+
+    assert.deepEqual(parsed, {
+      preferences: {
+        alwaysFloat: true,
+        avoidFullscreen: false,
+        lockPosition: true,
+      },
+    });
+  });
+
   it("clones settings payloads before returning them", () => {
     const input = {
       preferences: {

@@ -24,7 +24,11 @@ import {
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { DesktopStatusKind, DesktopStatusPreferences } from "@/entities";
+import type {
+  DesktopStatusKind,
+  DesktopStatusLanguage,
+  DesktopStatusPreferences,
+} from "@/entities";
 import type { HubEvent } from "@/entities";
 import {
   getDesktopStatusTemplateDescriptors,
@@ -45,6 +49,7 @@ export type SettingsPanelProps = {
   onToggleAvoidFullscreen: () => void;
   onToggleLockPosition: () => void;
   onToggleAutostart: () => void;
+  onSelectLanguage: (language: DesktopStatusLanguage) => void;
   onKindSelect: (kind: DesktopStatusKind) => void;
   onRefresh: () => void;
   onResetPosition: () => void;
@@ -100,6 +105,7 @@ export function SettingsPanel({
   onToggleAvoidFullscreen,
   onToggleLockPosition,
   onToggleAutostart,
+  onSelectLanguage,
   onKindSelect,
   onRefresh,
   onResetPosition,
@@ -240,7 +246,7 @@ export function SettingsPanel({
               <button
                 type="button"
                 className="win11-row-overlay"
-                onClick={() => void i18nInstance.changeLanguage("zh-CN")}
+                onClick={() => onSelectLanguage("zh-CN")}
                 aria-label={t("settings.language.zh-CN")}
               />
             </SettingRow>
@@ -263,7 +269,7 @@ export function SettingsPanel({
               <button
                 type="button"
                 className="win11-row-overlay"
-                onClick={() => void i18nInstance.changeLanguage("en")}
+                onClick={() => onSelectLanguage("en")}
                 aria-label={t("settings.language.en")}
               />
             </SettingRow>

@@ -1,3 +1,4 @@
+export { useAppLanguage } from "./useAppLanguage";
 export { useAppWindow } from "./useAppWindow";
 export { useAutostart } from "./useAutostart";
 export { useContextMenu } from "./useContextMenu";

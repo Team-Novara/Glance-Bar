@@ -28,6 +28,7 @@ const NOOP_HANDLERS = {
   onToggleAvoidFullscreen: () => undefined,
   onToggleLockPosition: () => undefined,
   onToggleAutostart: () => undefined,
+  onSelectLanguage: (_language: "en" | "zh-CN") => undefined,
   onKindSelect: (_kind: DesktopStatusKind) => undefined,
   onRefresh: () => undefined,
   onResetPosition: () => undefined,
@@ -143,6 +144,30 @@ describe("SettingsPanel i18n reactivity", () => {
     );
     expect(screen.getAllByText("常驻态").length).toBeGreaterThan(0);
     expect(screen.getAllByText("媒体").length).toBeGreaterThan(0);
+  });
+
+  it("routes language row clicks through onSelectLanguage with the chosen language", async () => {
+    await changeLanguage("en");
+    const onSelectLanguage = vi.fn();
+    render(
+      <SettingsPanel
+        preferences={BASE_PREFERENCES}
+        activeStatusKind={null}
+        autostartEnabled={false}
+        providerRecords={[]}
+        {...NOOP_HANDLERS}
+        onSelectLanguage={onSelectLanguage}
+      />,
+    );
+
+    await act(async () => {
+      screen.getByRole("button", { name: "简体中文" }).click();
+      screen.getByRole("button", { name: "English" }).click();
+    });
+
+    expect(onSelectLanguage).toHaveBeenCalledTimes(2);
+    expect(onSelectLanguage).toHaveBeenNthCalledWith(1, "zh-CN");
+    expect(onSelectLanguage).toHaveBeenNthCalledWith(2, "en");
   });
 });
 describe("SettingsPanel ProviderStatusPanel integration", () => {

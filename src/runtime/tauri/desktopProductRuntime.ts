@@ -1,6 +1,7 @@
 import { listen, type Event, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type {
+  DesktopStatusLanguage,
   DesktopStatusMenuActionId,
   DesktopStatusPreferencesPayload,
   DesktopStatusWindowPosition,
@@ -60,6 +61,7 @@ export function parseStatusCenterSettingsPayload(
       ...(isDesktopStatusWindowPosition(preferences.windowPosition)
         ? { windowPosition: { ...preferences.windowPosition } }
         : {}),
+      ...(isDesktopStatusLanguage(preferences.language) ? { language: preferences.language } : {}),
     },
   };
 }
@@ -132,7 +134,14 @@ function isDesktopStatusPreferences(
     (value.windowPosition === undefined ||
       value.windowPosition === null ||
       isDesktopStatusWindowPosition(value.windowPosition))
+    // `language` is intentionally NOT part of the acceptance contract: an
+    // unknown value drops just that field (mirroring the Rust remap-to-None)
+    // instead of rejecting the whole settings payload.
   );
+}
+
+function isDesktopStatusLanguage(value: unknown): value is DesktopStatusLanguage {
+  return value === "en" || value === "zh-CN";
 }
 
 function isDesktopStatusWindowPosition(value: unknown): value is DesktopStatusWindowPosition {

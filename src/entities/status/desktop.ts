@@ -212,11 +212,19 @@ export type DesktopStatusWindowPosition = {
   scaleFactorMilli: number;
 };
 
+/**
+ * In-app language selection persisted in the desktop preferences. Mirrors the
+ * Rust `AppLanguage` enum (`src-tauri/src/types.rs`): only these two values
+ * cross the boundary; anything else is dropped by the runtime guards.
+ */
+export type DesktopStatusLanguage = "en" | "zh-CN";
+
 export type DesktopStatusPreferences = {
   alwaysFloat: boolean;
   avoidFullscreen: boolean;
   lockPosition: boolean;
   windowPosition?: DesktopStatusWindowPosition;
+  language?: DesktopStatusLanguage;
 };
 
 export type DesktopStatusMenuActionId =

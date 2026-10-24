@@ -105,10 +105,20 @@ to be triaged during Gate D:
   quit) and the tray tooltip read `Cober Windows Bar`, a legacy product name.
   **Fixed on this branch** (`src-tauri/src/tray.rs`): the labels now read
   `Show / Recall Status Center`, `Open Settings`, and `Quit`, and the tooltip
-  reads `Glance Bar`. This is a code-level fix, not release evidence — it has
-  not been demonstrated on a packaged build. Still open as a backlog item:
-  full tray-menu i18n that follows the in-app Settings language switch; until
-  that lands, the tray menu is English regardless of the in-app language.
+  reads `Glance Bar`. **Tray labels now follow the in-app language setting**
+  (same branch): the choice is persisted in the desktop preferences
+  (`language: "en" | "zh-CN"`), both label sets live in a bounded table in
+  Rust (`src-tauri/src/tray.rs`, English fallback for missing/unknown
+  values), and switching language in Settings rebuilds the tray menu through
+  the existing `set_status_center_preferences` path — no new IPC channel.
+  Startup builds the tray menu from the stored preference, and the frontend
+  initializes i18next from it while keeping the browser detector (and its
+  `i18nextLng` localStorage cache key) as the fallback when no preference
+  exists. This is a code-level change with automated coverage, not release
+  evidence — it has not been demonstrated on a packaged build or physical
+  hardware. Still open as a backlog item: the in-window right-click context
+  menu (`create_status_center_menu` in `src-tauri/src/lib.rs`) keeps fixed
+  Simplified Chinese labels and does not yet follow the app language.
 
 ## Maintenance rule
 

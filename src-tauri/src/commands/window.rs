@@ -368,15 +368,26 @@ pub fn set_status_center_preferences(
     state: State<'_, SharedDesktopProductState<tauri::Wry>>,
     preferences: crate::types::DesktopStatusPreferences,
 ) -> Result<crate::types::StatusCenterSettingsPayload, String> {
-    {
+    let language_changed = {
         let mut state = state
             .lock()
             .map_err(|_| "status center state lock poisoned".to_string())?;
 
+        let language_changed = state.preferences.language != preferences.language;
         state.preferences = preferences.clone();
         if let Some(menu_items) = &state.menu_items {
             crate::preferences::apply_preference_menu_state(menu_items, &state.preferences);
         }
+        language_changed
+    };
+
+    if language_changed {
+        // Same propagation path as every other preference change: rebuild the
+        // tray menu in place when the app language changes.
+        crate::tray::rebuild_tray_menu(
+            &app,
+            crate::types::AppLanguage::from_stored(preferences.language.as_deref()),
+        );
     }
 
     crate::preferences::persist_status_center_preferences(&app, &preferences)?;
