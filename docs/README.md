@@ -25,6 +25,7 @@
 
 Draft documents for the limited Windows release decision. They describe preparation state, not verified release evidence; each file states its own status.
 
+- [Candidate freeze process](release/CANDIDATE_FREEZE.md): repeatable precheck-and-tag runbook that turns a clean-checkout commit into the versioned validation candidate (plan Days 22-23).
 - [Known limitations](release/KNOWN_LIMITATIONS.md): designed limitations and evidence still pending for the Windows MVP candidate.
 - [Tester guide](release/TESTER_GUIDE.md): install, tray recovery, preferences, and privacy-safe feedback reporting for validation testers.
 - [Tester checklist](release/TESTER_CHECKLIST.md): guided 30-60 minute checklist and normal-work-session checklist with severity definitions.
