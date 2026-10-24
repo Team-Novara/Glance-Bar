@@ -80,6 +80,7 @@ name = "app"
 version = "1.0.0"
 dependencies = [
  "arboard",
+ "gio",
  "log",
  "objc2",
  "objc2-app-kit",

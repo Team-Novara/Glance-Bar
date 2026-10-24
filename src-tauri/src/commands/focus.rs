@@ -4,6 +4,12 @@
 
 use crate::types::{FocusAssistStatePayload, NotificationSummaryPayload};
 
+// The gated Linux focus implementation (GNOME GSettings / KDE D-Bus
+// observation behind LINUX_FOCUS_VALIDATED) lives in its own submodule,
+// mirroring the media provider layout — see commands/focus/linux.rs.
+#[cfg(target_os = "linux")]
+mod linux;
+
 #[cfg(windows)]
 pub(crate) fn read_focus_assist_state() -> FocusAssistStatePayload {
     use winreg::enums::{HKEY_CURRENT_USER, KEY_READ};
@@ -49,7 +55,17 @@ pub(crate) fn read_focus_assist_state() -> FocusAssistStatePayload {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
+pub(crate) fn read_focus_assist_state() -> FocusAssistStatePayload {
+    // The gated Linux implementation: while LINUX_FOCUS_VALIDATED is false
+    // it returns exactly the bounded unsupported payload below, without
+    // touching the environment, gio, or the session bus.
+    linux::read_focus_assist_state()
+}
+
+/// Other non-Windows targets (macOS today): no focus mechanism is
+/// implemented — the same bounded unsupported stub earlier builds reported.
+#[cfg(not(any(windows, target_os = "linux")))]
 pub(crate) fn read_focus_assist_state() -> FocusAssistStatePayload {
     FocusAssistStatePayload {
         active: false,
@@ -94,8 +110,14 @@ fn read_notification_summary() -> NotificationSummaryPayload {
 
 #[cfg(not(windows))]
 fn read_notification_summary() -> NotificationSummaryPayload {
+    // Mirrors the Windows branch above: derive the summary from the focus
+    // read. While the Linux gate is off (and on macOS) the focus read
+    // always reports `active: false`, so this stays byte-identical to the
+    // old hardcoded false.
+    let focus = read_focus_assist_state();
+
     NotificationSummaryPayload {
-        focus_assist_active: false,
+        focus_assist_active: focus.active,
         checked_at: crate::unix_time_ms(),
     }
 }
