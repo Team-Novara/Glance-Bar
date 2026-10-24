@@ -79,6 +79,29 @@ version-specific detection gaps, if any, are unknown. **Pending evidence.**
   replacement, timeline edge cases, per-control verification — plan Days 8-9)
   has not been run. **Pending evidence.**
 
+### 3.5 Developer states (npm / git / docker) — not implemented
+
+- The real npm, git, and docker providers are registered with their full
+  lifecycle wiring (start/stop/subscribe, provider-registry records, capability
+  advertisements with `support: "unsupported"`), but **no native contract
+  exists to observe them**: there is no Tauri shell bridge to read
+  `package.json`, run `git status`, or run `docker ps`.
+- Their status checks report an honest `not-implemented` unavailable result
+  (`available: false`, empty scripts/containers/branch payloads), they emit
+  **no** events, and they never activate the developer status card — in a
+  plain browser preview and in the packaged app alike. The desktop bar falls
+  back to the resident state instead of showing a fabricated
+  "npm scripts / Git / Docker" card.
+- The aggregation layer additionally refuses to derive developer state from
+  any developer event that does not explicitly report an available native
+  source, so a future native contract must prove availability before the
+  developer card can render.
+- Earlier Stage 6 stubs of these providers emitted deterministic fabricated
+  snapshots (scripts, containers, branch names) labeled as native; that
+  behavior was removed because it violated the product contract (no fabricated
+  live state, no estimated value presented as exact). Until a real native
+  contract exists, developer states are reported as not-implemented.
+
 ## 4. Cross-platform scope
 
 - macOS and Linux are **not part of the Windows MVP release**. Platform modules

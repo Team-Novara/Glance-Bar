@@ -15,7 +15,8 @@ export type DockerContainer = {
   ports: string;
 };
 
-export type DockerStatusCode = "available" | "no-docker-cli" | "docker-daemon-down" | "error";
+export type DockerStatusCode =
+  "available" | "no-docker-cli" | "docker-daemon-down" | "not-implemented" | "error";
 
 export type DockerStatus = {
   available: boolean;
@@ -59,24 +60,21 @@ function dockerStatusToEvent(status: DockerStatus): HubEvent {
 }
 
 /**
- * Stage 6 stub: returns a deterministic snapshot so the provider pipeline,
- * lifecycle, and dedup can be wired without depending on a working `docker`
- * CLI or Tauri shell plugin. Once the shell bridge is available this
- * function should call `docker ps --format "{{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"`
+ * Stage 6 scaffolding: no native source for Docker state exists yet —
+ * there is no Tauri shell bridge to run `docker ps`. The check therefore
+ * reports an honest `not-implemented` unavailable result with no fabricated
+ * containers. Once the shell bridge is available this function should call
+ * `docker ps --format "{{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"`
  * and parse the output into a DockerStatus.
  */
-async function checkDockerStatus(): Promise<DockerStatus> {
-  const now = Date.now();
+export async function checkDockerStatus(): Promise<DockerStatus> {
   return {
-    available: true,
-    containers: [
-      { name: "postgres", status: "running", image: "postgres:15", ports: "5432/tcp" },
-      { name: "redis", status: "running", image: "redis:7", ports: "6379/tcp" },
-      { name: "nginx", status: "stopped", image: "nginx:alpine", ports: "80/tcp" },
-    ],
-    runningCount: 2,
-    lastCheckedAt: now,
-    code: "available",
+    available: false,
+    containers: [],
+    runningCount: 0,
+    lastCheckedAt: Date.now(),
+    code: "not-implemented",
+    diagnostic: "Docker observation is not implemented: no native shell bridge exists yet.",
   };
 }
 
@@ -103,18 +101,32 @@ export function createRealDockerProvider(): HubProvider {
 
     async start(handle) {
       const initial = await checkDockerStatus().catch(() => undefined);
-      if (initial) {
-        lastEmittedRunningCount = initial.runningCount;
-        lastEmittedTotalCount = initial.containers.length;
-        handle.emit([dockerStatusToEvent(initial)]);
-      } else {
+      if (!initial) {
         handle.markDegraded();
+        return;
       }
+      if (!initial.available) {
+        // No native source exists yet. Publishing this snapshot would put a
+        // fabricated "Docker" card with invented containers on the bar, so
+        // the provider stays idle and reports nothing. The capability
+        // already advertises `unsupported`; the diagnostic vocabulary
+        // carries `not-implemented` for the same fact.
+        return;
+      }
+
+      lastEmittedRunningCount = initial.runningCount;
+      lastEmittedTotalCount = initial.containers.length;
+      handle.emit([dockerStatusToEvent(initial)]);
 
       pollTimer = setInterval(async () => {
         const next = await checkDockerStatus().catch(() => undefined);
         if (!next) {
           handle.markDegraded();
+          return;
+        }
+        if (!next.available) {
+          // The source went away mid-run: publish nothing rather than a
+          // stale or invented snapshot.
           return;
         }
 

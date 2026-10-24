@@ -14,6 +14,7 @@ import type {
   DesktopStatusStateMap,
   DesktopUpdateState,
   FocusAssistPayload,
+  GuestProviderDiagnosticCode,
   HubEvent,
   HubStoreState,
   HubTask,
@@ -265,6 +266,40 @@ function snapshotAiTask(task: HubTask): DesktopUpdateState {
   };
 }
 
+function isDeveloperEvent(event: HubEvent): boolean {
+  return (
+    event.type === "ai" &&
+    (event.source === "git" || event.source === "docker" || event.source === "npm")
+  );
+}
+
+/**
+ * Only a developer event that explicitly reports an available native source
+ * may activate the developer card. A `not-implemented`/unavailable report
+ * (today's honest state for the git/docker/npm providers) must not render
+ * fabricated developer state — the same rule the media path applies to
+ * `payload.available`.
+ */
+function isAvailableDeveloperEvent(event: HubEvent): boolean {
+  return isDeveloperEvent(event) && event.metadata?.["code"] === "available";
+}
+
+function developerDiagnosticCode(value: unknown): GuestProviderDiagnosticCode {
+  if (
+    value === "available" ||
+    value === "unsupported" ||
+    value === "not-implemented" ||
+    value === "permission-denied" ||
+    value === "malformed" ||
+    value === "timeout"
+  ) {
+    return value;
+  }
+  // Unknown or provider-specific failure codes map to the shared
+  // provider-failed vocabulary instead of being laundered into "available".
+  return "provider-failed";
+}
+
 function snapshotDeveloperEvent(event: HubEvent): DesktopDeveloperState {
   const payload = event.payload as HubTask | undefined;
   const title =
@@ -275,6 +310,8 @@ function snapshotDeveloperEvent(event: HubEvent): DesktopDeveloperState {
     payload && typeof payload.subtitle === "string" && payload.subtitle
       ? payload.subtitle
       : i18n.t("developer.defaultDetail");
+  const diagnosticCode = developerDiagnosticCode(event.metadata?.["code"]);
+  const available = diagnosticCode === "available";
 
   return {
     kind: "developer",
@@ -287,12 +324,9 @@ function snapshotDeveloperEvent(event: HubEvent): DesktopDeveloperState {
       payload && typeof payload.progress === "number" ? clampProgress(payload.progress) : undefined,
     sourceHealth: {
       kind: "developer",
-      quality: "native",
-      code:
-        typeof event.metadata?.["code"] === "string"
-          ? (event.metadata["code"] as "available" | "unsupported")
-          : "available",
-      safeToDisplay: true,
+      quality: available ? "native" : "unavailable",
+      code: diagnosticCode,
+      safeToDisplay: available,
       lastCheckedAt: event.createdAt,
     },
   };
@@ -367,11 +401,10 @@ function deriveStateOverrides(hubState: HubStoreState): Partial<DesktopStatusSta
   }
 
   // --- Developer events (git/docker/npm real providers) ---
-  const developerEvent = hubState.events.find(
-    (event) =>
-      event.type === "ai" &&
-      (event.source === "git" || event.source === "docker" || event.source === "npm"),
-  );
+  // Only an event reporting an available native source may derive developer
+  // state; a not-implemented/unavailable report renders nothing (see
+  // isAvailableDeveloperEvent).
+  const developerEvent = hubState.events.find(isAvailableDeveloperEvent);
   if (developerEvent) {
     overrides.developer = snapshotDeveloperEvent(developerEvent);
   }
@@ -454,14 +487,9 @@ function deriveActiveKinds(hubState: HubStoreState, events: HubEvent[]): Desktop
     activeKinds.push("update");
   }
 
-  // Developer events (git/docker/npm real providers)
-  if (
-    events.some(
-      (event) =>
-        event.type === "ai" &&
-        (event.source === "git" || event.source === "docker" || event.source === "npm"),
-    )
-  ) {
+  // Developer events (git/docker/npm real providers) — only an available
+  // native report activates the developer card (see isAvailableDeveloperEvent).
+  if (events.some(isAvailableDeveloperEvent)) {
     activeKinds.push("developer");
   }
 
