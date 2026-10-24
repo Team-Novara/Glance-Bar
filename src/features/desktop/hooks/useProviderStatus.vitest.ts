@@ -138,7 +138,10 @@ describe("useProviderStatus", () => {
     // Arrange
     const records = [
       registryRecord("music", "Music", "music", { lifecycle: "Publishing", health: "Healthy" }),
-      registryRecord("download", "Download", "download", { lifecycle: "Started", health: "Healthy" }),
+      registryRecord("download", "Download", "download", {
+        lifecycle: "Started",
+        health: "Healthy",
+      }),
     ];
     const { manager } = makeManager(records);
 
@@ -160,8 +163,14 @@ describe("useProviderStatus", () => {
     // Arrange
     const records = [
       registryRecord("music", "Music", "music", { lifecycle: "Publishing", health: "Healthy" }),
-      registryRecord("download", "Download", "download", { lifecycle: "Started", health: "Degraded" }),
-      registryRecord("clipboard", "Clipboard", "clipboard", { lifecycle: "Started", health: "Unhealthy" }),
+      registryRecord("download", "Download", "download", {
+        lifecycle: "Started",
+        health: "Degraded",
+      }),
+      registryRecord("clipboard", "Clipboard", "clipboard", {
+        lifecycle: "Started",
+        health: "Unhealthy",
+      }),
     ];
     const { manager } = makeManager(records);
 
@@ -170,9 +179,10 @@ describe("useProviderStatus", () => {
 
     // Assert
     expect(result.current.degraded).toHaveLength(2);
-    expect(result.current.degraded.map((d) => d.providerId).sort()).toEqual(
-      ["clipboard", "download"],
-    );
+    expect(result.current.degraded.map((d) => d.providerId).sort()).toEqual([
+      "clipboard",
+      "download",
+    ]);
     expect(result.current.summary.degraded).toBe(1);
     expect(result.current.summary.unhealthy).toBe(1);
     expect(result.current.summary.needsAttention).toHaveLength(2);
@@ -207,7 +217,10 @@ describe("useProviderStatus", () => {
     ]);
     const second = makeManager([
       registryRecord("music", "Music", "music", { lifecycle: "Publishing", health: "Healthy" }),
-      registryRecord("download", "Download", "download", { lifecycle: "Started", health: "Healthy" }),
+      registryRecord("download", "Download", "download", {
+        lifecycle: "Started",
+        health: "Healthy",
+      }),
     ]);
 
     const { result, rerender } = renderHook(
@@ -230,7 +243,10 @@ describe("useProviderStatus", () => {
     // Arrange
     const records = [
       registryRecord("music", "Music", "music", { lifecycle: "Stopped", health: "Healthy" }),
-      registryRecord("download", "Download", "download", { lifecycle: "Stopped", health: "Healthy" }),
+      registryRecord("download", "Download", "download", {
+        lifecycle: "Stopped",
+        health: "Healthy",
+      }),
     ];
     const { manager } = makeManager(records);
 
@@ -248,7 +264,10 @@ describe("useProviderStatus", () => {
     // Arrange
     const records = [
       registryRecord("music", "Music", "music", { lifecycle: "Stopped", health: "Healthy" }),
-      registryRecord("download", "Download", "download", { lifecycle: "Publishing", health: "Healthy" }),
+      registryRecord("download", "Download", "download", {
+        lifecycle: "Publishing",
+        health: "Healthy",
+      }),
     ];
     const { manager } = makeManager(records);
 
@@ -265,8 +284,14 @@ describe("useProviderStatus", () => {
     // Arrange
     const records = [
       registryRecord("music", "Music", "music", { lifecycle: "Publishing", health: "Healthy" }),
-      registryRecord("download", "Download", "download", { lifecycle: "Stopped", health: "Healthy" }),
-      registryRecord("clipboard", "Clipboard", "clipboard", { lifecycle: "Started", health: "Healthy" }),
+      registryRecord("download", "Download", "download", {
+        lifecycle: "Stopped",
+        health: "Healthy",
+      }),
+      registryRecord("clipboard", "Clipboard", "clipboard", {
+        lifecycle: "Started",
+        health: "Healthy",
+      }),
     ];
     const { manager } = makeManager(records);
 

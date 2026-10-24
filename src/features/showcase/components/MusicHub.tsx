@@ -5,7 +5,6 @@ import type { MusicState } from "@/entities";
 
 import { FluentIconChip, FluentProgressRail } from "./ShowcaseFluentTokens";
 
-
 type MusicHubProps = {
   music: MusicState;
 };

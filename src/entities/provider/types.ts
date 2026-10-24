@@ -1,12 +1,7 @@
 import type { HubEvent } from "../status/types";
 
 export type HubProviderLifecycle =
-  | "Registered"
-  | "Started"
-  | "Publishing"
-  | "Paused"
-  | "Stopped"
-  | "Failed";
+  "Registered" | "Started" | "Publishing" | "Paused" | "Stopped" | "Failed";
 
 export type HubProviderHealth = "Healthy" | "Degraded" | "Unhealthy";
 

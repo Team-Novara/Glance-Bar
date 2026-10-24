@@ -125,7 +125,10 @@ describe("connectProviderToEventBus", () => {
       ]);
 
       // Assert
-      const ids = bus.getState().events.map((e) => e.id).sort();
+      const ids = bus
+        .getState()
+        .events.map((e) => e.id)
+        .sort();
       expect(ids).toEqual(["a", "b", "c"]);
 
       connection.disconnect();
@@ -219,11 +222,7 @@ describe("connectProviderToEventBus", () => {
       const connection = connectProviderToEventBus(provider, throwingBus);
 
       // Act -- emit a batch with a "bad" event in the middle
-      handle.emit([
-        makeEvent({ id: "ok-1" }),
-        makeEvent({ id: "bad" }),
-        makeEvent({ id: "ok-2" }),
-      ]);
+      handle.emit([makeEvent({ id: "ok-1" }), makeEvent({ id: "bad" }), makeEvent({ id: "ok-2" })]);
 
       // Assert -- the adapter swallowed the error and continued
       expect(callCount).toBe(3);

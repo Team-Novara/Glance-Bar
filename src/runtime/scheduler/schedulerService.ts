@@ -146,7 +146,11 @@ export function createSchedulerService() {
       availableKinds.includes(state.preferredKind) &&
       isWithinWindow(state.preferredUntil, now, DESKTOP_STATUS_PREFERRED_WINDOW_MS * 4);
 
-    if (state.preferredKind && availableKinds.includes(state.preferredKind) && preferredStillPinned) {
+    if (
+      state.preferredKind &&
+      availableKinds.includes(state.preferredKind) &&
+      preferredStillPinned
+    ) {
       return {
         kind: state.preferredKind,
         changed: state.preferredKind !== state.currentKind,
@@ -222,10 +226,16 @@ export function createSchedulerService() {
 
     const firstKnownAvailableKind = availableKinds[0];
     if (firstKnownAvailableKind) {
-      return { kind: firstKnownAvailableKind, changed: firstKnownAvailableKind !== state.currentKind };
+      return {
+        kind: firstKnownAvailableKind,
+        changed: firstKnownAvailableKind !== state.currentKind,
+      };
     }
 
-    return { kind: DESKTOP_STATUS_FALLBACK_KIND, changed: DESKTOP_STATUS_FALLBACK_KIND !== state.currentKind };
+    return {
+      kind: DESKTOP_STATUS_FALLBACK_KIND,
+      changed: DESKTOP_STATUS_FALLBACK_KIND !== state.currentKind,
+    };
   }
 
   function tick() {

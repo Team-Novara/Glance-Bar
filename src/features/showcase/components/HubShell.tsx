@@ -17,7 +17,6 @@ import { MusicHub } from "./MusicHub";
 import { NotificationHub } from "./NotificationHub";
 import { GlassPanel } from "../../../shared/ui/GlassPanel";
 
-
 type HubShellProps = {
   mode: HubMode;
   tasks?: HubTask[];

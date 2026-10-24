@@ -40,9 +40,8 @@ afterEach(() => {
 //     /`throws`/etc. keep working unmodified.
 // Once every legacy file migrates to native it()/expect(), delete this block.
 declare global {
-   
   var test: (name: string, run: () => void) => void;
-   
+
   var assert: {
     equal: (actual: unknown, expected: unknown, message?: string) => void;
     notEqual: (actual: unknown, expected: unknown, message?: string) => void;

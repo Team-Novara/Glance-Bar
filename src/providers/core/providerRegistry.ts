@@ -55,9 +55,7 @@ function snapshotProvider(entry: ProviderRegistryEntry): ProviderRegistryRecord 
   };
 }
 
-function snapshotCapabilitySupport(
-  entry: ProviderRegistryEntry,
-): {
+function snapshotCapabilitySupport(entry: ProviderRegistryEntry): {
   providerId: string;
   providerName: string;
   providerKind: HubProviderKind;
@@ -205,9 +203,7 @@ export function createProviderRegistry() {
     listRealProviders(): ProviderRegistryRecord[] {
       return [...entries.values()]
         .filter((e) =>
-          e.provider.capabilities.some(
-            (c) => c.origin === "real" || c.origin === "native",
-          ),
+          e.provider.capabilities.some((c) => c.origin === "real" || c.origin === "native"),
         )
         .map(snapshotProvider);
     },

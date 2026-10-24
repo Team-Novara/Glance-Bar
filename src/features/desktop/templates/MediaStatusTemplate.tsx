@@ -13,7 +13,6 @@ import { useStatusToast } from "./hooks/useStatusToast";
 import { StatusRail } from "./StatusRail";
 import { StatusToast as StatusToastView } from "./StatusToast";
 
-
 type MediaStatusTemplateProps = {
   state: DesktopMediaState;
 };
@@ -56,12 +55,19 @@ export function MediaStatusTemplate({ state }: MediaStatusTemplateProps) {
     [showToast, t],
   );
 
+  // Built via join so prettier-plugin-tailwindcss cannot rewrite the interpolated
+  // class token (it strips the semantic leading space inside template literals).
+  const mediaIconClassName = [
+    "product-status-icon",
+    "product-status-icon-media",
+    isPlaying ? "is-playing" : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <>
-      <div
-        className={`product-status-icon product-status-icon-media${isPlaying ? " is-playing" : ""}`}
-        aria-hidden="true"
-      >
+      <div className={mediaIconClassName} aria-hidden="true">
         <Disc3 size={20} strokeWidth={2.2} />
         <GuestSourceHealthIndicator sourceHealth={state.sourceHealth} />
       </div>
@@ -135,9 +141,7 @@ export function MediaStatusTemplate({ state }: MediaStatusTemplateProps) {
         <StatusRail
           value={state.progress}
           label={
-            indeterminate
-              ? t("media.progressUnknown")
-              : `${copy.mediaProgress} ${state.progress}%`
+            indeterminate ? t("media.progressUnknown") : `${copy.mediaProgress} ${state.progress}%`
           }
           accent="violet"
           active={isPlaying}

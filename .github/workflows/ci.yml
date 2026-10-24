@@ -32,6 +32,8 @@ jobs:
         run: npm ci
       - name: ESLint
         run: npm run lint
+      - name: Prettier check
+        run: npm run format:check
 
   test:
     name: test (node ${{ matrix.node }})

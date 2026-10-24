@@ -10,7 +10,6 @@ import type {
 
 import { clampProgress, isFiniteNumber, snapshotHubEvent } from "../shared/lib/runtimeGuards";
 
-
 const taskAccentMap: Record<string, HubTask["accent"]> = {
   music: "pink",
   ai: "blue",

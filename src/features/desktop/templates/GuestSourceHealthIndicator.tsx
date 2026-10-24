@@ -5,7 +5,6 @@ import type { GuestProviderSourceHealth, GuestProviderSourceQuality } from "@/en
 import { sourceQualityClassName } from "./ResidentStatusTemplate";
 import i18n from "../../../i18n";
 
-
 type GuestSourceHealthIndicatorProps = {
   sourceHealth?: GuestProviderSourceHealth;
 };

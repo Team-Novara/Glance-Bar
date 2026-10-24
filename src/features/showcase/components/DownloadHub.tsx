@@ -4,7 +4,6 @@ import type { HubTask } from "@/entities";
 
 import { FluentIconChip, FluentProgressRail } from "./ShowcaseFluentTokens";
 
-
 type DownloadHubProps = {
   task: HubTask;
 };

@@ -28,9 +28,7 @@ export type UseProviderStatusResult = {
  * bootstrap paths) all three fields are empty — the hook is safe to call
  * unconditionally.
  */
-export function useProviderStatus(
-  manager: ProviderManager | undefined,
-): UseProviderStatusResult {
+export function useProviderStatus(manager: ProviderManager | undefined): UseProviderStatusResult {
   const records = useMemo<ProviderRegistryRecord[]>(() => {
     if (!manager) {
       return [];

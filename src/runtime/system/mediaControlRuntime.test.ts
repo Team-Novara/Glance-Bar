@@ -157,9 +157,7 @@ describe("setClipboardContent", () => {
 
     const result = await setClipboardContent("plain text", invoke);
 
-    assert.deepEqual(calls, [
-      { command: "set_clipboard_content", args: { text: "plain text" } },
-    ]);
+    assert.deepEqual(calls, [{ command: "set_clipboard_content", args: { text: "plain text" } }]);
     assert.equal(result, true);
   });
 

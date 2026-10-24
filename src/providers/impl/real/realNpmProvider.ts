@@ -3,7 +3,6 @@ import type { HubEvent } from "@/entities";
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
-
 const PROVIDER_ID = "real-npm-provider";
 const POLL_INTERVAL_MS = 6_000;
 
@@ -126,10 +125,7 @@ export function createRealNpmProvider(): HubProvider {
         }
 
         // Skip identical emissions (no state change)
-        if (
-          lastEmittedRunning === next.runningCount &&
-          lastEmittedFailed === next.failedCount
-        ) {
+        if (lastEmittedRunning === next.runningCount && lastEmittedFailed === next.failedCount) {
           return;
         }
         lastEmittedRunning = next.runningCount;

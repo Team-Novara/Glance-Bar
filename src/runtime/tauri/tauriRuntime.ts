@@ -18,7 +18,6 @@ import {
   snapshotHubEvent,
 } from "../../shared/lib/runtimeGuards";
 
-
 export const TAURI_FIXTURE_COMMAND = "get_hub_event_fixtures";
 export const TAURI_RUNTIME_CAPABILITIES_COMMAND = "get_runtime_capabilities";
 export const TAURI_EMIT_FIXTURE_EVENTS_COMMAND = "emit_hub_event_fixtures";
@@ -29,10 +28,7 @@ export type TauriInvoke = (command: string, args?: Record<string, unknown>) => P
 
 type TauriRuntimeDiagnosticCode = "unavailable" | "invoke-failed" | "malformed";
 type TauriRuntimeDiagnosticSurface =
-  | "fixtureEvents"
-  | "runtimeCapabilities"
-  | "guestProviderCapabilities"
-  | "mediaSession";
+  "fixtureEvents" | "runtimeCapabilities" | "guestProviderCapabilities" | "mediaSession";
 type TauriRuntimeDiagnosticCommand =
   | typeof TAURI_FIXTURE_COMMAND
   | typeof TAURI_RUNTIME_CAPABILITIES_COMMAND

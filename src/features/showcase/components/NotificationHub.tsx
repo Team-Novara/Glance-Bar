@@ -4,7 +4,6 @@ import type { NotificationState } from "@/entities";
 
 import { FluentIconChip } from "./ShowcaseFluentTokens";
 
-
 type NotificationHubProps = {
   notification: NotificationState;
 };

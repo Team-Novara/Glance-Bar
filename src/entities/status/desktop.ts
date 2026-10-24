@@ -23,11 +23,7 @@ export type DesktopGuestStatusKind = Exclude<DesktopStatusKind, "resident">;
 type DesktopStatusSource = "default" | "mock" | "system";
 
 export type GuestProviderSourceQuality =
-  | "native"
-  | "app-owned"
-  | "fixture"
-  | "mock"
-  | "unavailable";
+  "native" | "app-owned" | "fixture" | "mock" | "unavailable";
 
 export type GuestProviderDiagnosticCode =
   | "available"
@@ -168,7 +164,9 @@ export type DesktopStatusResolverInput = {
   previousChangedAt?: number;
   preferredUntil?: number;
   activatedAtByKind?: Partial<Record<DesktopStatusKind, number>>;
-  attentionByKind?: Partial<Record<DesktopStatusKind, "new" | "near-complete" | "completion" | "urgent">>;
+  attentionByKind?: Partial<
+    Record<DesktopStatusKind, "new" | "near-complete" | "completion" | "urgent">
+  >;
   sourceHealthByKind?: GuestProviderSourceHealthMap;
   userInteractedAt?: number;
   lastGuestKind?: DesktopStatusKind;
@@ -199,7 +197,9 @@ export type DesktopStatusAggregationResult = {
   activeKinds: DesktopStatusKind[];
   availableKinds?: DesktopStatusKind[];
   states?: Partial<DesktopStatusStateMap>;
-  attentionByKind?: Partial<Record<DesktopStatusKind, "new" | "near-complete" | "completion" | "urgent">>;
+  attentionByKind?: Partial<
+    Record<DesktopStatusKind, "new" | "near-complete" | "completion" | "urgent">
+  >;
 };
 
 export type DesktopStatusWindowPosition = {

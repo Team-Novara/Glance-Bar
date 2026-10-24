@@ -215,11 +215,7 @@ describe("desktopStatusScheduler.test", () => {
     // media(15s) → resident(8s) → media(15s) → resident(8s)...
     const cycle3 = scheduleDesktopStatus({
       ...baseInput,
-      now:
-        t0 +
-        DESKTOP_STATUS_MEDIA_DURATION_MS * 2 +
-        DESKTOP_STATUS_RESIDENT_DURATION_MS +
-        300,
+      now: t0 + DESKTOP_STATUS_MEDIA_DURATION_MS * 2 + DESKTOP_STATUS_RESIDENT_DURATION_MS + 300,
       previousKind: cycle2.kind,
       previousChangedAt:
         t0 + DESKTOP_STATUS_MEDIA_DURATION_MS + DESKTOP_STATUS_RESIDENT_DURATION_MS + 200,

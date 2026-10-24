@@ -4,7 +4,6 @@ import { installUpdate } from "../../../runtime/actions/updateInstallRuntime";
 import { createProviderShell } from "../../core/providerShell";
 import type { HubProvider, HubProviderCapability, HubProviderMetadata } from "../../core/types";
 
-
 const PROVIDER_ID = "real-update-provider";
 const TICK_INTERVAL_MS = 2_000;
 const PROGRESS_INCREMENT = 10;
@@ -120,10 +119,10 @@ export async function dispatchUpdateInstall(
  * should produce. Extracted so tests can assert the transition table
  * without driving setInterval.
  */
-export function nextUpdateState(current: {
+export function nextUpdateState(current: { state: UpdateProviderState; progress: number }): {
   state: UpdateProviderState;
   progress: number;
-}): { state: UpdateProviderState; progress: number } {
+} {
   if (current.state === "idle") {
     return { state: "checking", progress: 0 };
   }

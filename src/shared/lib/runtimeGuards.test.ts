@@ -256,10 +256,7 @@ describe("parseHubEvents", () => {
   };
 
   it("parses an array of valid events", () => {
-    const result = parseHubEvents([
-      validEvent,
-      { ...validEvent, id: "evt-2" },
-    ]);
+    const result = parseHubEvents([validEvent, { ...validEvent, id: "evt-2" }]);
 
     expect(result).toHaveLength(2);
     expect(result[0]?.id).toBe("evt-1");

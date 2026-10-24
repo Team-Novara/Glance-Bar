@@ -60,9 +60,7 @@ export function ProviderStatusPanel({ records }: ProviderStatusPanelProps) {
 
         {degraded.length > 0 && (
           <div className="provider-attention" data-testid="provider-attention">
-            <h4 className="provider-attention-title">
-              {t("settings.providers.attentionTitle")}
-            </h4>
+            <h4 className="provider-attention-title">{t("settings.providers.attentionTitle")}</h4>
             <ul className="provider-list">
               {degraded.map((snap) => (
                 <li
@@ -80,9 +78,7 @@ export function ProviderStatusPanel({ records }: ProviderStatusPanelProps) {
         )}
 
         <details className="provider-details">
-          <summary className="provider-details-summary">
-            {t("settings.providers.showAll")}
-          </summary>
+          <summary className="provider-details-summary">{t("settings.providers.showAll")}</summary>
           <ul className="provider-list">
             {records.map((record) => (
               <li

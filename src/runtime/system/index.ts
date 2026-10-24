@@ -1,6 +1,6 @@
 // Framework barrel — system split
-export * from './systemPerformanceRuntime';
-export * from './mediaControlRuntime';
+export * from "./systemPerformanceRuntime";
+export * from "./mediaControlRuntime";
 // systemMonitorRuntime shares CLIPBOARD_CHANGED_EVENT with mediaControlRuntime —
 // re-export its named exports explicitly to avoid a duplicate-export collision.
 export {
@@ -20,4 +20,4 @@ export {
   onNotificationsChanged,
   parseFocusAssistState,
   parseMediaSessionChangedPayload,
-} from './systemMonitorRuntime';
+} from "./systemMonitorRuntime";

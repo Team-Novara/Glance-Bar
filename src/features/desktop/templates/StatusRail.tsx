@@ -23,7 +23,7 @@ export function StatusRail({
 
   return (
     <span
-      className={`product-status-track product-status-track-${accent}${indeterminate ? " is-indeterminate" : ""}`}
+      className={`product-status-track product-status-track-${accent}${indeterminate ? "is-indeterminate" : ""}`}
       role="progressbar"
       aria-label={label}
       aria-valuemin={0}

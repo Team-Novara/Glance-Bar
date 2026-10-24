@@ -9,7 +9,6 @@ import type {
 
 import i18n from "../../../i18n";
 
-
 type ResidentStatusTemplateProps = {
   state: DesktopResidentState;
 };

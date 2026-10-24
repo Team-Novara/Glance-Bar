@@ -77,9 +77,7 @@ export function snapshotProviderHealth(record: HealthRecordInput): ProviderHealt
  * Roll up a list of records into a fleet-wide summary. The aggregator
  * is intentionally O(n) with a single pass and never mutates inputs.
  */
-export function aggregateProviderHealth(
-  records: HealthRecordInput[],
-): ProviderHealthSummary {
+export function aggregateProviderHealth(records: HealthRecordInput[]): ProviderHealthSummary {
   const snapshots = records.map(snapshotProviderHealth);
 
   const byHealth: Record<HubProviderHealth, number> = {
@@ -120,7 +118,5 @@ export function aggregateProviderHealth(
  * (Degraded or Unhealthy). Preserves the order of the input records.
  */
 export function findDegradedProviders(records: HealthRecordInput[]): ProviderHealthSnapshot[] {
-  return records
-    .map(snapshotProviderHealth)
-    .filter((snap) => snap.isDegraded || snap.isUnhealthy);
+  return records.map(snapshotProviderHealth).filter((snap) => snap.isDegraded || snap.isUnhealthy);
 }
