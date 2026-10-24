@@ -103,6 +103,12 @@ Verification snapshot at `0110f47`: all gates green; Vitest 59 files / 984 tests
 
 Verification snapshot at `55a0ab9`: all gates green; Vitest 59 files / 994 tests; Rust 97/97; coverage toolchain noise-free.
 
+### Continuation — PR #86 (Wave 19, 2026-10-25)
+
+- **#86 — tauri runtime coverage completed**: 21 new tests; tauriRuntime.ts to 100 lines / 99.3 branch (fallback invoke wrapper, rejection stringification across all five wrappers, malformed envelope branches for publish/capabilities/guest-providers/media/shell-window), appRuntimeMetadata.ts to 100/100/100/100; runtime/tauri directory at 100/99.17/100/100 — the only residual branch is the desktopProductRuntime L107 case documented in #84, plus one more provably-unreachable branch documented here (invokeWithOptionalTimeout finally timer path, with an ECMA-262 executor-synchronicity proof). Scoped CI coverage: 97.58 stmts / 94.76 branch / 98.69 funcs / 97.5 lines.
+
+Verification snapshot at `407d8be`: all gates green; Vitest 59 files / 1015 tests; Rust 97/97; scoped coverage 97.5 lines — the coverage campaign that started at #79 has now lifted every CI-covered file tree to ~97+ lines with all residuals individually proven unreachable or documented.
+
 ### P0: preserve reliable product behavior
 
 - Keep the provider event pipeline intact and testable.
