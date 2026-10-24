@@ -56,35 +56,41 @@ pub(crate) fn clamp_percent(value: f64) -> u8 {
 // ---------------------------------------------------------------------------
 // Tray menu construction + event routing (kept in lib.rs as run() glue).
 // ---------------------------------------------------------------------------
+/// Builds the in-window status-center context menu. Labels follow the stored
+/// language preference (same [`AppLanguage`] source as the tray menu, English
+/// fallback) via the bounded table in `crate::tray`; the check states come
+/// from the current preferences. The result is cached in
+/// `DesktopProductState::menu_items` at startup, so language changes swap the
+/// cached menu through [`rebuild_status_center_menu`] instead of rebuilding
+/// per right-click.
 fn create_status_center_menu<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     preferences: &DesktopStatusPreferences,
 ) -> Result<StatusCenterMenuItems<R>, tauri::Error> {
-    let always_float =
-        CheckMenuItemBuilder::with_id(MENU_ALWAYS_FLOAT, "\u{603B}\u{662F}\u{60AC}\u{6D6E}")
-            .checked(preferences.always_float)
+    let labels = crate::tray::status_center_menu_labels(AppLanguage::from_stored(
+        preferences.language.as_deref(),
+    ));
+    let always_float = CheckMenuItemBuilder::with_id(MENU_ALWAYS_FLOAT, labels.always_float)
+        .checked(preferences.always_float)
+        .build(app)?;
+    let avoid_fullscreen =
+        CheckMenuItemBuilder::with_id(MENU_AVOID_FULLSCREEN, labels.avoid_fullscreen)
+            .checked(preferences.avoid_fullscreen)
             .build(app)?;
-    let avoid_fullscreen = CheckMenuItemBuilder::with_id(
-        MENU_AVOID_FULLSCREEN,
-        "\u{5168}\u{5C4F}\u{65F6}\u{907F}\u{8BA9}",
-    )
-    .checked(preferences.avoid_fullscreen)
-    .build(app)?;
-    let lock_position =
-        CheckMenuItemBuilder::with_id(MENU_LOCK_POSITION, "\u{9501}\u{5B9A}\u{4F4D}\u{7F6E}")
-            .checked(preferences.lock_position)
-            .build(app)?;
+    let lock_position = CheckMenuItemBuilder::with_id(MENU_LOCK_POSITION, labels.lock_position)
+        .checked(preferences.lock_position)
+        .build(app)?;
 
     let menu = MenuBuilder::new(app)
-        .text(MENU_REFRESH_DATA, "\u{5237}\u{65B0}\u{6570}\u{636E}")
+        .text(MENU_REFRESH_DATA, labels.refresh_data)
         .item(&always_float)
         .item(&avoid_fullscreen)
         .item(&lock_position)
         .separator()
-        .text(MENU_RESET_POSITION, "\u{91CD}\u{7F6E}\u{4F4D}\u{7F6E}")
-        .text(MENU_OPEN_SETTINGS, "\u{6253}\u{5F00}\u{8BBE}\u{7F6E}")
+        .text(MENU_RESET_POSITION, labels.reset_position)
+        .text(MENU_OPEN_SETTINGS, labels.open_settings)
         .separator()
-        .text(MENU_QUIT, "\u{9000}\u{51FA}")
+        .text(MENU_QUIT, labels.quit)
         .build()?;
 
     Ok(StatusCenterMenuItems {
@@ -93,6 +99,25 @@ fn create_status_center_menu<R: tauri::Runtime>(
         avoid_fullscreen,
         lock_position,
     })
+}
+
+/// Rebuilds the in-window status-center context menu in place after the
+/// language preference changes — the counterpart of
+/// `crate::tray::rebuild_tray_menu` for the tray menu. The menu is cached at
+/// startup, so a language change swaps the cached items; labels are
+/// re-derived from the already-updated stored preferences (which also carries
+/// the current check states). A rebuild failure leaves the previous menu in
+/// place, so the context menu keeps a usable menu in the prior language.
+pub(crate) fn rebuild_status_center_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    let Some(shared_state) = app.try_state::<SharedDesktopProductState<R>>() else {
+        return;
+    };
+    let Ok(mut state) = shared_state.lock() else {
+        return;
+    };
+    if let Ok(menu_items) = create_status_center_menu(app, &state.preferences) {
+        state.menu_items = Some(menu_items);
+    }
 }
 
 fn emit_status_center_settings<R: tauri::Runtime>(
