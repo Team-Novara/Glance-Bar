@@ -3,6 +3,8 @@
 // ---------------------------------------------------------------------------
 
 use crate::types::MediaSessionStatus;
+
+#[cfg(windows)]
 use tauri::State;
 
 // Only the Windows command variants take the media-thread sender in their

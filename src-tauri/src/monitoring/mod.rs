@@ -11,9 +11,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::Emitter;
 
-use crate::types::{
-    ClipboardContent, DownloadFolderStatus, FocusAssistStatePayload, NotificationSummaryPayload,
-};
+use crate::types::{ClipboardContent, FocusAssistStatePayload, NotificationSummaryPayload};
+
+#[cfg(windows)]
+use crate::types::DownloadFolderStatus;
 
 const STATUS_CENTER_CLIPBOARD_EVENT: &str = "status-center://clipboard-changed";
 const STATUS_CENTER_FOCUS_ASSIST_EVENT: &str = "status-center://focus-assist-changed";
