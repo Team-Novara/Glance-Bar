@@ -113,6 +113,8 @@ jobs:
         run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all -W clippy::pedantic --allow clippy::module_name_repetitions
       - name: Cargo fmt check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - name: Cargo test
+        run: cargo test --manifest-path src-tauri/Cargo.toml
 
   build:
     name: build
