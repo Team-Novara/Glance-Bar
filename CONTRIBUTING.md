@@ -32,8 +32,11 @@
 ```bash
 npm run typecheck
 npm run lint -- --max-warnings=0
+npm run format:check
 npm run test:vitest
 npm run qa
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+cargo test --manifest-path src-tauri/Cargo.toml
 cargo check --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all
 ```
