@@ -17,7 +17,16 @@ export type GitStatus = {
   diagnostic?: string;
 };
 
-function gitStatusToEvent(status: GitStatus): HubEvent {
+export type GitProviderOptions = {
+  /**
+   * Overrides the status check used for the initial snapshot and every
+   * poll. Production never passes this: the default remains the honest
+   * `not-implemented` module-local stub below (see #59).
+   */
+  checker?: () => Promise<GitStatus>;
+};
+
+export function gitStatusToEvent(status: GitStatus): HubEvent {
   const createdAt = status.lastCheckedAt;
   return {
     id: `${PROVIDER_ID}-git-${createdAt}`,
@@ -61,7 +70,10 @@ export async function checkGitStatus(): Promise<GitStatus> {
   };
 }
 
-export function createRealGitProvider(): HubProvider {
+export function createRealGitProvider(options: GitProviderOptions = {}): HubProvider {
+  // Injection seam for tests. With no options this is exactly the honest
+  // module-local stub, so the production call sites behave identically.
+  const checkStatus: () => Promise<GitStatus> = options.checker ?? checkGitStatus;
   let pollTimer: ReturnType<typeof setInterval> | undefined;
   let lastEmitted: GitStatus | undefined;
 
@@ -82,7 +94,7 @@ export function createRealGitProvider(): HubProvider {
     capabilities,
 
     async start(handle) {
-      const initial = await checkGitStatus().catch(() => undefined);
+      const initial = await checkStatus().catch(() => undefined);
       if (!initial) {
         handle.markDegraded();
         return;
@@ -100,7 +112,7 @@ export function createRealGitProvider(): HubProvider {
       handle.emit([gitStatusToEvent(initial)]);
 
       pollTimer = setInterval(async () => {
-        const next = await checkGitStatus().catch(() => undefined);
+        const next = await checkStatus().catch(() => undefined);
         if (!next) {
           handle.markDegraded();
           return;

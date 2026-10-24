@@ -27,7 +27,16 @@ export type DockerStatus = {
   diagnostic?: string;
 };
 
-function dockerStatusToEvent(status: DockerStatus): HubEvent {
+export type DockerProviderOptions = {
+  /**
+   * Overrides the status check used for the initial snapshot and every
+   * poll. Production never passes this: the default remains the honest
+   * `not-implemented` module-local stub below (see #59).
+   */
+  checker?: () => Promise<DockerStatus>;
+};
+
+export function dockerStatusToEvent(status: DockerStatus): HubEvent {
   const createdAt = status.lastCheckedAt;
 
   // Build subtitle summarizing container states
@@ -78,7 +87,10 @@ export async function checkDockerStatus(): Promise<DockerStatus> {
   };
 }
 
-export function createRealDockerProvider(): HubProvider {
+export function createRealDockerProvider(options: DockerProviderOptions = {}): HubProvider {
+  // Injection seam for tests. With no options this is exactly the honest
+  // module-local stub, so the production call sites behave identically.
+  const checkStatus: () => Promise<DockerStatus> = options.checker ?? checkDockerStatus;
   let pollTimer: ReturnType<typeof setInterval> | undefined;
   let lastEmittedRunningCount: number | undefined;
   let lastEmittedTotalCount: number | undefined;
@@ -100,7 +112,7 @@ export function createRealDockerProvider(): HubProvider {
     capabilities,
 
     async start(handle) {
-      const initial = await checkDockerStatus().catch(() => undefined);
+      const initial = await checkStatus().catch(() => undefined);
       if (!initial) {
         handle.markDegraded();
         return;
@@ -119,7 +131,7 @@ export function createRealDockerProvider(): HubProvider {
       handle.emit([dockerStatusToEvent(initial)]);
 
       pollTimer = setInterval(async () => {
-        const next = await checkDockerStatus().catch(() => undefined);
+        const next = await checkStatus().catch(() => undefined);
         if (!next) {
           handle.markDegraded();
           return;

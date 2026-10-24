@@ -27,7 +27,16 @@ export type NpmStatus = {
   diagnostic?: string;
 };
 
-function npmStatusToEvent(status: NpmStatus): HubEvent {
+export type NpmProviderOptions = {
+  /**
+   * Overrides the status check used for the initial snapshot and every
+   * poll. Production never passes this: the default remains the honest
+   * `not-implemented` module-local stub below (see #59).
+   */
+  checker?: () => Promise<NpmStatus>;
+};
+
+export function npmStatusToEvent(status: NpmStatus): HubEvent {
   const createdAt = status.lastCheckedAt;
   const total = status.scripts.length;
   const running = status.runningCount;
@@ -82,7 +91,10 @@ export async function checkNpmStatus(): Promise<NpmStatus> {
   };
 }
 
-export function createRealNpmProvider(): HubProvider {
+export function createRealNpmProvider(options: NpmProviderOptions = {}): HubProvider {
+  // Injection seam for tests. With no options this is exactly the honest
+  // module-local stub, so the production call sites behave identically.
+  const checkStatus: () => Promise<NpmStatus> = options.checker ?? checkNpmStatus;
   let pollTimer: ReturnType<typeof setInterval> | undefined;
   let lastEmittedRunning: number | undefined;
   let lastEmittedFailed: number | undefined;
@@ -104,7 +116,7 @@ export function createRealNpmProvider(): HubProvider {
     capabilities,
 
     async start(handle) {
-      const initial = await checkNpmStatus().catch(() => undefined);
+      const initial = await checkStatus().catch(() => undefined);
       if (!initial) {
         handle.markDegraded();
         return;
@@ -123,7 +135,7 @@ export function createRealNpmProvider(): HubProvider {
       handle.emit([npmStatusToEvent(initial)]);
 
       pollTimer = setInterval(async () => {
-        const next = await checkNpmStatus().catch(() => undefined);
+        const next = await checkStatus().catch(() => undefined);
         if (!next) {
           handle.markDegraded();
           return;
