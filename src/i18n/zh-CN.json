@@ -215,6 +215,7 @@
     "mock": "模拟"
   },
   "media": {
+    "progressUnknown": "媒体播放进度不可用",
     "previous": "上一首",
     "play": "播放",
     "pause": "暂停",
@@ -239,7 +240,8 @@
     "pause": "暂停下载",
     "resume": "继续下载",
     "cancel": "取消下载",
-    "controlFailed": "下载控制失败"
+    "controlFailed": "下载控制失败",
+    "progressUnknown": "下载进度不可用"
   },
   "update": {
     "installNow": "立即安装",
