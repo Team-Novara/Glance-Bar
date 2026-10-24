@@ -30,6 +30,51 @@ pub const MEDIA_REFRESH_INTERVAL: Duration = Duration::from_secs(20);
 /// more wakeups per second.
 pub const MEDIA_POLL_INTERVAL: Duration = Duration::from_millis(1000);
 
+/// In-app language selection shared by the frontend i18n switch and the
+/// native tray menu labels. Adding a language means extending both the
+/// serde remap in [`deserialize_stored_language`] and the tray label table
+/// in `crate::tray`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AppLanguage {
+    En,
+    ZhCn,
+}
+
+impl AppLanguage {
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            AppLanguage::En => "en",
+            AppLanguage::ZhCn => "zh-CN",
+        }
+    }
+
+    /// Maps a persisted (or IPC-supplied) language string onto a known
+    /// language. Missing and unknown values fall back to English — the same
+    /// fallback the tray label table applies.
+    #[must_use]
+    pub fn from_stored(value: Option<&str>) -> Self {
+        match value {
+            Some("zh-CN") => AppLanguage::ZhCn,
+            _ => AppLanguage::En,
+        }
+    }
+}
+
+/// Remaps unknown language strings to `None` during decode so a corrupt or
+/// future value never invalidates the whole preferences document: the other
+/// fields still decode, and label selection falls back to English.
+fn deserialize_stored_language<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<String>::deserialize(deserializer)?;
+    Ok(match value.as_deref() {
+        Some("en" | "zh-CN") => value,
+        _ => None,
+    })
+}
+
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DesktopStatusPreferences {
@@ -38,6 +83,12 @@ pub struct DesktopStatusPreferences {
     pub lock_position: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub window_position: Option<StatusWindowPosition>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "deserialize_stored_language"
+    )]
+    pub language: Option<String>,
 }
 
 impl Default for DesktopStatusPreferences {
@@ -47,6 +98,7 @@ impl Default for DesktopStatusPreferences {
             avoid_fullscreen: true,
             lock_position: false,
             window_position: None,
+            language: None,
         }
     }
 }

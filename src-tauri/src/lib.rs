@@ -294,12 +294,7 @@ pub fn run() {
 
             let preferences = crate::preferences::load_status_center_preferences(app.handle());
             let menu_items = create_status_center_menu(app.handle(), &preferences)?;
-            let tray_menu = crate::tray::create_tray_menu(app.handle())?;
-
-            let _tray =
-                crate::tray::build_tray_icon(app.handle().clone(), &tray_menu, |app_handle| {
-                    toggle_status_center_window(app_handle);
-                })?;
+            crate::tray::attach_tray(app.handle(), &preferences, toggle_status_center_window)?;
 
             if let Ok(mut state) = setup_state.lock() {
                 state.preferences = preferences.clone();

@@ -89,11 +89,49 @@ mod tests {
     }
 
     #[test]
+    fn legacy_preferences_without_language_default_to_none() {
+        let preferences: DesktopStatusPreferences = serde_json::from_str(
+            r#"{"alwaysFloat":true,"avoidFullscreen":false,"lockPosition":true}"#,
+        )
+        .expect("legacy preferences should remain readable");
+
+        assert!(preferences.language.is_none());
+    }
+
+    #[test]
+    fn unknown_language_values_are_remapped_to_none() {
+        let preferences: DesktopStatusPreferences = serde_json::from_str(
+            r#"{"alwaysFloat":true,"avoidFullscreen":false,"lockPosition":true,"language":"fr"}"#,
+        )
+        .expect("unknown language should not invalidate the document");
+
+        assert!(preferences.language.is_none());
+    }
+
+    #[test]
+    fn persisted_language_round_trips() {
+        let preferences = DesktopStatusPreferences {
+            always_float: true,
+            avoid_fullscreen: true,
+            lock_position: false,
+            window_position: None,
+            language: Some("zh-CN".to_string()),
+        };
+
+        let encoded = serde_json::to_string(&preferences).expect("preferences should serialize");
+        let decoded: DesktopStatusPreferences =
+            serde_json::from_str(&encoded).expect("preferences should deserialize");
+
+        assert_eq!(decoded.language.as_deref(), Some("zh-CN"));
+    }
+
+    #[test]
     fn persisted_window_position_round_trips() {
         let preferences = DesktopStatusPreferences {
             always_float: true,
             avoid_fullscreen: true,
             lock_position: false,
+            language: None,
             window_position: Some(StatusWindowPosition {
                 x: 120,
                 y: 640,

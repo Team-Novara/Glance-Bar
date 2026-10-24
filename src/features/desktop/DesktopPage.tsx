@@ -5,6 +5,7 @@ import { getDesktopStatusShellCopy } from "@/entities/status/config";
 
 import { SettingsPanel } from "./components/SettingsPanel";
 import {
+  useAppLanguage,
   useAppWindow,
   useAutostart,
   useContextMenu,
@@ -60,6 +61,10 @@ export function DesktopPage() {
 
   // Preferences
   const { preferences, updatePreferences } = usePreferences();
+
+  // Language selection — persists through the preferences runtime path so the
+  // native tray menu follows the same setting, and keeps i18next in sync.
+  const { selectLanguage } = useAppLanguage({ preferences, updatePreferences });
 
   // Drag controller (lock-position preference synced inside the hook)
   const { isDraggingRef, handlePointerDown } = useDragController({
@@ -148,6 +153,7 @@ export function DesktopPage() {
           onToggleAvoidFullscreen={toggleAvoidFullscreen}
           onToggleLockPosition={toggleLockPosition}
           onToggleAutostart={toggleAutostart}
+          onSelectLanguage={selectLanguage}
           onKindSelect={handleKindSelect}
           onRefresh={refresh}
           onResetPosition={resetPosition}
