@@ -46,17 +46,29 @@ pub async fn get_media_session_status(
 #[cfg(not(windows))]
 #[tauri::command]
 pub async fn get_media_session_status() -> Result<MediaSessionStatus, String> {
-    Ok(MediaSessionStatus {
-        available: false,
-        playback_status: "unsupported",
-        progress: 0,
-        position_ms: None,
-        duration_ms: None,
-        title: String::new(),
-        artist: String::new(),
-        code: "unsupported",
-        checked_at: crate::unix_time_ms(),
-    })
+    // Linux routes through the MPRIS provider so the STAGE6 validation gate
+    // in `media::linux` is the single switch that decides capability
+    // reporting; while the gate is off this returns the same bounded
+    // `unsupported` payload as before. Other non-Windows platforms keep the
+    // explicit unsupported result.
+    #[cfg(target_os = "linux")]
+    {
+        Ok(crate::media::linux::read_current_status())
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        Ok(MediaSessionStatus {
+            available: false,
+            playback_status: "unsupported",
+            progress: 0,
+            position_ms: None,
+            duration_ms: None,
+            title: String::new(),
+            artist: String::new(),
+            code: "unsupported",
+            checked_at: crate::unix_time_ms(),
+        })
+    }
 }
 
 #[cfg(windows)]
