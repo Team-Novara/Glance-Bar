@@ -54,3 +54,7 @@ objc2-media-player = { version = "0.3", features = ["MPNowPlayingInfoCenter", "M
 [target.'cfg(target_os = "linux")'.dependencies]
 x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
 zbus = "5"
+# Same version tauri 2.x already locks (0.6.2): names the rwh 0.6
+# `HasWindowHandle` impl tauri provides for `WebviewWindow` so window/linux.rs
+# can read the X11 window id. No new code is compiled by this line.
+raw-window-handle = "0.6"
