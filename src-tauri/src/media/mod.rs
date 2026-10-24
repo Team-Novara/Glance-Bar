@@ -9,10 +9,13 @@ pub mod linux;
 // `macos.rs` is the provider behind the non-Windows, non-Linux branch of
 // `commands::media::get_media_session_status` (macOS today; that branch also
 // covers any other target in that position, where the same bounded
-// `unsupported` payload applies). Gate it to exactly that consumer — like
-// `windows.rs` below — so platforms with their own read path compile no
-// unused provider code.
-#[cfg(not(any(windows, target_os = "linux")))]
+// `unsupported` payload applies). It compiles on every non-Windows target —
+// mirroring `linux.rs` above, whose pure layer is Linux-testable through
+// exactly that unconditional declaration — so the macOS pure mapping layer
+// and its unit tests run on the Linux CI as well. Everything in it that
+// touches objc2 stays `#[cfg(target_os = "macos")]`, so no other platform
+// compiles unused provider code beyond the shared pure shell.
+#[cfg(not(windows))]
 pub mod macos;
 // `windows.rs` is pure WinRT/GSMTC code and the `windows` crate is a
 // cfg(windows)-only dependency — compiling the file on other platforms
