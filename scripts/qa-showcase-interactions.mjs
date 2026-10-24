@@ -57,6 +57,9 @@ async function ensureServer() {
   server = spawn(command, args, {
     env: { ...process.env, BROWSER: "none" },
     stdio: ["ignore", "pipe", "pipe"],
+    // Own process group on POSIX so stopServer can signal the whole
+    // npm -> sh -> Vite chain; killing only the npm parent orphans Vite.
+    detached: process.platform !== "win32",
   });
 
   server.stdout.on("data", (data) => process.stdout.write(data));
@@ -98,7 +101,42 @@ async function stopServer() {
     return;
   }
 
-  child.kill();
+  try {
+    // Negative PID signals the detached process group, taking down the
+    // Vite grandchild together with npm. Fall back to the direct kill if
+    // the group has already exited.
+    process.kill(-child.pid, "SIGTERM");
+  } catch {
+    child.kill();
+  }
+
+  // SIGTERM is asynchronous: Vite keeps shutting down gracefully for a
+  // moment after the signal, so if this script exited right away an
+  // immediate `pgrep -af vite` would snapshot the dying grandchild and
+  // report a leaked server. Poll until the whole group is gone (signal 0
+  // succeeds while any member is still alive), then SIGKILL any holdouts
+  // so the journey never exits before the server is fully dead.
+  const deadline = Date.now() + 5_000;
+  let groupAlive = true;
+  while (groupAlive && Date.now() < deadline) {
+    try {
+      process.kill(-child.pid, 0);
+    } catch (error) {
+      groupAlive = error?.code !== "ESRCH";
+      if (!groupAlive) {
+        break;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  if (groupAlive) {
+    try {
+      process.kill(-child.pid, "SIGKILL");
+    } catch {
+      // The group exited between the last probe and the SIGKILL.
+    }
+  }
 }
 
 async function clickButton(locator, name) {
@@ -180,7 +218,14 @@ async function run() {
     // i18next-browser-languagedetector uses its default `i18nextLng` cache
     // key. Using a different key leaves the browser locale in control and
     // makes the English role assertions below fail on a Chinese machine.
-    localStorage.setItem("i18nextLng", "en");
+    // Guarded because this init script runs on every document, including
+    // Chromium network-error pages, which deny storage access; a throw
+    // there would poison the run as a phantom page error.
+    try {
+      localStorage.setItem("i18nextLng", "en");
+    } catch {
+      // Not a real app document; the locale setting is irrelevant there.
+    }
 
     window.__qaTauriInvokeDelayMs = 0;
     window.__TAURI__ = {
@@ -276,7 +321,12 @@ async function run() {
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
   try {
-    const response = await page.goto(showcaseUrl, { waitUntil: "networkidle" });
+    // 60s: the 30s default timed out once under back-to-back runs while the
+    // dev server was still accepting connections (transient stall).
+    const response = await page.goto(showcaseUrl, {
+      waitUntil: "networkidle",
+      timeout: 60_000,
+    });
 
     if (!response || response.status() !== 200) {
       throw new Error(
@@ -394,6 +444,7 @@ async function run() {
 
     const missingResponse = await page.goto(`${baseUrl}/missing`, {
       waitUntil: "networkidle",
+      timeout: 60_000,
     });
 
     if (!missingResponse || missingResponse.status() !== 200) {
@@ -410,6 +461,7 @@ async function run() {
 
     const desktopResponse = await page.goto(desktopUrl, {
       waitUntil: "networkidle",
+      timeout: 60_000,
     });
 
     if (!desktopResponse || desktopResponse.status() !== 200) {
