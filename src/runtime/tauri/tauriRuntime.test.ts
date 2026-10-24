@@ -1,3 +1,20 @@
+// Hoist: shared by both the mock factory and the test body so
+// `vi.mock` can reference the same spy as the test assertions.
+const { coreInvokeMock, isTauriMock } = vi.hoisted(() => ({
+  coreInvokeMock: vi.fn(),
+  isTauriMock: vi.fn(),
+}));
+
+// `tauriRuntime` imports `invoke`/`isTauri` from @tauri-apps/api/core.
+// Mocking the module lets the getTauriInvoke fallback wrapper (native
+// runtime detected without a global __TAURI__ invoke) and its error
+// propagation be exercised without a native runtime.
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: coreInvokeMock,
+  isTauri: isTauriMock,
+}));
+
+// Imports must come AFTER vi.mock so they pick up the mocked module.
 import {
   emitTauriFixtureEvents,
   getTauriInvoke,
@@ -21,8 +38,13 @@ import {
 import type { HubEvent } from "@/entities";
 import type { HubProviderCapability } from "../../providers/types";
 
-import { describe, it } from "vitest";
+import { beforeEach, describe, it, vi } from "vitest";
 describe("tauriRuntime.test", () => {
+  beforeEach(() => {
+    coreInvokeMock.mockReset();
+    isTauriMock.mockReturnValue(false);
+  });
+
   const canonicalRuntimeCapabilities = {
     runtime: "tauri",
     fixtureIpc: true,
@@ -327,6 +349,55 @@ describe("tauriRuntime.test", () => {
     assert.equal(getTauriInvoke({ __TAURI__: { core: { invoke } } }), invoke);
   });
 
+  it("prefers the global __TAURI__ core invoke over the legacy and internals fallbacks", () => {
+    const coreInvoke: TauriInvoke = async () => "core";
+    const legacyInvoke: TauriInvoke = async () => "legacy";
+    const internalsInvoke: TauriInvoke = async () => "internals";
+
+    assert.equal(
+      getTauriInvoke({
+        __TAURI__: { core: { invoke: coreInvoke }, invoke: legacyInvoke },
+        __TAURI_INTERNALS__: { invoke: internalsInvoke },
+      }),
+      coreInvoke,
+    );
+  });
+
+  it("falls back to the Tauri API invoke when __TAURI_INTERNALS__ exposes invoke", async () => {
+    const invoke = getTauriInvoke({ __TAURI_INTERNALS__: { invoke: () => "ignored" } });
+
+    assert.notEqual(invoke, undefined);
+    coreInvokeMock.mockResolvedValueOnce("native-payload");
+
+    assert.equal(await invoke!("get_hub_event_fixtures", { key: 1 }), "native-payload");
+    assert.deepEqual(coreInvokeMock.mock.calls[0], ["get_hub_event_fixtures", { key: 1 }]);
+  });
+
+  it("falls back to the Tauri API invoke when the scope marks isTauri", () => {
+    assert.notEqual(getTauriInvoke({ isTauri: true }), undefined);
+  });
+
+  it("falls back to the Tauri API invoke when the Tauri API reports a native runtime", () => {
+    isTauriMock.mockReturnValue(true);
+
+    assert.notEqual(getTauriInvoke({}), undefined);
+  });
+
+  it("propagates native invoke failures through the fallback wrapper", async () => {
+    const invoke = getTauriInvoke({ isTauri: true });
+    coreInvokeMock.mockRejectedValueOnce(new Error("native boundary down"));
+
+    let caught: unknown;
+    try {
+      await invoke!("get_hub_event_fixtures");
+      assert.fail("expected the fallback invoke to reject");
+    } catch (error) {
+      caught = error;
+    }
+
+    assert.equal((caught as Error)?.message, "native boundary down");
+  });
+
   it("returns malformed diagnostic for non-canonical fixture payloads", async () => {
     const eventBus = { publishHubEvent: () => {} };
     const result = await publishTauriFixtureEvents(eventBus, {
@@ -379,6 +450,37 @@ describe("tauriRuntime.test", () => {
       command: TAURI_FIXTURE_COMMAND,
     });
     assert.equal(result.diagnostic.detail, "native boundary failed");
+  });
+
+  it("stringifies non-Error fixture command failures in the diagnostic detail", async () => {
+    const result = await publishTauriFixtureEvents(
+      { publishHubEvent: () => {} },
+      {
+        invoke: async () => {
+          throw "native fixture boundary string";
+        },
+      },
+    );
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "invoke-failed");
+    assert.equal(result.diagnostic.detail, "native fixture boundary string");
+  });
+
+  it("returns malformed diagnostic when the fixture command resolves to a non-array", async () => {
+    const result = await publishTauriFixtureEvents(
+      { publishHubEvent: () => {} },
+      {
+        invoke: async () => ({ fixtures: [] }),
+      },
+    );
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "malformed");
+    assertDiagnosticContext(result.diagnostic, {
+      surface: "fixtureEvents",
+      command: TAURI_FIXTURE_COMMAND,
+    });
   });
 
   it("loads canonical fixture events through the configured command", async () => {
@@ -612,6 +714,18 @@ describe("tauriRuntime.test", () => {
     });
   });
 
+  it("stringifies non-Error emit command failures in the diagnostic detail", async () => {
+    const result = await emitTauriFixtureEvents({
+      invoke: async () => {
+        throw "emit boundary string";
+      },
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "invoke-failed");
+    assert.equal(result.diagnostic.detail, "emit boundary string");
+  });
+
   it("detects unavailable Tauri capability invoke", async () => {
     const result = await loadTauriRuntimeCapabilities();
 
@@ -691,6 +805,47 @@ describe("tauriRuntime.test", () => {
       command: TAURI_RUNTIME_CAPABILITIES_COMMAND,
     });
     assert.equal(result.diagnostic.detail, "capability boundary failed");
+  });
+
+  it("stringifies non-Error capability command failures in the diagnostic detail", async () => {
+    const result = await loadTauriRuntimeCapabilities({
+      invoke: async () => {
+        throw "capability boundary string";
+      },
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "invoke-failed");
+    assert.equal(result.diagnostic.detail, "capability boundary string");
+  });
+
+  it("returns malformed diagnostic when capability facts are not a record", async () => {
+    const result = await loadTauriRuntimeCapabilities({
+      invoke: async () => "not-a-record",
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "malformed");
+    assertDiagnosticContext(result.diagnostic, {
+      surface: "runtimeCapabilities",
+      command: TAURI_RUNTIME_CAPABILITIES_COMMAND,
+    });
+  });
+
+  it("returns malformed diagnostic when shell window facts are not a record", async () => {
+    const result = await loadTauriRuntimeCapabilities({
+      invoke: async () => ({
+        ...canonicalRuntimeCapabilities,
+        configuredShellWindow: "not-a-record",
+      }),
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "malformed");
+    assertDiagnosticContext(result.diagnostic, {
+      surface: "runtimeCapabilities",
+      command: TAURI_RUNTIME_CAPABILITIES_COMMAND,
+    });
   });
 
   it("loads canonical runtime capability facts through the configured command", async () => {
@@ -903,6 +1058,59 @@ describe("tauriRuntime.test", () => {
     assert.equal(result.diagnostic.detail, "guest provider boundary failed");
   });
 
+  it("loads guest provider source health from a bare capability array", async () => {
+    const result = await loadTauriGuestProviderCapabilities({
+      invoke: async () => [...canonicalGuestProviderCapabilities],
+    });
+
+    assert.equal(result.ok, true);
+
+    if (result.ok) {
+      assert.equal(result.sourceHealthByKind.update?.quality, "app-owned");
+      assert.equal(result.sourceHealthByKind.focus?.code, "not-implemented");
+    }
+  });
+
+  it("returns malformed diagnostic for non-array, non-record guest provider facts", async () => {
+    for (const payload of [42, { noProviders: true }]) {
+      const result = await loadTauriGuestProviderCapabilities({
+        invoke: async () => payload,
+      });
+
+      assert.equal(result.ok, false);
+      assert.equal(result.diagnostic.code, "malformed");
+      assertDiagnosticContext(result.diagnostic, {
+        surface: "guestProviderCapabilities",
+        command: TAURI_GUEST_PROVIDER_CAPABILITIES_COMMAND,
+      });
+    }
+  });
+
+  it("returns malformed diagnostic when a guest provider item is not a record", async () => {
+    const result = await loadTauriGuestProviderCapabilities({
+      invoke: async () => [42],
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "malformed");
+    assertDiagnosticContext(result.diagnostic, {
+      surface: "guestProviderCapabilities",
+      command: TAURI_GUEST_PROVIDER_CAPABILITIES_COMMAND,
+    });
+  });
+
+  it("stringifies non-Error guest provider failures in the diagnostic detail", async () => {
+    const result = await loadTauriGuestProviderCapabilities({
+      invoke: async () => {
+        throw "guest provider boundary string";
+      },
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "invoke-failed");
+    assert.equal(result.diagnostic.detail, "guest provider boundary string");
+  });
+
   it("loads native media session status as a privacy-safe music event", async () => {
     const calls: string[] = [];
     const result = await loadTauriMediaSessionStatus({
@@ -1019,5 +1227,30 @@ describe("tauriRuntime.test", () => {
       surface: "mediaSession",
       command: TAURI_MEDIA_SESSION_STATUS_COMMAND,
     });
+  });
+
+  it("returns malformed diagnostic when media session facts are not a record", async () => {
+    const result = await loadTauriMediaSessionStatus({
+      invoke: async () => "not-a-record",
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "malformed");
+    assertDiagnosticContext(result.diagnostic, {
+      surface: "mediaSession",
+      command: TAURI_MEDIA_SESSION_STATUS_COMMAND,
+    });
+  });
+
+  it("stringifies non-Error media session failures in the diagnostic detail", async () => {
+    const result = await loadTauriMediaSessionStatus({
+      invoke: async () => {
+        throw "media session boundary string";
+      },
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.diagnostic.code, "invoke-failed");
+    assert.equal(result.diagnostic.detail, "media session boundary string");
   });
 });

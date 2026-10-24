@@ -55,4 +55,36 @@ describe("app runtime metadata", () => {
       runtime: "tauri",
     });
   });
+
+  it("rejects non-record payloads", () => {
+    expect(parseAppRuntimeMetadata(null)).toBeUndefined();
+    expect(parseAppRuntimeMetadata(42)).toBeUndefined();
+    expect(parseAppRuntimeMetadata(["1.0.0"])).toBeUndefined();
+  });
+
+  it("rejects empty, oversized, or invalid appVersion fields", () => {
+    expect(parseAppRuntimeMetadata({ ...canonical, appVersion: "" })).toBeUndefined();
+    expect(parseAppRuntimeMetadata({ ...canonical, appVersion: "1".repeat(65) })).toBeUndefined();
+    expect(
+      parseAppRuntimeMetadata({ ...canonical, appVersion: "1 0 with spaces" }),
+    ).toBeUndefined();
+  });
+
+  it("accepts the four diagnostic platform markers", () => {
+    for (const platform of ["windows", "macos", "linux", "unknown"] as const) {
+      expect(parseAppRuntimeMetadata({ ...canonical, platform })).toEqual({
+        appVersion: "1.0.0",
+        platform,
+        runtime: "tauri",
+      });
+    }
+  });
+
+  it("falls back to a tauri-flavored browser-preview marker on malformed metadata", async () => {
+    await expect(loadAppRuntimeMetadata(async () => ({ runtime: "browser" }))).resolves.toEqual({
+      appVersion: "browser-preview",
+      platform: "unknown",
+      runtime: "tauri",
+    });
+  });
 });
