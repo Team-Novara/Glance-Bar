@@ -9,8 +9,7 @@ use tauri::menu::Menu;
 /// All WinRT async calls run on this thread; the MTA apartment lets the
 /// thread pool signal async completions without a dedicated message pump.
 /// The enum is defined unconditionally: it only carries plain channel
-/// senders, and the non-Windows `start_mta_media_thread` stub must still
-/// name the type in its signature.
+/// senders, so every platform can name the type in command signatures.
 pub enum MediaRequest {
     Read(std_mpsc::Sender<MediaSessionStatus>),
     Action(String, std_mpsc::Sender<Result<MediaControlResult, String>>),

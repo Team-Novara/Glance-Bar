@@ -31,3 +31,13 @@ impl PlatformMediaProvider for MacosMediaProvider {
         read_media_session_status_at(checked_at)
     }
 }
+
+/// Command-layer entry point: read the current media session through the
+/// macOS provider. Mirrors `media::linux::read_current_status` so the
+/// non-Windows command layer (`commands::media::get_media_session_status`)
+/// always routes through the platform provider, keeping this module the
+/// single source of the macOS payload as the capability grows.
+pub fn read_current_status() -> MediaSessionStatus {
+    let mut cache = None;
+    MacosMediaProvider::read_status(&mut cache, crate::unix_time_ms())
+}
