@@ -14,10 +14,12 @@
  *   - domain-specific behavior (music / download / AI / notification)
  *
  * Notes:
- *   - The current mock provider factories emit a single fixed event when
- *     start() is called. There is no setInterval/setTimeout in the source,
- *     but we still wire vi.useFakeTimers() so any future timer-based
- *     behavior is testable without rewiring.
+ *   - The music, download, and AI factories are ticking providers: start()
+ *     emits an initial event and a setInterval then advances progress by the
+ *     provider's step every tickMs. The notification factory emits a single
+ *     fixed event when start() is called and registers no timer.
+ *   - vi.useFakeTimers() makes the ticking providers' intervals
+ *     deterministically controllable without changing the test harness.
  *   - The fixtures expose deterministic `now()` via the
  *     MockProviderOptions.now field, so event ids and timestamps stay
  *     stable across runs.
@@ -30,6 +32,7 @@ import {
   createMockMusicProvider,
   createMockNotificationProvider,
 } from "./index";
+import { MOCK_AI_TICK_MS } from "./shared";
 import type { HubProvider } from "../../core/types";
 import type { HubEvent, NotificationState } from "@/entities";
 
@@ -392,6 +395,69 @@ describe("createMockAIProvider", () => {
       expect(payload?.title).toBe("Codex is updating the provider SDK");
       expect(payload?.accent).toBe("blue");
       expect(typeof payload?.subtitle).toBe("string");
+    });
+  });
+
+  describe("progress phases across ticks", () => {
+    it("walks analyzing -> generating -> review as ticks accumulate", async () => {
+      const provider = AI_PROVIDER();
+      const batches = captureBatches(provider);
+
+      provider.start();
+
+      const phaseAt = (index: number) =>
+        (batches[index]?.[0]?.metadata as { phase?: string } | undefined)?.phase;
+      const progressAt = (index: number) => batches[index]?.[0]?.progress;
+      const subtitleAt = (index: number) =>
+        (batches[index]?.[0]?.payload as { subtitle?: string } | undefined)?.subtitle;
+
+      // start() emits tick 0: progress 0 -> analyzing.
+      expect(phaseAt(0)).toBe("analyzing");
+      expect(progressAt(0)).toBe(0);
+      expect(subtitleAt(0)).toBe("Inspecting repo context");
+
+      // 6 ticks x 5 progress = 30: crosses the analyzing (<30) boundary.
+      await vi.advanceTimersByTimeAsync(MOCK_AI_TICK_MS * 6);
+      expect(phaseAt(6)).toBe("generating");
+      expect(progressAt(6)).toBe(30);
+      expect(subtitleAt(6)).toBe("Generating mock provider contract tests");
+
+      // 12 more ticks = 90: crosses the generating (<90) boundary.
+      await vi.advanceTimersByTimeAsync(MOCK_AI_TICK_MS * 12);
+      expect(phaseAt(18)).toBe("review");
+      expect(progressAt(18)).toBe(90);
+      expect(subtitleAt(18)).toBe("Reviewing and finalizing artifacts");
+
+      provider.stop();
+    });
+
+    it("caps progress at 100 and keeps emitting stable review events past the cap", async () => {
+      const provider = AI_PROVIDER();
+      const batches = captureBatches(provider);
+
+      provider.start();
+      await vi.advanceTimersByTimeAsync(MOCK_AI_TICK_MS * 30);
+
+      const events = batches.map((batch) => batch[0]);
+      expect(events).toHaveLength(31); // tick 0 (start) + 30 intervals
+
+      for (const event of events) {
+        expect(event?.progress).toBeLessThanOrEqual(100);
+      }
+      // Tick 20 reaches 100; ticks 21-30 clamp to the same cap.
+      expect(events[20]?.progress).toBe(100);
+      expect(events[30]?.progress).toBe(100);
+
+      const phaseAt = (index: number) =>
+        (events[index]?.metadata as { phase?: string } | undefined)?.phase;
+      expect(phaseAt(30)).toBe("review");
+
+      // Event ids advance with the per-tick createdAt, never repeat.
+      const ids = events.map((event) => event?.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(events[30]?.id).toBe(`mock-ai-ai-${NOW + 30 * MOCK_AI_TICK_MS}`);
+
+      provider.stop();
     });
   });
 });
