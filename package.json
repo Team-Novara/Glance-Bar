@@ -10,6 +10,7 @@
     "qa": "npm run test:vitest && npm run qa:showcase:interactions && npm run build",
     "qa:showcase:screenshots": "npx playwright screenshot --viewport-size=1366,768 http://127.0.0.1:5173/showcase output/playwright/showcase-1366.png && npx playwright screenshot --viewport-size=1440,900 http://127.0.0.1:5173/showcase output/playwright/showcase-1440.png && npx playwright screenshot --viewport-size=1920,1080 http://127.0.0.1:5173/showcase output/playwright/showcase-1920.png",
     "qa:showcase:interactions": "node scripts/qa-showcase-interactions.mjs",
+    "qa:desktop:interactions": "node scripts/qa-desktop-interactions.mjs",
     "test:vitest": "vitest run --reporter=verbose",
     "test:vitest:state": "vitest run --reporter=verbose src/state",
     "test:vitest:providers": "vitest run --reporter=verbose src/providers",
