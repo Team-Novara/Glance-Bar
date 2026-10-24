@@ -25,10 +25,11 @@ const isWindows = process.platform === "win32";
 
 // One entry per quality gate, in run order. `label` is the exact command so a
 // precheck row can be copied verbatim into the freeze record and the release
-// decision template's gate table. Gates run sequentially: the two interaction
-// gates each bind 127.0.0.1:5173, and the cargo gates share a target dir.
+// decision template's gate table. Gates run sequentially: the interaction and
+// screenshot gates each bind 127.0.0.1:5173, and the cargo gates share a
+// target dir.
 const gates = [
-  ...["typecheck", "lint", "format:check", "test:vitest", "qa:showcase:interactions", "qa:desktop:interactions", "build"].map(
+  ...["typecheck", "lint", "format:check", "test:vitest", "qa:showcase:interactions", "qa:desktop:interactions", "qa:showcase:screenshots", "build"].map(
     (script) => ({
       id: script,
       label: `npm run ${script}`,
@@ -66,9 +67,9 @@ function spawnNpm(script) {
 
   return spawn(command, args, {
     // Own process group on POSIX so stopGate can signal the whole
-    // npm -> sh -> gate chain. The interaction gates nest a Vite dev server
-    // under here; killing only the npm parent would orphan it. This mirrors
-    // the group-kill idiom in scripts/qa-desktop-interactions.mjs.
+    // npm -> sh -> gate chain. The interaction and screenshot gates nest a
+    // Vite dev server under here; killing only the npm parent would orphan
+    // it. This mirrors the group-kill idiom in scripts/qa-desktop-interactions.mjs.
     detached: !isWindows,
     env: process.env,
     stdio: ["ignore", "pipe", "pipe"],

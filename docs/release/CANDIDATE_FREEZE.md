@@ -47,8 +47,8 @@ describe it as frozen at a tag with its automated gate results recorded.
    evidence. It still runs the gates for diagnosis; treat such a run as
    diagnostic only.
 2. Dependencies are installed (`npm install`). Playwright browsers must be
-   present for the interaction gates (`npx playwright install chromium` if
-   they have never been fetched).
+   present for the interaction and screenshot gates (`npx playwright install
+   chromium` if they have never been fetched).
 3. Toolchains: Node, and cargo — the precheck sources `~/.cargo/env` in the
    cargo gates' child shell, so cargo needs no manual PATH setup. If a shared
    cargo target dir is used, export `CARGO_TARGET_DIR` before running; the
@@ -67,18 +67,18 @@ The script (see its header comment for implementation details):
 1. Records the commit hash and branch, and checks whether the working tree is
    clean. A dirty tree is reported up front and fails the run, but the gates
    still run so the full table is available for diagnosis.
-2. Runs all 11 quality gates sequentially, streaming each gate's output to the
+2. Runs all 12 quality gates sequentially, streaming each gate's output to the
    console and saving it to `output/release-precheck/<run id>/<gate>.log`
    (gitignored). The interaction gates and `npm run build` are the same
    commands CI runs; the cargo gates run in a login shell with
    `source ~/.cargo/env` applied.
 3. Prints one PASS/FAIL line per gate with its duration, then exactly one of:
    `RELEASE-PRECHECK PASSED <commit>` or
-   `RELEASE-PRECHECK FAILED (n/11 gates failed)`.
+   `RELEASE-PRECHECK FAILED (n/12 gates failed)`.
 4. Exits nonzero on a dirty tree, any failed gate, or an interrupt. Ctrl-C
    kills the running gate's entire process group (including any Vite dev
-   server the interaction gates started), so an interrupted run leaves no
-   orphaned processes.
+   server the interaction or screenshot gates started), so an interrupted
+   run leaves no orphaned processes.
 
 The gates, in run order:
 
@@ -90,11 +90,16 @@ The gates, in run order:
 | 4 | `npm run test:vitest` |
 | 5 | `npm run qa:showcase:interactions` |
 | 6 | `npm run qa:desktop:interactions` |
-| 7 | `npm run build` |
-| 8 | `cargo fmt --manifest-path src-tauri/Cargo.toml -- --check` |
-| 9 | `cargo check --manifest-path src-tauri/Cargo.toml` |
-| 10 | `cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all -W clippy::pedantic --allow clippy::module_name_repetitions` |
-| 11 | `cargo test --manifest-path src-tauri/Cargo.toml` |
+| 7 | `npm run qa:showcase:screenshots` |
+| 8 | `npm run build` |
+| 9 | `cargo fmt --manifest-path src-tauri/Cargo.toml -- --check` |
+| 10 | `cargo check --manifest-path src-tauri/Cargo.toml` |
+| 11 | `cargo clippy --manifest-path src-tauri/Cargo.toml -- -W clippy::all -W clippy::pedantic --allow clippy::module_name_repetitions` |
+| 12 | `cargo test --manifest-path src-tauri/Cargo.toml` |
+
+The screenshot gate (7) captures the three-viewport PNG baseline of the
+`/showcase` page (1366x768 / 1440x900 / 1920x1080) locally; the screenshots
+are local evidence, not committed artifacts.
 
 **Required outcome: the last line is exactly `RELEASE-PRECHECK PASSED <commit>`
 and the exit code is 0.** Any other outcome means no freeze: fix the tree or
@@ -127,7 +132,7 @@ Day 30 record is written), record:
 ```
 git tag -a candidate/vX.Y.Z-rcN -m "Validation candidate vX.Y.Z-rcN
 
-Precheck: RELEASE-PRECHECK PASSED <commit> (11/11 gates) at <UTC date>.
+Precheck: RELEASE-PRECHECK PASSED <commit> (12/12 gates) at <UTC date>.
 Known limitations at freeze: docs/release/KNOWN_LIMITATIONS.md.
 Freeze record: docs/release/CANDIDATE_FREEZE.md."
 git push origin candidate/vX.Y.Z-rcN
