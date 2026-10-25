@@ -128,6 +128,7 @@ Verification snapshot at `407d8be`: all gates green; Vitest 59 files / 1015 test
 - Wave 28 patrol (no new PRs): `main` at `c2f1a5f` in sync with origin — **RELEASE-PRECHECK PASSED (12/12 gates)**, eighth consecutive routine pass.
 - Wave 29 patrol (no new PRs): `main` at `4fcd1df` in sync with origin — **RELEASE-PRECHECK PASSED (12/12 gates)**, ninth consecutive routine pass.
 - Wave 30 patrol (no new PRs): `main` at `dcb95ab` in sync with origin — **RELEASE-PRECHECK PASSED (12/12 gates)**, tenth consecutive routine pass.
+- Wave 31 patrol (no new PRs): `main` at `13d9ce0` in sync with origin — **RELEASE-PRECHECK PASSED (12/12 gates)**, eleventh consecutive routine pass.
 
 ### P0: preserve reliable product behavior
 
